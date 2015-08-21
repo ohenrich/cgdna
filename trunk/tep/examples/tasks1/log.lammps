@@ -1,0 +1,152 @@
+LAMMPS (9 Dec 2014)
+
+variable run equal 1
+
+###
+# Box and units  (use LJ units and periodic boundaries)
+###
+
+units lj
+
+atom_style hybrid angle ellipsoid
+
+boundary  p p p
+
+###
+# Pair interactions require lists of neighbours to be calculated
+###
+neighbor 1.9 bin
+neigh_modify every 1 delay 1 check yes
+
+
+### READ "start" data file ###
+read_data lammps_new_input
+  orthogonal box = (0 0 0) to (54 54 54)
+  1 by 1 by 1 MPI processor grid
+  reading atoms ...
+  32022 atoms
+  reading velocities ...
+  32022 velocities
+  32022 ellipsoids
+  scanning bonds ...
+  1 = max bonds/atom
+  scanning angles ...
+  2 = max angles/atom
+  reading bonds ...
+  31995 bonds
+  reading angles ...
+  63990 angles
+  2 = max # of 1-2 neighbors
+  2 = max # of 1-3 neighbors
+  4 = max # of 1-4 neighbors
+  6 = max # of special neighbors
+######################
+
+######################
+### reset timestep ###
+reset_timestep 0
+######################
+
+###
+# Define groups (atom type 1 is group 'all')
+###
+group all type 1
+32022 atoms in group all
+
+###
+# Dump configs
+###
+
+# A dump file with bead orientations
+#compute quat all property/atom quatw quati quatj quatk
+#dump 1 all xyz 1000 test.${run}.DNA
+
+###################################################################
+# Stiffness term
+
+angle_style   hybrid cosine polytorsion polytorsionend
+angle_coeff   1 cosine 20.0
+angle_coeff   2 polytorsion 80.0 29.68
+angle_coeff   3 polytorsionend 80.0 29.68
+
+###################################################################
+# Pair interaction between non-bonded atoms
+
+pair_style      lj/cut 1.12246152962189
+pair_modify     shift yes
+pair_coeff      1 1 1.0 1.0 1.12246152962189
+
+###################################################################
+
+###################################################################
+# Pair interaction between bonded atoms
+
+bond_style   fene
+special_bonds fene #<=== I M P O R T A N T (new command)
+  2 = max # of 1-2 neighbors
+  2 = max # of special neighbors
+bond_coeff   1   30.0   1.6   1.0   1.0
+
+###################################################
+###
+# Set up fixes
+###
+#include /Home/cbrackle/work/seeds/seed.${run} # Load a seed for the Langevin integrator from a file
+
+fix 1 all   nve/asphere   ###NVE ensemble
+#fix 2 all   langevin   1.0 1.0 0.5  ${seed} angmom 3.33
+fix 2 all   langevin   1.0 1.0 0.5  457145 angmom 3.33
+
+###################################################
+###
+# Output thermo data to a file
+###
+variable t equal step
+variable cbtemp equal temp
+variable cbepair equal epair
+variable cbemol equal emol
+variable cbebond equal ebond
+variable cbeangle equal eangle
+
+#fix ther all print 10000 "$t ${cbtemp} ${cbepair} ${cbemol}" file thermo.${run} screen no
+
+##### Sample thermodynamic info  (temperature, energy, pressure, etc.) #####
+#thermo 5000
+#thermo_style   custom   step  temp  epair  emol  press pxx pyy pzz  vol
+############################################################################
+
+###
+# set timestep of integrator
+###
+timestep 0.01
+
+balance 1.2 shift xyz 20 1.1
+
+run 20000
+Memory usage per processor = 23.2342 Mbytes
+Step Temp E_pair E_mol TotEng Press 
+       0            0  0.040038433    23.135951    23.175989 -0.089693052 
+   20000   0.99580773  0.013819811    22.969789    24.477274  0.076935747 
+Loop time of 321.48 on 1 procs for 20000 steps with 32022 atoms
+
+Pair  time (%) = 29.9143 (9.30518)
+Bond  time (%) = 84.1062 (26.1622)
+Neigh time (%) = 18.3302 (5.7018)
+Comm  time (%) = 6.81132 (2.11874)
+Outpt time (%) = 0.000105143 (3.27058e-05)
+Other time (%) = 182.318 (56.712)
+
+Nlocal:    32022 ave 32022 max 32022 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Nghost:    11816 ave 11816 max 11816 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+Neighs:    360910 ave 360910 max 360910 min
+Histogram: 1 0 0 0 0 0 0 0 0 0
+
+Total # of neighbors = 360910
+Ave neighs/atom = 11.2707
+Ave special neighs/atom = 1.99831
+Neighbor list builds = 608
+Dangerous builds = 0
+
+#write_restart DNA.bench.${run}.restart
