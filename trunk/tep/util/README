@@ -1,0 +1,25 @@
+
+What each file is :
+
+add_linking.cc			c++ program for adding supercoils to a loop of 
+				DNA. Reads in a lammps input data file. Writes 
+				a lammps input data file.
+
+measure_linking_loop.cc    	c++ program to measure the supercoiling (twist 
+				and writhe). The writhe calculation is based on 
+				Klenin and Langowski Biopolymers 54 (2000), and 
+				should be exact. The twist calculation is only 
+				approximate - could be improved by following 
+				the twist calculation in 
+				Clauvelin et al JCTC (2012), but that hasn't 
+				been implemented yet.
+
+tools_functions.cc  		Functions used in the above.
+
+tools.h				Headers for above.
+
+generate_IC.cc			c++ program for generating initial conditions
+
+generate_functions.cc  		functions used by generate_IC.cc
+
+generate_DNA.h  		headers for generate_IC.cc
