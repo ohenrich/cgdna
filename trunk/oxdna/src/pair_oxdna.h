@@ -33,6 +33,7 @@ class PairOxdna : public Pair {
   void coeff(int, char **);
   void init_style();
   void init_list(int, class NeighList *);
+  double init_one(int, int);
   void write_restart(FILE *);
   void read_restart(FILE *);
   void write_restart_settings(FILE *);
@@ -40,11 +41,11 @@ class PairOxdna : public Pair {
   void write_data(FILE *);
   void write_data_all(FILE *);
   double single(int, int, int, int, double, double, double, double &);
+  void *extract(const char *, int &);
 
  protected:
-  double cut_global;
-  double **cut;
-  double **epsilon,**sigma;
+  double **epsilon_bb, **r0_bb, **Delta_bb;
+  double **epsilon_exc,**sigma_exc, **cut_exc;
   double **lj1,**lj2,**lj3,**lj4,**offset;
 
   virtual void allocate();
@@ -67,5 +68,9 @@ E: Incorrect args for pair coefficients
 
 Self-explanatory.  Check the input script or data file.
 
+E: Pair cutoff < Respa interior cutoff
+
+One or more pairwise cutoffs are too short to use with the specified
+rRESPA cutoffs.
 
 */
