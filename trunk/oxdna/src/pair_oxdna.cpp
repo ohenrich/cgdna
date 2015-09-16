@@ -10,7 +10,6 @@
 
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
-
 /* ----------------------------------------------------------------------
    Contributing author: Oliver Henrich (EPCC, University of Edinburgh)
 ------------------------------------------------------------------------- */
@@ -193,30 +192,6 @@ void PairOxdna::coeff(int narg, char **arg)
   if (!allocated) allocate();
 
   int count = 0;
-
-  if (strncmp(arg[0],"bb",2) == 0) {
-
-    int ilo,ihi,jlo,jhi;
-    double epsilon_bb_one, r0_bb_one, Delta_bb_one;
-
-    force->bounds(arg[1],atom->ntypes,ilo,ihi);
-    force->bounds(arg[2],atom->ntypes,jlo,jhi);
-
-    epsilon_bb_one = force->numeric(FLERR,arg[3]);
-    r0_bb_one = force->numeric(FLERR,arg[4]);
-    Delta_bb_one = force->numeric(FLERR,arg[5]);
-
-    for (int i = ilo; i <= ihi; i++) {
-      for (int j = MAX(jlo,i); j <= jhi; j++) {
-	epsilon_bb[i][j] = epsilon_bb_one;
-	r0_bb[i][j] = r0_bb_one;
-	Delta_bb[i][j] = Delta_bb_one;
-	setflag[i][j] = 1;
-	count++;
-      }
-    }
-
-  }
 
   if (strncmp(arg[0],"exc",3) == 0) {
 
