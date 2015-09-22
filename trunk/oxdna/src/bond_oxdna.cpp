@@ -168,18 +168,32 @@ void BondOxdna::coeff(int narg, char **arg)
 }
 
 /* ----------------------------------------------------------------------
-   check if special_bond settings are valid
+   set special_bond settings and check if valid
 ------------------------------------------------------------------------- */
 
 void BondOxdna::init_style()
 {
   // special bonds should be 0 1 1
 
+  force->special_lj[1] = 0.0;
+  force->special_lj[2] = 1.0;
+  force->special_lj[3] = 1.0;
+  force->special_coul[1] = 0.0;
+  force->special_coul[2] = 1.0;
+  force->special_coul[3] = 1.0;
+
+  fprintf(screen,"Finding 1-2 1-3 1-4 neighbors ...\n"
+		 " Special bond factors lj:   %-10g %-10g %-10g\n"
+		 " Special bond factors coul: %-10g %-10g %-10g\n",
+		 force->special_lj[1],force->special_lj[2],force->special_lj[3],
+		 force->special_coul[1],force->special_coul[2],force->special_coul[3]);
+
   if (force->special_lj[1] != 0.0 || force->special_lj[2] != 1.0 ||
       force->special_lj[3] != 1.0) {
     if (comm->me == 0)
       error->warning(FLERR,"Use special bonds = 0,1,1 with bond style oxdna");
   }
+
 }
 
 /* ---------------------------------------------------------------------- */
