@@ -25,6 +25,8 @@
 #include "force.h"
 #include "memory.h"
 #include "error.h"
+#include "atom_vec_ellipsoid.h"
+#include "math_extra.h"
 
 using namespace LAMMPS_NS;
 
@@ -52,9 +54,10 @@ BondOxdna::~BondOxdna()
 void BondOxdna::compute(int eflag, int vflag)
 {
   int i1,i2,n,type;
-  double delx,dely,delz,ebond,fbond;
+  double delx,dely,delz,ebond,fbond, delf[3];
   double rsq,r0sq,rlogarg;//,sr2,sr6;
   double r,rshift,rshiftsq;
+  double d_bb = -0.24; // distance backbone - COM
 
   ebond = 0.0;
   if (eflag || vflag) ev_setup(eflag,vflag);
@@ -62,6 +65,14 @@ void BondOxdna::compute(int eflag, int vflag)
 
   double **x = atom->x;
   double **f = atom->f;
+
+  double **torque = atom->torque;
+  int *ellipsoid = atom->ellipsoid;
+  AtomVecEllipsoid *avec = (AtomVecEllipsoid *) atom->style_match("ellipsoid");
+  AtomVecEllipsoid::Bonus *bonus = avec->bonus;
+  double *quat1,ex1[3],ey1[3],ez1[3],e_cmbb1[3];
+  double *quat2,ex2[3],ey2[3],ez2[3],e_cmbb2[3];
+
   int **bondlist = neighbor->bondlist;
   int nbondlist = neighbor->nbondlist;
   int nlocal = atom->nlocal;
@@ -72,9 +83,21 @@ void BondOxdna::compute(int eflag, int vflag)
     i2 = bondlist[n][1];
     type = bondlist[n][2];
 
-    delx = x[i1][0] - x[i2][0];
-    dely = x[i1][1] - x[i2][1];
-    delz = x[i1][2] - x[i2][2];
+    quat1=bonus[i1].quat;
+    MathExtra::q_to_exyz(quat1,ex1,ey1,ez1);
+    quat2=bonus[i2].quat;
+    MathExtra::q_to_exyz(quat2,ex2,ey2,ez2);
+
+    e_cmbb1[0] = d_bb*ex1[0];
+    e_cmbb1[1] = d_bb*ex1[1];
+    e_cmbb1[2] = d_bb*ex1[2];
+    e_cmbb2[0] = d_bb*ex2[0];
+    e_cmbb2[1] = d_bb*ex2[1];
+    e_cmbb2[2] = d_bb*ex2[2];
+
+    delx = (x[i1][0] + e_cmbb1[0]) - (x[i2][0] + e_cmbb2[0]);
+    dely = (x[i1][1] + e_cmbb1[1]) - (x[i2][1] + e_cmbb2[1]);
+    delz = (x[i1][2] + e_cmbb1[2]) - (x[i2][2] + e_cmbb2[2]);
 
     // force from log term
 
@@ -100,6 +123,9 @@ void BondOxdna::compute(int eflag, int vflag)
     }
 
     fbond = -k[type]*rshift/rlogarg/r0sq/r;
+    delf[0] = delx*fbond;
+    delf[1] = dely*fbond;
+    delf[2] = delz*fbond;
 
     // energy
 
@@ -110,19 +136,26 @@ void BondOxdna::compute(int eflag, int vflag)
     // apply force to each of 2 atoms
 
     if (newton_bond || i1 < nlocal) {
-      f[i1][0] += delx*fbond;
-      f[i1][1] += dely*fbond;
-      f[i1][2] += delz*fbond;
+      f[i1][0] += delf[0];
+      f[i1][1] += delf[1];
+      f[i1][2] += delf[2];
+      torque[i1][0] += e_cmbb1[1]*delf[2] - e_cmbb1[2]*delf[1];
+      torque[i1][1] += e_cmbb1[2]*delf[0] - e_cmbb1[0]*delf[2];
+      torque[i1][2] += e_cmbb1[0]*delf[1] - e_cmbb1[1]*delf[0];
     }
 
     if (newton_bond || i2 < nlocal) {
-      f[i2][0] -= delx*fbond;
-      f[i2][1] -= dely*fbond;
-      f[i2][2] -= delz*fbond;
+      f[i2][0] -= delf[0];
+      f[i2][1] -= delf[1];
+      f[i2][2] -= delf[2];
+      torque[i2][0] -= e_cmbb2[1]*delf[2] - e_cmbb2[2]*delf[1];
+      torque[i2][1] -= e_cmbb2[2]*delf[0] - e_cmbb2[0]*delf[2];
+      torque[i2][2] -= e_cmbb2[0]*delf[1] - e_cmbb2[1]*delf[0];
     }
 
     if (evflag) ev_tally(i1,i2,nlocal,newton_bond,ebond,fbond,delx,dely,delz);
   }
+
 }
 
 /* ---------------------------------------------------------------------- */
@@ -188,11 +221,13 @@ void BondOxdna::init_style()
 		 force->special_lj[1],force->special_lj[2],force->special_lj[3],
 		 force->special_coul[1],force->special_coul[2],force->special_coul[3]);
 
+
   if (force->special_lj[1] != 0.0 || force->special_lj[2] != 1.0 ||
       force->special_lj[3] != 1.0) {
     if (comm->me == 0)
       error->warning(FLERR,"Use special bonds = 0,1,1 with bond style oxdna");
   }
+
 
 }
 
