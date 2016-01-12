@@ -47,8 +47,8 @@ class PairOxdna : public Pair {
   void *extract(const char *, int &);
 
  protected:
-  double **epsilon_bb, **r0_bb, **Delta_bb;
-  double **epsilon_exc,**sigma_exc, **cut_exc;
+  double **epsilon_ss, **sigma_ss, **cut_ss_lj, **b_ss, **cut_ss_sm;
+  double **cutsq_ss_lj, **cutsq_ss_sm;
   double **lj1,**lj2,**lj3,**lj4,**offset;
 
   virtual void allocate();

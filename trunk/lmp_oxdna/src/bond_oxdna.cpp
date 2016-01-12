@@ -57,7 +57,7 @@ void BondOxdna::compute(int eflag, int vflag)
   double delx,dely,delz,ebond,fbond, delf[3];
   double rsq,r0sq,rlogarg;//,sr2,sr6;
   double r,rshift,rshiftsq;
-  double d_bb = -0.24; // distance backbone - COM
+  double d_coms=-0.24; // distance backbone - COM
 
   ebond = 0.0;
   if (eflag || vflag) ev_setup(eflag,vflag);
@@ -70,8 +70,8 @@ void BondOxdna::compute(int eflag, int vflag)
   int *ellipsoid = atom->ellipsoid;
   AtomVecEllipsoid *avec = (AtomVecEllipsoid *) atom->style_match("ellipsoid");
   AtomVecEllipsoid::Bonus *bonus = avec->bonus;
-  double *quat1,ex1[3],ey1[3],ez1[3],e_cmbb1[3];
-  double *quat2,ex2[3],ey2[3],ez2[3],e_cmbb2[3];
+  double *quat1,ex1[3],ey1[3],ez1[3],e_coms1[3];
+  double *quat2,ex2[3],ey2[3],ez2[3],e_coms2[3];
 
   int **bondlist = neighbor->bondlist;
   int nbondlist = neighbor->nbondlist;
@@ -88,16 +88,16 @@ void BondOxdna::compute(int eflag, int vflag)
     quat2=bonus[i2].quat;
     MathExtra::q_to_exyz(quat2,ex2,ey2,ez2);
 
-    e_cmbb1[0] = d_bb*ex1[0];
-    e_cmbb1[1] = d_bb*ex1[1];
-    e_cmbb1[2] = d_bb*ex1[2];
-    e_cmbb2[0] = d_bb*ex2[0];
-    e_cmbb2[1] = d_bb*ex2[1];
-    e_cmbb2[2] = d_bb*ex2[2];
+    e_coms1[0] = d_coms*ex1[0];
+    e_coms1[1] = d_coms*ex1[1];
+    e_coms1[2] = d_coms*ex1[2];
+    e_coms2[0] = d_coms*ex2[0];
+    e_coms2[1] = d_coms*ex2[1];
+    e_coms2[2] = d_coms*ex2[2];
 
-    delx = (x[i1][0] + e_cmbb1[0]) - (x[i2][0] + e_cmbb2[0]);
-    dely = (x[i1][1] + e_cmbb1[1]) - (x[i2][1] + e_cmbb2[1]);
-    delz = (x[i1][2] + e_cmbb1[2]) - (x[i2][2] + e_cmbb2[2]);
+    delx = (x[i1][0] + e_coms1[0]) - (x[i2][0] + e_coms2[0]);
+    dely = (x[i1][1] + e_coms1[1]) - (x[i2][1] + e_coms2[1]);
+    delz = (x[i1][2] + e_coms1[2]) - (x[i2][2] + e_coms2[2]);
 
     // force from log term
 
@@ -139,18 +139,18 @@ void BondOxdna::compute(int eflag, int vflag)
       f[i1][0] += delf[0];
       f[i1][1] += delf[1];
       f[i1][2] += delf[2];
-      torque[i1][0] += e_cmbb1[1]*delf[2] - e_cmbb1[2]*delf[1];
-      torque[i1][1] += e_cmbb1[2]*delf[0] - e_cmbb1[0]*delf[2];
-      torque[i1][2] += e_cmbb1[0]*delf[1] - e_cmbb1[1]*delf[0];
+      torque[i1][0] += e_coms1[1]*delf[2] - e_coms1[2]*delf[1];
+      torque[i1][1] += e_coms1[2]*delf[0] - e_coms1[0]*delf[2];
+      torque[i1][2] += e_coms1[0]*delf[1] - e_coms1[1]*delf[0];
     }
 
     if (newton_bond || i2 < nlocal) {
       f[i2][0] -= delf[0];
       f[i2][1] -= delf[1];
       f[i2][2] -= delf[2];
-      torque[i2][0] -= e_cmbb2[1]*delf[2] - e_cmbb2[2]*delf[1];
-      torque[i2][1] -= e_cmbb2[2]*delf[0] - e_cmbb2[0]*delf[2];
-      torque[i2][2] -= e_cmbb2[0]*delf[1] - e_cmbb2[1]*delf[0];
+      torque[i2][0] -= e_coms2[1]*delf[2] - e_coms2[2]*delf[1];
+      torque[i2][1] -= e_coms2[2]*delf[0] - e_coms2[0]*delf[2];
+      torque[i2][2] -= e_coms2[0]*delf[1] - e_coms2[1]*delf[0];
     }
 
     if (evflag) ev_tally(i1,i2,nlocal,newton_bond,ebond,fbond,delx,dely,delz);
@@ -206,12 +206,13 @@ void BondOxdna::coeff(int narg, char **arg)
 
 void BondOxdna::init_style()
 {
-  // special bonds should be 0 1 1
+  /* special bonds should be lj = 0 1 1 and coul = 1 1 1 to exclude the 
+     excluded volume interaction of nearest neighbours on the backbone */ 
 
   force->special_lj[1] = 0.0;
   force->special_lj[2] = 1.0;
   force->special_lj[3] = 1.0;
-  force->special_coul[1] = 0.0;
+  force->special_coul[1] = 1.0;
   force->special_coul[2] = 1.0;
   force->special_coul[3] = 1.0;
 
@@ -221,11 +222,10 @@ void BondOxdna::init_style()
 		 force->special_lj[1],force->special_lj[2],force->special_lj[3],
 		 force->special_coul[1],force->special_coul[2],force->special_coul[3]);
 
-
   if (force->special_lj[1] != 0.0 || force->special_lj[2] != 1.0 ||
       force->special_lj[3] != 1.0) {
     if (comm->me == 0)
-      error->warning(FLERR,"Use special bonds = 0,1,1 with bond style oxdna");
+      error->warning(FLERR,"Use special bonds lj = 0,1,1 and coul = 1,1,1 with bond style oxdna");
   }
 
 
@@ -300,7 +300,7 @@ double BondOxdna::single(int type, double rsq, int i, int j,
             update->ntimestep,sqrt(rsq));
     error->warning(FLERR,str,0);
     if (rlogarg <= -3.0) error->one(FLERR,"Bad FENE bond");
-    rlogarg = 0.1;
+//    rlogarg = 0.1;
   }
 
   double eng = -0.5 * k[type]*log(rlogarg);
