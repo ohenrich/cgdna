@@ -119,7 +119,7 @@ void BondOxdna::compute(int eflag, int vflag)
               update->ntimestep,atom->tag[i1],atom->tag[i2],sqrt(rsq));
       error->warning(FLERR,str,0);
       if (rlogarg <= -3.0) error->one(FLERR,"Bad FENE bond");
-      rlogarg = 0.1;
+//      rlogarg = 0.1;
     }
 
     fbond = -k[type]*rshift/rlogarg/r0sq/r;

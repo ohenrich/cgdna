@@ -152,25 +152,25 @@ void PairOxdna::compute(int eflag, int vflag)
       e_comb2[1] = d_comb*ex2[1];
       e_comb2[2] = d_comb*ex2[2];
 
-      // rel. distance backbone-backbone sites
+      // rel. distance backbone i - backbone j
       delx_ss = xtmp_s - x[j][0] - e_coms2[0];
       dely_ss = ytmp_s - x[j][1] - e_coms2[1];
       delz_ss = ztmp_s - x[j][2] - e_coms2[2];
       rsq_ss = delx_ss*delx_ss + dely_ss*dely_ss + delz_ss*delz_ss;
 
-      // rel. distance backbone-base sites
+      // rel. distance backbone i - base j
       delx_sb = xtmp_s - x[j][0] - e_comb2[0];
       dely_sb = ytmp_s - x[j][1] - e_comb2[1];
       delz_sb = ztmp_s - x[j][2] - e_comb2[2];
       rsq_sb = delx_sb*delx_sb + dely_sb*dely_sb + delz_sb*delz_sb;
 
-      // rel. distance base-backbone sites
+      // rel. distance base i - backbone j
       delx_bs = xtmp_b - x[j][0] - e_coms2[0];
       dely_bs = ytmp_b - x[j][1] - e_coms2[1];
       delz_bs = ztmp_b - x[j][2] - e_coms2[2];
       rsq_bs = delx_bs*delx_bs + dely_bs*dely_bs + delz_bs*delz_bs;
 
-      // rel. distance base-base sites
+      // rel. distance base i - base j
       delx_bb = xtmp_b - x[j][0] - e_comb2[0];
       dely_bb = ytmp_b - x[j][1] - e_comb2[1];
       delz_bb = ztmp_b - x[j][2] - e_comb2[2];
