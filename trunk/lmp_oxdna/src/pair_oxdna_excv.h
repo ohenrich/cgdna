@@ -16,7 +16,7 @@
 
 #ifdef PAIR_CLASS
 
-PairStyle(oxdna,PairOxdna)
+PairStyle(oxdna_excv,PairOxdnaExcv)
 
 #else
 
@@ -27,10 +27,10 @@ PairStyle(oxdna,PairOxdna)
 
 namespace LAMMPS_NS {
 
-class PairOxdna : public Pair {
+class PairOxdnaExcv : public Pair {
  public:
-  PairOxdna(class LAMMPS *);
-  virtual ~PairOxdna();
+  PairOxdnaExcv(class LAMMPS *);
+  virtual ~PairOxdnaExcv();
   virtual void compute(int, int);
   void settings(int, char **);
   void coeff(int, char **);
@@ -47,9 +47,15 @@ class PairOxdna : public Pair {
   void *extract(const char *, int &);
 
  protected:
-  double **epsilon_ss, **sigma_ss, **cut_ss_lj, **b_ss, **cut_ss_sm;
-  double **cutsq_ss_lj, **cutsq_ss_sm;
-  double **lj1,**lj2,**lj3,**lj4,**offset;
+  double **epsilon_ss, **sigma_ss, **cut_ss_lj, **cutsq_ss_lj; 
+  double **b_ss, **cut_ss_sm, **cutsq_ss_sm;
+  double **lj1_ss, **lj2_ss, **lj3_ss, **lj4_ss, **offset_ss;
+  double **epsilon_sb, **sigma_sb, **cut_sb_lj, **cutsq_sb_lj; 
+  double **b_sb, **cut_sb_sm, **cutsq_sb_sm;
+  double **lj1_sb, **lj2_sb, **lj3_sb, **lj4_sb, **offset_sb;
+  double **epsilon_bb, **sigma_bb, **cut_bb_lj, **cutsq_bb_lj; 
+  double **b_bb, **cut_bb_sm, **cutsq_bb_sm;
+  double **lj1_bb, **lj2_bb, **lj3_bb, **lj4_bb, **offset_bb;
 
   virtual void allocate();
 };
