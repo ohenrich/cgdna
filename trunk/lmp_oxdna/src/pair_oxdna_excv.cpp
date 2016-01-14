@@ -285,6 +285,237 @@ void PairOxdnaExcv::compute(int eflag, int vflag)
                              evdwl,0.0,fpair,delx_ss,dely_ss,delz_ss);
       }
 
+      // backbone-base LJ part
+
+      if (rsq_sb < cutsq_sb_lj[itype][jtype]) {
+
+        r2inv = 1.0/rsq_sb;
+        r6inv = r2inv*r2inv*r2inv;
+        forcelj = r6inv * (lj1_sb[itype][jtype]*r6inv - lj2_sb[itype][jtype]);
+        fpair = forcelj*r2inv;
+
+	delf[0] = delx_sb*fpair;
+	delf[1] = dely_sb*fpair;
+	delf[2] = delz_sb*fpair;
+
+        f[i][0] += delf[0];
+        f[i][1] += delf[1];
+        f[i][2] += delf[2];
+	torque[i][0] += e_coms1[1]*delf[2] - e_coms1[2]*delf[1]; 
+	torque[i][1] += e_coms1[2]*delf[0] - e_coms1[0]*delf[2];
+	torque[i][2] += e_coms1[0]*delf[1] - e_coms1[1]*delf[0];
+
+        if (newton_pair || j < nlocal) {
+          f[j][0] -= delf[0];
+          f[j][1] -= delf[1];
+          f[j][2] -= delf[2];
+	  torque[j][0] -= e_comb2[1]*delf[2] - e_comb2[2]*delf[1]; 
+	  torque[j][1] -= e_comb2[2]*delf[0] - e_comb2[0]*delf[2];
+	  torque[j][2] -= e_comb2[0]*delf[1] - e_comb2[1]*delf[0];
+        }
+
+        if (eflag) {
+          evdwl = r6inv*(lj3_sb[itype][jtype]*r6inv-lj4_sb[itype][jtype]) -
+            offset_sb[itype][jtype];
+          evdwl *= factor_lj;
+        }
+
+        if (evflag) ev_tally(i,j,nlocal,newton_pair,
+                             evdwl,0.0,fpair,delx_sb,dely_sb,delz_sb);
+      }
+
+       // backbone-base smoothing part
+
+      if (cutsq_sb_lj[itype][jtype] <= rsq_sb && rsq_sb < cutsq_sb_sm[itype][jtype]) {
+
+	r = sqrt(rsq_sb);
+	rinv = 1.0/r;
+
+	fpair = epsilon_sb[itype][jtype]*2.0*b_sb[itype][jtype]*(cut_sb_sm[itype][jtype]*rinv - 1.0);
+
+	delf[0] = delx_sb*fpair; 
+	delf[1] = dely_sb*fpair; 
+	delf[2] = delz_sb*fpair; 
+
+        f[i][0] += delf[0];
+        f[i][1] += delf[1];
+        f[i][2] += delf[2];
+        torque[i][0] += e_coms1[1]*delf[2] - e_coms1[2]*delf[1];
+        torque[i][1] += e_coms1[2]*delf[0] - e_coms1[0]*delf[2];
+        torque[i][2] += e_coms1[0]*delf[1] - e_coms1[1]*delf[0];
+
+        if (newton_pair || j < nlocal) {
+          f[j][0] -= delf[0];
+          f[j][1] -= delf[1];
+          f[j][2] -= delf[2];
+          torque[j][0] -= e_comb2[1]*delf[2] - e_comb2[2]*delf[1];
+          torque[j][1] -= e_comb2[2]*delf[0] - e_comb2[0]*delf[2];
+          torque[j][2] -= e_comb2[0]*delf[1] - e_comb2[1]*delf[0];
+        }
+
+        if (eflag) {
+          evdwl = b_sb[itype][jtype]*
+		(cut_sb_sm[itype][jtype]-r)*(cut_sb_sm[itype][jtype]-r);
+          evdwl *= factor_lj;
+        }
+
+        if (evflag) ev_tally(i,j,nlocal,newton_pair,
+                             evdwl,0.0,fpair,delx_sb,dely_sb,delz_sb);
+      }
+
+
+      // base-backbone LJ part
+
+      if (rsq_bs < cutsq_sb_lj[itype][jtype]) {
+
+        r2inv = 1.0/rsq_bs;
+        r6inv = r2inv*r2inv*r2inv;
+        forcelj = r6inv * (lj1_sb[itype][jtype]*r6inv - lj2_sb[itype][jtype]);
+        fpair = forcelj*r2inv;
+
+	delf[0] = delx_bs*fpair;
+	delf[1] = dely_bs*fpair;
+	delf[2] = delz_bs*fpair;
+
+        f[i][0] += delf[0];
+        f[i][1] += delf[1];
+        f[i][2] += delf[2];
+	torque[i][0] += e_comb1[1]*delf[2] - e_comb1[2]*delf[1]; 
+	torque[i][1] += e_comb1[2]*delf[0] - e_comb1[0]*delf[2];
+	torque[i][2] += e_comb1[0]*delf[1] - e_comb1[1]*delf[0];
+
+        if (newton_pair || j < nlocal) {
+          f[j][0] -= delf[0];
+          f[j][1] -= delf[1];
+          f[j][2] -= delf[2];
+	  torque[j][0] -= e_coms2[1]*delf[2] - e_coms2[2]*delf[1]; 
+	  torque[j][1] -= e_coms2[2]*delf[0] - e_coms2[0]*delf[2];
+	  torque[j][2] -= e_coms2[0]*delf[1] - e_coms2[1]*delf[0];
+        }
+
+        if (eflag) {
+          evdwl = r6inv*(lj3_sb[itype][jtype]*r6inv-lj4_sb[itype][jtype]) -
+            offset_sb[itype][jtype];
+        }
+
+        if (evflag) ev_tally(i,j,nlocal,newton_pair,
+                             evdwl,0.0,fpair,delx_bs,dely_bs,delz_bs);
+      }
+
+       // base-backbone smoothing part
+
+      if (cutsq_sb_lj[itype][jtype] <= rsq_bs && rsq_bs < cutsq_sb_sm[itype][jtype]) {
+
+	r = sqrt(rsq_bs);
+	rinv = 1.0/r;
+
+	fpair = epsilon_sb[itype][jtype]*2.0*b_sb[itype][jtype]*(cut_sb_sm[itype][jtype]*rinv - 1.0);
+
+	delf[0] = delx_bs*fpair; 
+	delf[1] = dely_bs*fpair; 
+	delf[2] = delz_bs*fpair; 
+
+        f[i][0] += delf[0];
+        f[i][1] += delf[1];
+        f[i][2] += delf[2];
+        torque[i][0] += e_comb1[1]*delf[2] - e_comb1[2]*delf[1];
+        torque[i][1] += e_comb1[2]*delf[0] - e_comb1[0]*delf[2];
+        torque[i][2] += e_comb1[0]*delf[1] - e_comb1[1]*delf[0];
+
+        if (newton_pair || j < nlocal) {
+          f[j][0] -= delf[0];
+          f[j][1] -= delf[1];
+          f[j][2] -= delf[2];
+          torque[j][0] -= e_coms2[1]*delf[2] - e_coms2[2]*delf[1];
+          torque[j][1] -= e_coms2[2]*delf[0] - e_coms2[0]*delf[2];
+          torque[j][2] -= e_coms2[0]*delf[1] - e_coms2[1]*delf[0];
+        }
+
+        if (eflag) {
+          evdwl = b_sb[itype][jtype]*
+		(cut_sb_sm[itype][jtype]-r)*(cut_sb_sm[itype][jtype]-r);
+        }
+
+        if (evflag) ev_tally(i,j,nlocal,newton_pair,
+                             evdwl,0.0,fpair,delx_bs,dely_bs,delz_bs);
+      }
+
+      // base-base LJ part
+
+      if (rsq_bb < cutsq_bb_lj[itype][jtype]) {
+
+        r2inv = 1.0/rsq_bb;
+        r6inv = r2inv*r2inv*r2inv;
+        forcelj = r6inv * (lj1_bb[itype][jtype]*r6inv - lj2_bb[itype][jtype]);
+        fpair = forcelj*r2inv;
+
+	delf[0] = delx_bb*fpair;
+	delf[1] = dely_bb*fpair;
+	delf[2] = delz_bb*fpair;
+
+        f[i][0] += delf[0];
+        f[i][1] += delf[1];
+        f[i][2] += delf[2];
+	torque[i][0] += e_comb1[1]*delf[2] - e_comb1[2]*delf[1]; 
+	torque[i][1] += e_comb1[2]*delf[0] - e_comb1[0]*delf[2];
+	torque[i][2] += e_comb1[0]*delf[1] - e_comb1[1]*delf[0];
+
+        if (newton_pair || j < nlocal) {
+          f[j][0] -= delf[0];
+          f[j][1] -= delf[1];
+          f[j][2] -= delf[2];
+	  torque[j][0] -= e_comb2[1]*delf[2] - e_comb2[2]*delf[1]; 
+	  torque[j][1] -= e_comb2[2]*delf[0] - e_comb2[0]*delf[2];
+	  torque[j][2] -= e_comb2[0]*delf[1] - e_comb2[1]*delf[0];
+        }
+
+        if (eflag) {
+          evdwl = r6inv*(lj3_bb[itype][jtype]*r6inv-lj4_bb[itype][jtype]) -
+            offset_bb[itype][jtype];
+        }
+
+        if (evflag) ev_tally(i,j,nlocal,newton_pair,
+                             evdwl,0.0,fpair,delx_bb,dely_bb,delz_bb);
+      }
+
+       // base-base smoothing part
+
+      if (cutsq_bb_lj[itype][jtype] <= rsq_bb && rsq_bb < cutsq_bb_sm[itype][jtype]) {
+
+	r = sqrt(rsq_bb);
+	rinv = 1.0/r;
+
+	fpair = epsilon_bb[itype][jtype]*2.0*b_bb[itype][jtype]*(cut_bb_sm[itype][jtype]*rinv - 1.0);
+
+	delf[0] = delx_bb*fpair; 
+	delf[1] = dely_bb*fpair; 
+	delf[2] = delz_bb*fpair; 
+
+        f[i][0] += delf[0];
+        f[i][1] += delf[1];
+        f[i][2] += delf[2];
+        torque[i][0] += e_comb1[1]*delf[2] - e_comb1[2]*delf[1];
+        torque[i][1] += e_comb1[2]*delf[0] - e_comb1[0]*delf[2];
+        torque[i][2] += e_comb1[0]*delf[1] - e_comb1[1]*delf[0];
+
+        if (newton_pair || j < nlocal) {
+          f[j][0] -= delf[0];
+          f[j][1] -= delf[1];
+          f[j][2] -= delf[2];
+          torque[j][0] -= e_comb2[1]*delf[2] - e_comb2[2]*delf[1];
+          torque[j][1] -= e_comb2[2]*delf[0] - e_comb2[0]*delf[2];
+          torque[j][2] -= e_comb2[0]*delf[1] - e_comb2[1]*delf[0];
+        }
+
+        if (eflag) {
+          evdwl = b_bb[itype][jtype]*
+		(cut_bb_sm[itype][jtype]-r)*(cut_bb_sm[itype][jtype]-r);
+        }
+
+        if (evflag) ev_tally(i,j,nlocal,newton_pair,
+                             evdwl,0.0,fpair,delx_bb,dely_bb,delz_bb);
+      }
+
     }
   }
 
@@ -365,7 +596,7 @@ void PairOxdnaExcv::coeff(int narg, char **arg)
 {
   int count;
 
-  if (narg != 8) error->all(FLERR,"Incorrect args for pair coefficients");
+  if (narg != 11) error->all(FLERR,"Incorrect args for pair coefficients");
   if (!allocated) allocate();
 
   int ilo,ihi,jlo,jhi;
@@ -446,9 +677,9 @@ void PairOxdnaExcv::coeff(int narg, char **arg)
   double cut_bb_lj_one, cut_bb_sm_one, b_bb_one;
 
   // LJ parameters
-  epsilon_bb_one = force->numeric(FLERR,arg[5]);
-  sigma_bb_one = force->numeric(FLERR,arg[6]);
-  cut_bb_lj_one = force->numeric(FLERR,arg[7]);
+  epsilon_bb_one = force->numeric(FLERR,arg[8]);
+  sigma_bb_one = force->numeric(FLERR,arg[9]);
+  cut_bb_lj_one = force->numeric(FLERR,arg[10]);
 
   // Smoothing - determined through continuity and differentiability 
   b_bb_one = 4.0/sigma_bb_one
@@ -508,31 +739,77 @@ void PairOxdnaExcv::init_list(int id, NeighList *ptr)
 double PairOxdnaExcv::init_one(int i, int j)
 {
   if (setflag[i][j] == 0) {
+
     epsilon_ss[i][j] = mix_energy(epsilon_ss[i][i],epsilon_ss[j][j],
                                sigma_ss[i][i],sigma_ss[j][j]);
     sigma_ss[i][j]  = mix_distance(sigma_ss[i][i],sigma_ss[j][j]);
     cut_ss_lj[i][j] = mix_distance(cut_ss_lj[i][i],cut_ss_lj[j][j]);
     cut_ss_sm[i][j]  = mix_distance(cut_ss_sm[i][i],cut_ss_sm[j][j]);
+
+    epsilon_sb[i][j] = mix_energy(epsilon_sb[i][i],epsilon_sb[j][j],
+                               sigma_sb[i][i],sigma_sb[j][j]);
+    sigma_sb[i][j]  = mix_distance(sigma_sb[i][i],sigma_sb[j][j]);
+    cut_sb_lj[i][j] = mix_distance(cut_sb_lj[i][i],cut_sb_lj[j][j]);
+    cut_sb_sm[i][j]  = mix_distance(cut_sb_sm[i][i],cut_sb_sm[j][j]);
+
+    epsilon_bb[i][j] = mix_energy(epsilon_bb[i][i],epsilon_bb[j][j],
+                               sigma_bb[i][i],sigma_bb[j][j]);
+    sigma_bb[i][j]  = mix_distance(sigma_bb[i][i],sigma_bb[j][j]);
+    cut_bb_lj[i][j] = mix_distance(cut_bb_lj[i][i],cut_bb_lj[j][j]);
+    cut_bb_sm[i][j]  = mix_distance(cut_bb_sm[i][i],cut_bb_sm[j][j]);
+
   }
 
   cutsq_ss_lj[i][j] = cut_ss_lj[i][j]*cut_ss_lj[i][j];
   cutsq_ss_sm[i][j]  = cut_ss_sm[i][j]*cut_ss_sm[i][j];
+
+  cutsq_sb_lj[i][j] = cut_sb_lj[i][j]*cut_sb_lj[i][j];
+  cutsq_sb_sm[i][j]  = cut_sb_sm[i][j]*cut_sb_sm[i][j];
+
+  cutsq_bb_lj[i][j] = cut_bb_lj[i][j]*cut_bb_lj[i][j];
+  cutsq_bb_sm[i][j]  = cut_bb_sm[i][j]*cut_bb_sm[i][j];
 
   lj1_ss[i][j] = 48.0 * epsilon_ss[i][j] * pow(sigma_ss[i][j],12.0);
   lj2_ss[i][j] = 24.0 * epsilon_ss[i][j] * pow(sigma_ss[i][j],6.0);
   lj3_ss[i][j] = 4.0 * epsilon_ss[i][j] * pow(sigma_ss[i][j],12.0);
   lj4_ss[i][j] = 4.0 * epsilon_ss[i][j] * pow(sigma_ss[i][j],6.0);
 
+  lj1_sb[i][j] = 48.0 * epsilon_sb[i][j] * pow(sigma_sb[i][j],12.0);
+  lj2_sb[i][j] = 24.0 * epsilon_sb[i][j] * pow(sigma_sb[i][j],6.0);
+  lj3_sb[i][j] = 4.0 * epsilon_sb[i][j] * pow(sigma_sb[i][j],12.0);
+  lj4_sb[i][j] = 4.0 * epsilon_sb[i][j] * pow(sigma_sb[i][j],6.0);
+
+  lj1_bb[i][j] = 48.0 * epsilon_bb[i][j] * pow(sigma_bb[i][j],12.0);
+  lj2_bb[i][j] = 24.0 * epsilon_bb[i][j] * pow(sigma_bb[i][j],6.0);
+  lj3_bb[i][j] = 4.0 * epsilon_bb[i][j] * pow(sigma_bb[i][j],12.0);
+  lj4_bb[i][j] = 4.0 * epsilon_bb[i][j] * pow(sigma_bb[i][j],6.0);
+
   if (offset_flag) {
     error->all(FLERR,"Offset not supported");
   } 
-  else offset_ss[i][j] = 0.0;
+  else {
+    offset_ss[i][j] = 0.0;
+    offset_sb[i][j] = 0.0;
+    offset_bb[i][j] = 0.0;
+  }
 
   lj1_ss[j][i] = lj1_ss[i][j];
   lj2_ss[j][i] = lj2_ss[i][j];
   lj3_ss[j][i] = lj3_ss[i][j];
   lj4_ss[j][i] = lj4_ss[i][j];
   offset_ss[j][i] = offset_ss[i][j];
+
+  lj1_sb[j][i] = lj1_sb[i][j];
+  lj2_sb[j][i] = lj2_sb[i][j];
+  lj3_sb[j][i] = lj3_sb[i][j];
+  lj4_sb[j][i] = lj4_sb[i][j];
+  offset_sb[j][i] = offset_sb[i][j];
+
+  lj1_bb[j][i] = lj1_bb[i][j];
+  lj2_bb[j][i] = lj2_bb[i][j];
+  lj3_bb[j][i] = lj3_bb[i][j];
+  lj4_bb[j][i] = lj4_bb[i][j];
+  offset_bb[j][i] = offset_bb[i][j];
 
   // compute I,J contribution to long-range tail correction
   // count total # of atoms of type I and J via Allreduce
@@ -703,28 +980,6 @@ void PairOxdnaExcv::write_data_all(FILE *fp)
 	epsilon_sb[i][j],sigma_sb[i][j],cut_sb_lj[i][j],b_sb[i][j],cut_sb_sm[i][j],
 	epsilon_bb[i][j],sigma_bb[i][j],cut_bb_lj[i][j],b_bb[i][j],cut_bb_sm[i][j]);
 }
-
-/* ---------------------------------------------------------------------- */
-/* TODO: Check if single can be used and defined */
-
-double PairOxdnaExcv::single(int i, int j, int itype, int jtype, double rsq,
-                         double factor_coul, double factor_lj,
-                         double &fforce)
-{
-
-  double r2inv,r6inv,forcelj,philj;
-
-  r2inv = 1.0/rsq;
-  r6inv = r2inv*r2inv*r2inv;
-  forcelj = r6inv * (lj1_ss[itype][jtype]*r6inv - lj2_ss[itype][jtype]);
-  fforce = factor_lj*forcelj*r2inv;
-
-  philj = r6inv*(lj3_ss[itype][jtype]*r6inv-lj4_ss[itype][jtype]) -
-    offset_ss[itype][jtype];
-  return factor_lj*philj;
-
-}
-
 
 /* ---------------------------------------------------------------------- */
 
