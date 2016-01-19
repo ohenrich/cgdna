@@ -14,29 +14,33 @@
    Contributing author: Oliver Henrich (EPCC, University of Edinburgh)
 ------------------------------------------------------------------------- */
 
+
 #ifdef PAIR_CLASS
 
-PairStyle(oxdna_excv,PairOxdnaExcv)
+PairStyle(oxdna,PairOxdna)
 
 #else
 
-#ifndef LMP_PAIR_OXDNA_EXCV_H
-#define LMP_PAIR_OXDNA_EXCV_H
+
+#ifndef LMP_PAIR_OXDNA_H
+#define LMP_PAIR_OXDNA_H
 
 #include "pair.h"
 
 namespace LAMMPS_NS {
 
-class PairOxdnaExcv : public Pair {
+class PairOxdna : public Pair {
  public:
-  PairOxdnaExcv(class LAMMPS *);
-  virtual ~PairOxdnaExcv();
+  PairOxdna(class LAMMPS *);
+  virtual ~PairOxdna();
   virtual void compute(int, int);
   void settings(int, char **);
   void coeff(int, char **);
+
   void init_style();
   void init_list(int, class NeighList *);
   double init_one(int, int);
+/*
   void write_restart(FILE *);
   void read_restart(FILE *);
   void write_restart_settings(FILE *);
@@ -44,6 +48,7 @@ class PairOxdnaExcv : public Pair {
   void write_data(FILE *);
   void write_data_all(FILE *);
   void *extract(const char *, int &);
+*/
 
  protected:
   double **epsilon_ss, **sigma_ss, **cut_ss_lj, **cutsq_ss_lj; 
