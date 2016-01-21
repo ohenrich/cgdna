@@ -14,13 +14,11 @@
    Contributing author: Oliver Henrich (EPCC, University of Edinburgh)
 ------------------------------------------------------------------------- */
 
-
 #ifdef PAIR_CLASS
 
 PairStyle(oxdna,PairOxdna)
 
 #else
-
 
 #ifndef LMP_PAIR_OXDNA_H
 #define LMP_PAIR_OXDNA_H
@@ -36,11 +34,9 @@ class PairOxdna : public Pair {
   virtual void compute(int, int);
   void settings(int, char **);
   void coeff(int, char **);
-
   void init_style();
   void init_list(int, class NeighList *);
   double init_one(int, int);
-/*
   void write_restart(FILE *);
   void read_restart(FILE *);
   void write_restart_settings(FILE *);
@@ -48,7 +44,6 @@ class PairOxdna : public Pair {
   void write_data(FILE *);
   void write_data_all(FILE *);
   void *extract(const char *, int &);
-*/
 
  protected:
   double **epsilon_ss, **sigma_ss, **cut_ss_lj, **cutsq_ss_lj; 

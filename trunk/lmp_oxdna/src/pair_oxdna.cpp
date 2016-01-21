@@ -99,10 +99,6 @@ PairOxdna::~PairOxdna()
 
 void PairOxdna::compute(int eflag, int vflag)
 {
-
-printf("New code - compute!\n");
-
-/*
   int i,j,ii,jj,inum,jnum,itype,jtype;
   double xtmp_s,ytmp_s,ztmp_s,xtmp_b,ytmp_b,ztmp_b;
   double delx_ss,dely_ss,delz_ss,rsq_ss;
@@ -524,7 +520,6 @@ printf("New code - compute!\n");
   }
 
   if (vflag_fdotr) virial_fdotr_compute();
-*/
 }
 
 /* ----------------------------------------------------------------------
@@ -536,9 +531,7 @@ void PairOxdna::allocate()
   allocated = 1;
   int n = atom->ntypes;
 
-
   memory->create(setflag,n+1,n+1,"pair:setflag");
-
   for (int i = 1; i <= n; i++)
     for (int j = i; j <= n; j++)
       setflag[i][j] = 0;
@@ -583,7 +576,7 @@ void PairOxdna::allocate()
   memory->create(offset_bb,n+1,n+1,"pair:offset_bb");
   memory->create(cutsq_bb_lj,n+1,n+1,"pair:cutsq_bb_lj");
   memory->create(cutsq_bb_sm,n+1,n+1,"pair:cutsq_bb_sm");
-printf("New code - allocate!\n");
+
 }
 
 /* ----------------------------------------------------------------------
@@ -594,17 +587,6 @@ void PairOxdna::settings(int narg, char **arg)
 {
   if (narg != 0) error->all(FLERR,"Illegal pair_style command");
 
-  if (!allocated) allocate();
-
-
-  for (int i = 0; i <= 1; i++) {
-    for (int j = 0; j <= 1; j++) {
-      setflag[i][j] = 1;
-    }
-  }
-
-printf("New code - settings!\n");
-
 }
 
 /* ----------------------------------------------------------------------
@@ -613,8 +595,6 @@ printf("New code - settings!\n");
 
 void PairOxdna::coeff(int narg, char **arg)
 {
-printf("New code - coeff!\n");
-/*
   int count;
 
   if (narg != 11) error->all(FLERR,"Incorrect args for pair coefficients");
@@ -725,7 +705,7 @@ printf("New code - coeff!\n");
   }
 
   if (count == 0) error->all(FLERR,"Incorrect args for pair coefficients");
-*/
+
 }
 
 /* ----------------------------------------------------------------------
@@ -750,6 +730,7 @@ void PairOxdna::init_list(int id, NeighList *ptr)
 {
   if (id == 0) list = ptr;
   if (id  > 0) error->all(FLERR,"Respa not supported");
+
 }
 
 
@@ -847,7 +828,7 @@ double PairOxdna::init_one(int i, int j)
     }
     MPI_Allreduce(count,all,2,MPI_DOUBLE,MPI_SUM,world);
 
-    // TODO: Energy and pressure tail corrections
+    /* TODO: Energy and pressure tail corrections */
     double sig2 = sigma_ss[i][j]*sigma_ss[i][j];
     double sig6 = sig2*sig2*sig2;
     double rc3 = cut_ss_lj[i][j]*cut_ss_lj[i][j]*cut_ss_lj[i][j];
@@ -865,7 +846,7 @@ double PairOxdna::init_one(int i, int j)
 /* ----------------------------------------------------------------------
    proc 0 writes to restart file
 ------------------------------------------------------------------------- */
-/*
+
 void PairOxdna::write_restart(FILE *fp)
 {
   write_restart_settings(fp);
@@ -893,11 +874,11 @@ void PairOxdna::write_restart(FILE *fp)
   }
   }
 }
-*/
+
 /* ----------------------------------------------------------------------
    proc 0 reads from restart file, bcasts
 ------------------------------------------------------------------------- */
-/*
+
 void PairOxdna::read_restart(FILE *fp)
 {
   read_restart_settings(fp);
@@ -946,22 +927,22 @@ void PairOxdna::read_restart(FILE *fp)
       }
     }
 }
-*/
+
 /* ----------------------------------------------------------------------
    proc 0 writes to restart file
 ------------------------------------------------------------------------- */
-/*
+
 void PairOxdna::write_restart_settings(FILE *fp)
 {
   fwrite(&offset_flag,sizeof(int),1,fp);
   fwrite(&mix_flag,sizeof(int),1,fp);
   fwrite(&tail_flag,sizeof(int),1,fp);
 }
-*/
+
 /* ----------------------------------------------------------------------
    proc 0 reads from restart file, bcasts
 ------------------------------------------------------------------------- */
-/*
+
 void PairOxdna::read_restart_settings(FILE *fp)
 {
   int me = comm->me;
@@ -974,11 +955,11 @@ void PairOxdna::read_restart_settings(FILE *fp)
   MPI_Bcast(&mix_flag,1,MPI_INT,0,world);
   MPI_Bcast(&tail_flag,1,MPI_INT,0,world);
 }
-*/
+
 /* ----------------------------------------------------------------------
    proc 0 writes to data file
 ------------------------------------------------------------------------- */
-/*
+
 void PairOxdna::write_data(FILE *fp)
 {
   for (int i = 1; i <= atom->ntypes; i++)
@@ -987,11 +968,11 @@ void PairOxdna::write_data(FILE *fp)
 	epsilon_sb[i][i],sigma_sb[i][i],cut_sb_lj[i][i],b_sb[i][i],cut_sb_sm[i][i],
 	epsilon_bb[i][i],sigma_bb[i][i],cut_bb_lj[i][i],b_bb[i][i],cut_bb_sm[i][i]);
 }
-*/
+
 /* ----------------------------------------------------------------------
    proc 0 writes all pairs to data file
 ------------------------------------------------------------------------- */
-/*
+
 void PairOxdna::write_data_all(FILE *fp)
 {
   for (int i = 1; i <= atom->ntypes; i++)
@@ -1001,9 +982,9 @@ void PairOxdna::write_data_all(FILE *fp)
 	epsilon_sb[i][j],sigma_sb[i][j],cut_sb_lj[i][j],b_sb[i][j],cut_sb_sm[i][j],
 	epsilon_bb[i][j],sigma_bb[i][j],cut_bb_lj[i][j],b_bb[i][j],cut_bb_sm[i][j]);
 }
-*/
+
 /* ---------------------------------------------------------------------- */
-/*
+
 void *PairOxdna::extract(const char *str, int &dim)
 {
   dim = 2;
@@ -1024,4 +1005,3 @@ void *PairOxdna::extract(const char *str, int &dim)
   if (strcmp(str,"cut_bb_sm") == 0) return (void *) cut_bb_sm;
   return NULL;
 }
-*/
