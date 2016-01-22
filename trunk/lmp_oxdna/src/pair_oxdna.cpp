@@ -193,7 +193,7 @@ void PairOxdna::compute(int eflag, int vflag)
 
 	if (rsq_ss < cutsq_ss_lj[itype][jtype]) {
 
-	  calculate_excv_lj(factor_lj,rsq_ss,lj1_ss[itype][jtype],
+	  f3_lj(factor_lj,rsq_ss,lj1_ss[itype][jtype],
 				  lj2_ss[itype][jtype],r6inv,fpair);
 
 	  if (eflag) {
@@ -207,7 +207,7 @@ void PairOxdna::compute(int eflag, int vflag)
 	}
 	else {
 
-	  calculate_excv_sm(factor_lj,rsq_ss,epsilon_ss[itype][jtype],
+	  f3_sm(factor_lj,rsq_ss,epsilon_ss[itype][jtype],
 				  b_ss[itype][jtype],cut_ss_sm[itype][jtype],r,fpair);
 
 	  if (eflag) {
@@ -253,7 +253,7 @@ void PairOxdna::compute(int eflag, int vflag)
 
 	if (rsq_sb < cutsq_sb_lj[itype][jtype]) {
 
-	  calculate_excv_lj(1.0,rsq_sb,lj1_sb[itype][jtype],lj2_sb[itype][jtype],r6inv,fpair);
+	  f3_lj(1.0,rsq_sb,lj1_sb[itype][jtype],lj2_sb[itype][jtype],r6inv,fpair);
 
 	  if (eflag) {
 	    evdwl = r6inv*(lj3_sb[itype][jtype]*r6inv-lj4_sb[itype][jtype]) -
@@ -266,7 +266,7 @@ void PairOxdna::compute(int eflag, int vflag)
 	}
 	else {
 
-	  calculate_excv_sm(1.0,rsq_sb,epsilon_sb[itype][jtype],
+	  f3_sm(1.0,rsq_sb,epsilon_sb[itype][jtype],
 				  b_sb[itype][jtype],cut_sb_sm[itype][jtype],r,fpair);
 
 	  if (eflag) {
@@ -312,7 +312,7 @@ void PairOxdna::compute(int eflag, int vflag)
 
 	if (rsq_bs < cutsq_sb_lj[itype][jtype]) {
 
-	  calculate_excv_lj(1.0,rsq_bs,lj1_sb[itype][jtype],lj2_sb[itype][jtype],r6inv,fpair);
+	  f3_lj(1.0,rsq_bs,lj1_sb[itype][jtype],lj2_sb[itype][jtype],r6inv,fpair);
 
 	  if (eflag) {
 	    evdwl = r6inv*(lj3_sb[itype][jtype]*r6inv-lj4_sb[itype][jtype]) -
@@ -324,7 +324,7 @@ void PairOxdna::compute(int eflag, int vflag)
 	}
 	else {
 
-	  calculate_excv_sm(1.0,rsq_bs,epsilon_sb[itype][jtype],
+	  f3_sm(1.0,rsq_bs,epsilon_sb[itype][jtype],
 				  b_sb[itype][jtype],cut_sb_sm[itype][jtype],r,fpair);
 
 
@@ -370,7 +370,7 @@ void PairOxdna::compute(int eflag, int vflag)
 
 	if (rsq_bb < cutsq_bb_lj[itype][jtype]) {
 
-	  calculate_excv_lj(1.0,rsq_bb,lj1_bb[itype][jtype],lj2_bb[itype][jtype],r6inv,fpair);
+	  f3_lj(1.0,rsq_bb,lj1_bb[itype][jtype],lj2_bb[itype][jtype],r6inv,fpair);
 
 	  if (eflag) {
 	    evdwl = r6inv*(lj3_bb[itype][jtype]*r6inv-lj4_bb[itype][jtype]) -
@@ -382,7 +382,7 @@ void PairOxdna::compute(int eflag, int vflag)
 	}
 	else {
 
-	  calculate_excv_sm(1.0,rsq_bb,epsilon_bb[itype][jtype],
+	  f3_sm(1.0,rsq_bb,epsilon_bb[itype][jtype],
 				  b_bb[itype][jtype],cut_bb_sm[itype][jtype],r,fpair);
 
 	  if (eflag) {
@@ -916,7 +916,7 @@ void *PairOxdna::extract(const char *str, int &dim)
 /* ----------------------------------------------------------------------
    calculates the lj part of the excluded volume interaction 
 ------------------------------------------------------------------------- */
-inline void PairOxdna::calculate_excv_lj(double factor_lj, double rsq, 
+inline void PairOxdna::f3_lj(double factor_lj, double rsq, 
 	double lj1, double lj2, double & r6inv, double & fpair) 
 {
   double r2inv,forcelj;
@@ -930,7 +930,7 @@ inline void PairOxdna::calculate_excv_lj(double factor_lj, double rsq,
 /* ----------------------------------------------------------------------
    calculates the smooting part of the excluded volume interaction 
 ------------------------------------------------------------------------- */
-inline void PairOxdna::calculate_excv_sm(double factor_lj, double rsq, 
+inline void PairOxdna::f3_sm(double factor_lj, double rsq, 
 	double eps, double b, double cut, double & r, double & fpair) 
 {
   double rinv;

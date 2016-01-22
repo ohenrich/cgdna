@@ -58,8 +58,8 @@ class PairOxdna : public Pair {
 
   virtual void allocate();
 
-  inline void calculate_excv_lj(double, double, double, double, double &, double &);
-  inline void calculate_excv_sm(double, double, double, double, double, double &, double &);
+  inline void f3_lj(double, double, double, double, double &, double &);
+  inline void f3_sm(double, double, double, double, double, double &, double &);
 };
 
 }
