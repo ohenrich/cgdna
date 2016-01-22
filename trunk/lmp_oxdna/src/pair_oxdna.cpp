@@ -140,15 +140,21 @@ void PairOxdna::compute(int eflag, int vflag)
     quat1=bonus[i].quat;
     MathExtra::q_to_exyz(quat1,ex1,ey1,ez1);
 
-    for (ia = 0; ia < 3; ia++) {
-	// position of backbone site i
-	e_coms1[ia] = d_coms*ex1[ia];
-	rtmp_s[ia] = x[i][ia] + e_coms1[ia];
+    // position of backbone site i
+    e_coms1[0] = d_coms*ex1[0];
+    e_coms1[1] = d_coms*ex1[1];
+    e_coms1[2] = d_coms*ex1[2];
+    rtmp_s[0] = x[i][0] + e_coms1[0];
+    rtmp_s[1] = x[i][1] + e_coms1[1];
+    rtmp_s[2] = x[i][2] + e_coms1[2];
 
-	// position of base site i
-	e_comb1[ia] = d_comb*ex1[ia];
-	rtmp_b[ia] = x[i][ia] + e_comb1[ia];
-    }
+    // position of base site i
+    e_comb1[0] = d_comb*ex1[0];
+    e_comb1[1] = d_comb*ex1[1];
+    e_comb1[2] = d_comb*ex1[2];
+    rtmp_b[0] = x[i][0] + e_comb1[0];
+    rtmp_b[1] = x[i][1] + e_comb1[1];
+    rtmp_b[2] = x[i][2] + e_comb1[2];
 
     itype = type[i];
     jlist = firstneigh[i];
@@ -163,21 +169,29 @@ void PairOxdna::compute(int eflag, int vflag)
       quat2=bonus[j].quat;
       MathExtra::q_to_exyz(quat2,ex2,ey2,ez2);
 
-      for (ia = 0; ia < 3; ia++) {
+      e_coms2[0] = d_coms*ex2[0];
+      e_coms2[1] = d_coms*ex2[1];
+      e_coms2[2] = d_coms*ex2[2];
+      e_comb2[0] = d_comb*ex2[0];
+      e_comb2[1] = d_comb*ex2[1];
+      e_comb2[2] = d_comb*ex2[2];
 
-	    e_coms2[ia] = d_coms*ex2[ia];
-	    e_comb2[ia] = d_comb*ex2[ia];
-
-	    // rel. distance backbone i - backbone j
-	    delr_ss[ia] = rtmp_s[ia] - x[j][ia] - e_coms2[ia];
-	    // rel. distance backbone i - base j
-	    delr_sb[ia] = rtmp_s[ia] - x[j][ia] - e_comb2[ia];
-	    // rel. distance base i - backbone j
-	    delr_bs[ia] = rtmp_b[ia] - x[j][ia] - e_coms2[ia];
-	    // rel. distance base i - base j
-	    delr_bb[ia] = rtmp_b[ia] - x[j][ia] - e_comb2[ia];
-
-      }
+      // rel. distance backbone i - backbone j
+      delr_ss[0] = rtmp_s[0] - x[j][0] - e_coms2[0];
+      delr_ss[1] = rtmp_s[1] - x[j][1] - e_coms2[1];
+      delr_ss[2] = rtmp_s[2] - x[j][2] - e_coms2[2];
+      // rel. distance backbone i - base j
+      delr_sb[0] = rtmp_s[0] - x[j][0] - e_comb2[0];
+      delr_sb[1] = rtmp_s[1] - x[j][1] - e_comb2[1];
+      delr_sb[2] = rtmp_s[2] - x[j][2] - e_comb2[2];
+      // rel. distance base i - backbone j
+      delr_bs[0] = rtmp_b[0] - x[j][0] - e_coms2[0];
+      delr_bs[1] = rtmp_b[1] - x[j][1] - e_coms2[1];
+      delr_bs[2] = rtmp_b[2] - x[j][2] - e_coms2[2];
+      // rel. distance base i - base j
+      delr_bb[0] = rtmp_b[0] - x[j][0] - e_comb2[0];
+      delr_bb[1] = rtmp_b[1] - x[j][1] - e_comb2[1];
+      delr_bb[2] = rtmp_b[2] - x[j][2] - e_comb2[2];
 
       rsq_ss = delr_ss[0]*delr_ss[0] + delr_ss[1]*delr_ss[1] + delr_ss[2]*delr_ss[2];
       rsq_sb = delr_sb[0]*delr_sb[0] + delr_sb[1]*delr_sb[1] + delr_sb[2]*delr_sb[2];
@@ -193,8 +207,8 @@ void PairOxdna::compute(int eflag, int vflag)
 
 	if (rsq_ss < cutsq_ss_lj[itype][jtype]) {
 
-	  f3_lj(factor_lj,rsq_ss,lj1_ss[itype][jtype],
-				  lj2_ss[itype][jtype],r6inv,fpair);
+	  fpair = f3_lj(factor_lj,rsq_ss,lj1_ss[itype][jtype],
+				  lj2_ss[itype][jtype],r6inv);
 
 	  if (eflag) {
 	    evdwl = r6inv*(lj3_ss[itype][jtype]*r6inv-lj4_ss[itype][jtype]) -
@@ -207,8 +221,8 @@ void PairOxdna::compute(int eflag, int vflag)
 	}
 	else {
 
-	  f3_sm(factor_lj,rsq_ss,epsilon_ss[itype][jtype],
-				  b_ss[itype][jtype],cut_ss_sm[itype][jtype],r,fpair);
+	  fpair = f3_sm(factor_lj,rsq_ss,epsilon_ss[itype][jtype],
+				  b_ss[itype][jtype],cut_ss_sm[itype][jtype],r);
 
 	  if (eflag) {
 	    evdwl = b_ss[itype][jtype]*
@@ -235,6 +249,7 @@ void PairOxdna::compute(int eflag, int vflag)
 	torque[i][2] += delt[2];
 
         if (newton_pair || j < nlocal) {
+
           f[j][0] -= delf[0];
           f[j][1] -= delf[1];
           f[j][2] -= delf[2];
@@ -253,7 +268,7 @@ void PairOxdna::compute(int eflag, int vflag)
 
 	if (rsq_sb < cutsq_sb_lj[itype][jtype]) {
 
-	  f3_lj(1.0,rsq_sb,lj1_sb[itype][jtype],lj2_sb[itype][jtype],r6inv,fpair);
+	  fpair = f3_lj(1.0,rsq_sb,lj1_sb[itype][jtype],lj2_sb[itype][jtype],r6inv);
 
 	  if (eflag) {
 	    evdwl = r6inv*(lj3_sb[itype][jtype]*r6inv-lj4_sb[itype][jtype]) -
@@ -266,8 +281,8 @@ void PairOxdna::compute(int eflag, int vflag)
 	}
 	else {
 
-	  f3_sm(1.0,rsq_sb,epsilon_sb[itype][jtype],
-				  b_sb[itype][jtype],cut_sb_sm[itype][jtype],r,fpair);
+	  fpair = f3_sm(1.0,rsq_sb,epsilon_sb[itype][jtype],
+				  b_sb[itype][jtype],cut_sb_sm[itype][jtype],r);
 
 	  if (eflag) {
 	    evdwl = b_sb[itype][jtype]*
@@ -294,6 +309,7 @@ void PairOxdna::compute(int eflag, int vflag)
 	torque[i][2] += delt[2];
 
 	if (newton_pair || j < nlocal) {
+
 	  f[j][0] -= delf[0];
 	  f[j][1] -= delf[1];
 	  f[j][2] -= delf[2];
@@ -312,7 +328,7 @@ void PairOxdna::compute(int eflag, int vflag)
 
 	if (rsq_bs < cutsq_sb_lj[itype][jtype]) {
 
-	  f3_lj(1.0,rsq_bs,lj1_sb[itype][jtype],lj2_sb[itype][jtype],r6inv,fpair);
+	  fpair = f3_lj(1.0,rsq_bs,lj1_sb[itype][jtype],lj2_sb[itype][jtype],r6inv);
 
 	  if (eflag) {
 	    evdwl = r6inv*(lj3_sb[itype][jtype]*r6inv-lj4_sb[itype][jtype]) -
@@ -324,8 +340,8 @@ void PairOxdna::compute(int eflag, int vflag)
 	}
 	else {
 
-	  f3_sm(1.0,rsq_bs,epsilon_sb[itype][jtype],
-				  b_sb[itype][jtype],cut_sb_sm[itype][jtype],r,fpair);
+	  fpair = f3_sm(1.0,rsq_bs,epsilon_sb[itype][jtype],
+				  b_sb[itype][jtype],cut_sb_sm[itype][jtype],r);
 
 
 	  if (eflag) {
@@ -352,6 +368,7 @@ void PairOxdna::compute(int eflag, int vflag)
 	torque[i][2] += delt[2];
 
 	if (newton_pair || j < nlocal) {
+
 	  f[j][0] -= delf[0];
 	  f[j][1] -= delf[1];
 	  f[j][2] -= delf[2];
@@ -370,7 +387,7 @@ void PairOxdna::compute(int eflag, int vflag)
 
 	if (rsq_bb < cutsq_bb_lj[itype][jtype]) {
 
-	  f3_lj(1.0,rsq_bb,lj1_bb[itype][jtype],lj2_bb[itype][jtype],r6inv,fpair);
+	  fpair = f3_lj(1.0,rsq_bb,lj1_bb[itype][jtype],lj2_bb[itype][jtype],r6inv);
 
 	  if (eflag) {
 	    evdwl = r6inv*(lj3_bb[itype][jtype]*r6inv-lj4_bb[itype][jtype]) -
@@ -382,8 +399,8 @@ void PairOxdna::compute(int eflag, int vflag)
 	}
 	else {
 
-	  f3_sm(1.0,rsq_bb,epsilon_bb[itype][jtype],
-				  b_bb[itype][jtype],cut_bb_sm[itype][jtype],r,fpair);
+	  fpair = f3_sm(1.0,rsq_bb,epsilon_bb[itype][jtype],
+				  b_bb[itype][jtype],cut_bb_sm[itype][jtype],r);
 
 	  if (eflag) {
 	    evdwl = b_bb[itype][jtype]*
@@ -401,7 +418,7 @@ void PairOxdna::compute(int eflag, int vflag)
 	f[i][0] += delf[0];
 	f[i][1] += delf[1];
 	f[i][2] += delf[2];
- 
+
 	MathExtra::cross3(e_comb1,delf,delt);
 
 	torque[i][0] += delt[0];
@@ -409,6 +426,7 @@ void PairOxdna::compute(int eflag, int vflag)
 	torque[i][2] += delt[2];
 
 	if (newton_pair || j < nlocal) {
+
 	  f[j][0] -= delf[0];
 	  f[j][1] -= delf[1];
 	  f[j][2] -= delf[2];
@@ -916,27 +934,31 @@ void *PairOxdna::extract(const char *str, int &dim)
 /* ----------------------------------------------------------------------
    calculates the lj part of the excluded volume interaction 
 ------------------------------------------------------------------------- */
-inline void PairOxdna::f3_lj(double factor_lj, double rsq, 
-	double lj1, double lj2, double & r6inv, double & fpair) 
+inline double PairOxdna::f3_lj(double factor_lj, double rsq, 
+	double lj1, double lj2, double & r6inv) 
 {
-  double r2inv,forcelj;
+  double r2inv,forcelj,fpair;
 
   r2inv = 1.0/rsq;
   r6inv = r2inv*r2inv*r2inv;
   forcelj = r6inv * (lj1* r6inv - lj2);
   fpair = factor_lj*forcelj*r2inv;
+
+  return fpair;
 }
 
 /* ----------------------------------------------------------------------
    calculates the smooting part of the excluded volume interaction 
 ------------------------------------------------------------------------- */
-inline void PairOxdna::f3_sm(double factor_lj, double rsq, 
-	double eps, double b, double cut, double & r, double & fpair) 
+inline double PairOxdna::f3_sm(double factor_lj, double rsq, 
+	double eps, double b, double cut, double & r) 
 {
-  double rinv;
+  double rinv,fpair;
 
   r = sqrt(rsq);
   rinv = 1.0/r;
   fpair = factor_lj*eps*2.0*b*(cut*rinv - 1.0);
+
+  return fpair;
 }
 	
