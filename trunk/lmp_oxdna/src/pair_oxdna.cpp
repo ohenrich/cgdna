@@ -99,13 +99,11 @@ PairOxdna::~PairOxdna()
 
 void PairOxdna::compute(int eflag, int vflag)
 {
-  int i,j,ii,jj,inum,jnum,itype,jtype;
-  double xtmp_s,ytmp_s,ztmp_s,xtmp_b,ytmp_b,ztmp_b;
-  double delx_ss,dely_ss,delz_ss,rsq_ss;
-  double delx_sb,dely_sb,delz_sb,rsq_sb;
-  double delx_bs,dely_bs,delz_bs,rsq_bs;
-  double delx_bb,dely_bb,delz_bb,rsq_bb;
-  double evdwl,fpair,delf[3];
+  int i,j,ii,jj,inum,jnum,itype,jtype,ia;
+  double rtmp_s[3],rtmp_b[3],delf[3],delt[3];
+  double delr_ss[3],rsq_ss,delr_sb[3],rsq_sb;
+  double delr_bs[3],rsq_bs,delr_bb[3],rsq_bb;
+  double evdwl,fpair;
   double r,rinv,r2inv,r6inv,forcelj,factor_lj;
   int *ilist,*jlist,*numneigh,**firstneigh;
   double d_coms=-0.24, d_comb=+0.56; // distance COM-backbone and COM-base
@@ -142,23 +140,15 @@ void PairOxdna::compute(int eflag, int vflag)
     quat1=bonus[i].quat;
     MathExtra::q_to_exyz(quat1,ex1,ey1,ez1);
 
-    // position of backbone site i
-    e_coms1[0] = d_coms*ex1[0];
-    e_coms1[1] = d_coms*ex1[1];
-    e_coms1[2] = d_coms*ex1[2];
+    for (ia = 0; ia < 3; ia++) {
+	// position of backbone site i
+	e_coms1[ia] = d_coms*ex1[ia];
+	rtmp_s[ia] = x[i][ia] + e_coms1[ia];
 
-    xtmp_s = x[i][0] + e_coms1[0];
-    ytmp_s = x[i][1] + e_coms1[1];
-    ztmp_s = x[i][2] + e_coms1[2];
-
-    // position of base site i
-    e_comb1[0] = d_comb*ex1[0];
-    e_comb1[1] = d_comb*ex1[1];
-    e_comb1[2] = d_comb*ex1[2];
-
-    xtmp_b = x[i][0] + e_comb1[0];
-    ytmp_b = x[i][1] + e_comb1[1];
-    ztmp_b = x[i][2] + e_comb1[2];
+	// position of base site i
+	e_comb1[ia] = d_comb*ex1[ia];
+	rtmp_b[ia] = x[i][ia] + e_comb1[ia];
+    }
 
     itype = type[i];
     jlist = firstneigh[i];
@@ -173,348 +163,265 @@ void PairOxdna::compute(int eflag, int vflag)
       quat2=bonus[j].quat;
       MathExtra::q_to_exyz(quat2,ex2,ey2,ez2);
 
-      e_coms2[0] = d_coms*ex2[0];
-      e_coms2[1] = d_coms*ex2[1];
-      e_coms2[2] = d_coms*ex2[2];
+      for (ia = 0; ia < 3; ia++) {
 
-      e_comb2[0] = d_comb*ex2[0];
-      e_comb2[1] = d_comb*ex2[1];
-      e_comb2[2] = d_comb*ex2[2];
+	    e_coms2[ia] = d_coms*ex2[ia];
+	    e_comb2[ia] = d_comb*ex2[ia];
 
-      // rel. distance backbone i - backbone j
-      delx_ss = xtmp_s - x[j][0] - e_coms2[0];
-      dely_ss = ytmp_s - x[j][1] - e_coms2[1];
-      delz_ss = ztmp_s - x[j][2] - e_coms2[2];
-      rsq_ss = delx_ss*delx_ss + dely_ss*dely_ss + delz_ss*delz_ss;
+	    // rel. distance backbone i - backbone j
+	    delr_ss[ia] = rtmp_s[ia] - x[j][ia] - e_coms2[ia];
+	    // rel. distance backbone i - base j
+	    delr_sb[ia] = rtmp_s[ia] - x[j][ia] - e_comb2[ia];
+	    // rel. distance base i - backbone j
+	    delr_bs[ia] = rtmp_b[ia] - x[j][ia] - e_coms2[ia];
+	    // rel. distance base i - base j
+	    delr_bb[ia] = rtmp_b[ia] - x[j][ia] - e_comb2[ia];
 
-      // rel. distance backbone i - base j
-      delx_sb = xtmp_s - x[j][0] - e_comb2[0];
-      dely_sb = ytmp_s - x[j][1] - e_comb2[1];
-      delz_sb = ztmp_s - x[j][2] - e_comb2[2];
-      rsq_sb = delx_sb*delx_sb + dely_sb*dely_sb + delz_sb*delz_sb;
+      }
 
-      // rel. distance base i - backbone j
-      delx_bs = xtmp_b - x[j][0] - e_coms2[0];
-      dely_bs = ytmp_b - x[j][1] - e_coms2[1];
-      delz_bs = ztmp_b - x[j][2] - e_coms2[2];
-      rsq_bs = delx_bs*delx_bs + dely_bs*dely_bs + delz_bs*delz_bs;
-
-      // rel. distance base i - base j
-      delx_bb = xtmp_b - x[j][0] - e_comb2[0];
-      dely_bb = ytmp_b - x[j][1] - e_comb2[1];
-      delz_bb = ztmp_b - x[j][2] - e_comb2[2];
-      rsq_bb = delx_bb*delx_bb + dely_bb*dely_bb + delz_bb*delz_bb;
+      rsq_ss = delr_ss[0]*delr_ss[0] + delr_ss[1]*delr_ss[1] + delr_ss[2]*delr_ss[2];
+      rsq_sb = delr_sb[0]*delr_sb[0] + delr_sb[1]*delr_sb[1] + delr_sb[2]*delr_sb[2];
+      rsq_bs = delr_bs[0]*delr_bs[0] + delr_bs[1]*delr_bs[1] + delr_bs[2]*delr_bs[2];
+      rsq_bb = delr_bb[0]*delr_bb[0] + delr_bb[1]*delr_bb[1] + delr_bb[2]*delr_bb[2];
 
       jtype = type[j];
 
-      // backbone-backbone LJ part
+      // excluded volume interaction
 
-      if (rsq_ss < cutsq_ss_lj[itype][jtype]) {
+      // backbone-backbone
+      if (rsq_ss < cutsq_ss_sm[itype][jtype]) {
 
-        r2inv = 1.0/rsq_ss;
-        r6inv = r2inv*r2inv*r2inv;
-        forcelj = r6inv * (lj1_ss[itype][jtype]*r6inv - lj2_ss[itype][jtype]);
-        fpair = factor_lj*forcelj*r2inv;
+	if (rsq_ss < cutsq_ss_lj[itype][jtype]) {
 
-	delf[0] = delx_ss*fpair;
-	delf[1] = dely_ss*fpair;
-	delf[2] = delz_ss*fpair;
+	  calculate_excv_lj(factor_lj,rsq_ss,lj1_ss[itype][jtype],
+				  lj2_ss[itype][jtype],r6inv,fpair);
+
+	  if (eflag) {
+	    evdwl = r6inv*(lj3_ss[itype][jtype]*r6inv-lj4_ss[itype][jtype]) -
+	      offset_ss[itype][jtype];
+	    evdwl *= factor_lj;
+	  }
+
+	  if (evflag) ev_tally(i,j,nlocal,newton_pair,
+			       evdwl,0.0,fpair,delr_ss[0],delr_ss[1],delr_ss[2]);
+	}
+	else {
+
+	  calculate_excv_sm(factor_lj,rsq_ss,epsilon_ss[itype][jtype],
+				  b_ss[itype][jtype],cut_ss_sm[itype][jtype],r,fpair);
+
+	  if (eflag) {
+	    evdwl = b_ss[itype][jtype]*
+		  (cut_ss_sm[itype][jtype]-r)*(cut_ss_sm[itype][jtype]-r);
+	    evdwl *= factor_lj;
+	  }
+
+	  if (evflag) ev_tally(i,j,nlocal,newton_pair,
+			       evdwl,0.0,fpair,delr_ss[0],delr_ss[1],delr_ss[2]);
+	}
+
+	delf[0] = delr_ss[0]*fpair; 
+	delf[1] = delr_ss[1]*fpair; 
+	delf[2] = delr_ss[2]*fpair; 
 
         f[i][0] += delf[0];
         f[i][1] += delf[1];
         f[i][2] += delf[2];
-	torque[i][0] += e_coms1[1]*delf[2] - e_coms1[2]*delf[1]; 
-	torque[i][1] += e_coms1[2]*delf[0] - e_coms1[0]*delf[2];
-	torque[i][2] += e_coms1[0]*delf[1] - e_coms1[1]*delf[0];
+
+	MathExtra::cross3(e_coms1,delf,delt);
+
+	torque[i][0] += delt[0];
+	torque[i][1] += delt[1];
+	torque[i][2] += delt[2];
 
         if (newton_pair || j < nlocal) {
           f[j][0] -= delf[0];
           f[j][1] -= delf[1];
           f[j][2] -= delf[2];
-	  torque[j][0] -= e_coms2[1]*delf[2] - e_coms2[2]*delf[1]; 
-	  torque[j][1] -= e_coms2[2]*delf[0] - e_coms2[0]*delf[2];
-	  torque[j][2] -= e_coms2[0]*delf[1] - e_coms2[1]*delf[0];
+
+	  MathExtra::cross3(e_coms2,delf,delt);
+
+	  torque[j][0] -= delt[0];
+	  torque[j][1] -= delt[1];
+	  torque[j][2] -= delt[2];
         }
 
-        if (eflag) {
-          evdwl = r6inv*(lj3_ss[itype][jtype]*r6inv-lj4_ss[itype][jtype]) -
-            offset_ss[itype][jtype];
-          evdwl *= factor_lj;
-        }
-
-        if (evflag) ev_tally(i,j,nlocal,newton_pair,
-                             evdwl,0.0,fpair,delx_ss,dely_ss,delz_ss);
       }
 
-       // backbone-backbone smoothing part
+      // backbone-base
+      if (rsq_sb < cutsq_sb_sm[itype][jtype]) {
 
-      if (cutsq_ss_lj[itype][jtype] <= rsq_ss && rsq_ss < cutsq_ss_sm[itype][jtype]) {
+	if (rsq_sb < cutsq_sb_lj[itype][jtype]) {
 
-	r = sqrt(rsq_ss);
-	rinv = 1.0/r;
+	  calculate_excv_lj(1.0,rsq_sb,lj1_sb[itype][jtype],lj2_sb[itype][jtype],r6inv,fpair);
 
-	fpair = factor_lj*epsilon_ss[itype][jtype]*2.0*b_ss[itype][jtype]*(cut_ss_sm[itype][jtype]*rinv - 1.0);
+	  if (eflag) {
+	    evdwl = r6inv*(lj3_sb[itype][jtype]*r6inv-lj4_sb[itype][jtype]) -
+	      offset_sb[itype][jtype];
+	    evdwl *= factor_lj;
+	  }
 
-	delf[0] = delx_ss*fpair; 
-	delf[1] = dely_ss*fpair; 
-	delf[2] = delz_ss*fpair; 
+	  if (evflag) ev_tally(i,j,nlocal,newton_pair,
+			       evdwl,0.0,fpair,delr_sb[0],delr_sb[1],delr_sb[2]);
+	}
+	else {
 
-        f[i][0] += delf[0];
-        f[i][1] += delf[1];
-        f[i][2] += delf[2];
-        torque[i][0] += e_coms1[1]*delf[2] - e_coms1[2]*delf[1];
-        torque[i][1] += e_coms1[2]*delf[0] - e_coms1[0]*delf[2];
-        torque[i][2] += e_coms1[0]*delf[1] - e_coms1[1]*delf[0];
+	  calculate_excv_sm(1.0,rsq_sb,epsilon_sb[itype][jtype],
+				  b_sb[itype][jtype],cut_sb_sm[itype][jtype],r,fpair);
 
-        if (newton_pair || j < nlocal) {
-          f[j][0] -= delf[0];
-          f[j][1] -= delf[1];
-          f[j][2] -= delf[2];
-          torque[j][0] -= e_coms2[1]*delf[2] - e_coms2[2]*delf[1];
-          torque[j][1] -= e_coms2[2]*delf[0] - e_coms2[0]*delf[2];
-          torque[j][2] -= e_coms2[0]*delf[1] - e_coms2[1]*delf[0];
-        }
+	  if (eflag) {
+	    evdwl = b_sb[itype][jtype]*
+		  (cut_sb_sm[itype][jtype]-r)*(cut_sb_sm[itype][jtype]-r);
+	    evdwl *= factor_lj;
+	  }
 
-        if (eflag) {
-          evdwl = b_ss[itype][jtype]*
-		(cut_ss_sm[itype][jtype]-r)*(cut_ss_sm[itype][jtype]-r);
-          evdwl *= factor_lj;
-        }
+	  if (evflag) ev_tally(i,j,nlocal,newton_pair,
+			       evdwl,0.0,fpair,delr_sb[0],delr_sb[1],delr_sb[2]);
+	}
 
-        if (evflag) ev_tally(i,j,nlocal,newton_pair,
-                             evdwl,0.0,fpair,delx_ss,dely_ss,delz_ss);
+	delf[0] = delr_sb[0]*fpair; 
+	delf[1] = delr_sb[1]*fpair; 
+	delf[2] = delr_sb[2]*fpair; 
+
+	f[i][0] += delf[0];
+	f[i][1] += delf[1];
+	f[i][2] += delf[2];
+
+	MathExtra::cross3(e_coms1,delf,delt);
+
+	torque[i][0] += delt[0];
+	torque[i][1] += delt[1];
+	torque[i][2] += delt[2];
+
+	if (newton_pair || j < nlocal) {
+	  f[j][0] -= delf[0];
+	  f[j][1] -= delf[1];
+	  f[j][2] -= delf[2];
+
+	  MathExtra::cross3(e_comb2,delf,delt);
+
+	  torque[j][0] -= delt[0];
+	  torque[j][1] -= delt[1];
+	  torque[j][2] -= delt[2];
+	}
+
       }
 
-      // backbone-base LJ part
+      // base-backbone
+      if (rsq_bs < cutsq_sb_sm[itype][jtype]) {
 
-      if (rsq_sb < cutsq_sb_lj[itype][jtype]) {
+	if (rsq_bs < cutsq_sb_lj[itype][jtype]) {
 
-        r2inv = 1.0/rsq_sb;
-        r6inv = r2inv*r2inv*r2inv;
-        forcelj = r6inv * (lj1_sb[itype][jtype]*r6inv - lj2_sb[itype][jtype]);
-        fpair = forcelj*r2inv;
+	  calculate_excv_lj(1.0,rsq_bs,lj1_sb[itype][jtype],lj2_sb[itype][jtype],r6inv,fpair);
 
-	delf[0] = delx_sb*fpair;
-	delf[1] = dely_sb*fpair;
-	delf[2] = delz_sb*fpair;
+	  if (eflag) {
+	    evdwl = r6inv*(lj3_sb[itype][jtype]*r6inv-lj4_sb[itype][jtype]) -
+	      offset_sb[itype][jtype];
+	  }
 
-        f[i][0] += delf[0];
-        f[i][1] += delf[1];
-        f[i][2] += delf[2];
-	torque[i][0] += e_coms1[1]*delf[2] - e_coms1[2]*delf[1]; 
-	torque[i][1] += e_coms1[2]*delf[0] - e_coms1[0]*delf[2];
-	torque[i][2] += e_coms1[0]*delf[1] - e_coms1[1]*delf[0];
+	  if (evflag) ev_tally(i,j,nlocal,newton_pair,
+			       evdwl,0.0,fpair,delr_bs[0],delr_bs[1],delr_bs[2]);
+	}
+	else {
 
-        if (newton_pair || j < nlocal) {
-          f[j][0] -= delf[0];
-          f[j][1] -= delf[1];
-          f[j][2] -= delf[2];
-	  torque[j][0] -= e_comb2[1]*delf[2] - e_comb2[2]*delf[1]; 
-	  torque[j][1] -= e_comb2[2]*delf[0] - e_comb2[0]*delf[2];
-	  torque[j][2] -= e_comb2[0]*delf[1] - e_comb2[1]*delf[0];
-        }
+	  calculate_excv_sm(1.0,rsq_bs,epsilon_sb[itype][jtype],
+				  b_sb[itype][jtype],cut_sb_sm[itype][jtype],r,fpair);
 
-        if (eflag) {
-          evdwl = r6inv*(lj3_sb[itype][jtype]*r6inv-lj4_sb[itype][jtype]) -
-            offset_sb[itype][jtype];
-          evdwl *= factor_lj;
-        }
 
-        if (evflag) ev_tally(i,j,nlocal,newton_pair,
-                             evdwl,0.0,fpair,delx_sb,dely_sb,delz_sb);
+	  if (eflag) {
+	    evdwl = b_sb[itype][jtype]*
+		  (cut_sb_sm[itype][jtype]-r)*(cut_sb_sm[itype][jtype]-r);
+	  }
+
+	  if (evflag) ev_tally(i,j,nlocal,newton_pair,
+			       evdwl,0.0,fpair,delr_bs[0],delr_bs[1],delr_bs[2]);
+	}
+
+	delf[0] = delr_bs[0]*fpair; 
+	delf[1] = delr_bs[1]*fpair; 
+	delf[2] = delr_bs[2]*fpair; 
+
+	f[i][0] += delf[0];
+	f[i][1] += delf[1];
+	f[i][2] += delf[2];
+ 
+	MathExtra::cross3(e_comb1,delf,delt);
+
+	torque[i][0] += delt[0];
+	torque[i][1] += delt[1];
+	torque[i][2] += delt[2];
+
+	if (newton_pair || j < nlocal) {
+	  f[j][0] -= delf[0];
+	  f[j][1] -= delf[1];
+	  f[j][2] -= delf[2];
+
+	  MathExtra::cross3(e_coms2,delf,delt);
+
+	  torque[j][0] -= delt[0];
+	  torque[j][1] -= delt[1];
+	  torque[j][2] -= delt[2];
+	}
+
       }
 
-       // backbone-base smoothing part
+      // base-base
+      if (rsq_bb < cutsq_bb_sm[itype][jtype]) {
 
-      if (cutsq_sb_lj[itype][jtype] <= rsq_sb && rsq_sb < cutsq_sb_sm[itype][jtype]) {
+	if (rsq_bb < cutsq_bb_lj[itype][jtype]) {
 
-	r = sqrt(rsq_sb);
-	rinv = 1.0/r;
+	  calculate_excv_lj(1.0,rsq_bb,lj1_bb[itype][jtype],lj2_bb[itype][jtype],r6inv,fpair);
 
-	fpair = epsilon_sb[itype][jtype]*2.0*b_sb[itype][jtype]*(cut_sb_sm[itype][jtype]*rinv - 1.0);
+	  if (eflag) {
+	    evdwl = r6inv*(lj3_bb[itype][jtype]*r6inv-lj4_bb[itype][jtype]) -
+	      offset_bb[itype][jtype];
+	  }
 
-	delf[0] = delx_sb*fpair; 
-	delf[1] = dely_sb*fpair; 
-	delf[2] = delz_sb*fpair; 
+	  if (evflag) ev_tally(i,j,nlocal,newton_pair,
+			       evdwl,0.0,fpair,delr_bb[0],delr_bb[1],delr_bb[2]);
+	}
+	else {
 
-        f[i][0] += delf[0];
-        f[i][1] += delf[1];
-        f[i][2] += delf[2];
-        torque[i][0] += e_coms1[1]*delf[2] - e_coms1[2]*delf[1];
-        torque[i][1] += e_coms1[2]*delf[0] - e_coms1[0]*delf[2];
-        torque[i][2] += e_coms1[0]*delf[1] - e_coms1[1]*delf[0];
+	  calculate_excv_sm(1.0,rsq_bb,epsilon_bb[itype][jtype],
+				  b_bb[itype][jtype],cut_bb_sm[itype][jtype],r,fpair);
 
-        if (newton_pair || j < nlocal) {
-          f[j][0] -= delf[0];
-          f[j][1] -= delf[1];
-          f[j][2] -= delf[2];
-          torque[j][0] -= e_comb2[1]*delf[2] - e_comb2[2]*delf[1];
-          torque[j][1] -= e_comb2[2]*delf[0] - e_comb2[0]*delf[2];
-          torque[j][2] -= e_comb2[0]*delf[1] - e_comb2[1]*delf[0];
-        }
+	  if (eflag) {
+	    evdwl = b_bb[itype][jtype]*
+		  (cut_bb_sm[itype][jtype]-r)*(cut_bb_sm[itype][jtype]-r);
+	  }
 
-        if (eflag) {
-          evdwl = b_sb[itype][jtype]*
-		(cut_sb_sm[itype][jtype]-r)*(cut_sb_sm[itype][jtype]-r);
-          evdwl *= factor_lj;
-        }
+	  if (evflag) ev_tally(i,j,nlocal,newton_pair,
+			       evdwl,0.0,fpair,delr_bb[0],delr_bb[1],delr_bb[2]);
+	}
 
-        if (evflag) ev_tally(i,j,nlocal,newton_pair,
-                             evdwl,0.0,fpair,delx_sb,dely_sb,delz_sb);
+	delf[0] = delr_bb[0]*fpair; 
+	delf[1] = delr_bb[1]*fpair; 
+	delf[2] = delr_bb[2]*fpair; 
+
+	f[i][0] += delf[0];
+	f[i][1] += delf[1];
+	f[i][2] += delf[2];
+ 
+	MathExtra::cross3(e_comb1,delf,delt);
+
+	torque[i][0] += delt[0];
+	torque[i][1] += delt[1];
+	torque[i][2] += delt[2];
+
+	if (newton_pair || j < nlocal) {
+	  f[j][0] -= delf[0];
+	  f[j][1] -= delf[1];
+	  f[j][2] -= delf[2];
+
+	  MathExtra::cross3(e_comb2,delf,delt);
+
+	  torque[j][0] -= delt[0];
+	  torque[j][1] -= delt[1];
+	  torque[j][2] -= delt[2];
+	}
+
       }
-
-
-      // base-backbone LJ part
-
-      if (rsq_bs < cutsq_sb_lj[itype][jtype]) {
-
-        r2inv = 1.0/rsq_bs;
-        r6inv = r2inv*r2inv*r2inv;
-        forcelj = r6inv * (lj1_sb[itype][jtype]*r6inv - lj2_sb[itype][jtype]);
-        fpair = forcelj*r2inv;
-
-	delf[0] = delx_bs*fpair;
-	delf[1] = dely_bs*fpair;
-	delf[2] = delz_bs*fpair;
-
-        f[i][0] += delf[0];
-        f[i][1] += delf[1];
-        f[i][2] += delf[2];
-	torque[i][0] += e_comb1[1]*delf[2] - e_comb1[2]*delf[1]; 
-	torque[i][1] += e_comb1[2]*delf[0] - e_comb1[0]*delf[2];
-	torque[i][2] += e_comb1[0]*delf[1] - e_comb1[1]*delf[0];
-
-        if (newton_pair || j < nlocal) {
-          f[j][0] -= delf[0];
-          f[j][1] -= delf[1];
-          f[j][2] -= delf[2];
-	  torque[j][0] -= e_coms2[1]*delf[2] - e_coms2[2]*delf[1]; 
-	  torque[j][1] -= e_coms2[2]*delf[0] - e_coms2[0]*delf[2];
-	  torque[j][2] -= e_coms2[0]*delf[1] - e_coms2[1]*delf[0];
-        }
-
-        if (eflag) {
-          evdwl = r6inv*(lj3_sb[itype][jtype]*r6inv-lj4_sb[itype][jtype]) -
-            offset_sb[itype][jtype];
-        }
-
-        if (evflag) ev_tally(i,j,nlocal,newton_pair,
-                             evdwl,0.0,fpair,delx_bs,dely_bs,delz_bs);
-      }
-
-       // base-backbone smoothing part
-
-      if (cutsq_sb_lj[itype][jtype] <= rsq_bs && rsq_bs < cutsq_sb_sm[itype][jtype]) {
-
-	r = sqrt(rsq_bs);
-	rinv = 1.0/r;
-
-	fpair = epsilon_sb[itype][jtype]*2.0*b_sb[itype][jtype]*(cut_sb_sm[itype][jtype]*rinv - 1.0);
-
-	delf[0] = delx_bs*fpair; 
-	delf[1] = dely_bs*fpair; 
-	delf[2] = delz_bs*fpair; 
-
-        f[i][0] += delf[0];
-        f[i][1] += delf[1];
-        f[i][2] += delf[2];
-        torque[i][0] += e_comb1[1]*delf[2] - e_comb1[2]*delf[1];
-        torque[i][1] += e_comb1[2]*delf[0] - e_comb1[0]*delf[2];
-        torque[i][2] += e_comb1[0]*delf[1] - e_comb1[1]*delf[0];
-
-        if (newton_pair || j < nlocal) {
-          f[j][0] -= delf[0];
-          f[j][1] -= delf[1];
-          f[j][2] -= delf[2];
-          torque[j][0] -= e_coms2[1]*delf[2] - e_coms2[2]*delf[1];
-          torque[j][1] -= e_coms2[2]*delf[0] - e_coms2[0]*delf[2];
-          torque[j][2] -= e_coms2[0]*delf[1] - e_coms2[1]*delf[0];
-        }
-
-        if (eflag) {
-          evdwl = b_sb[itype][jtype]*
-		(cut_sb_sm[itype][jtype]-r)*(cut_sb_sm[itype][jtype]-r);
-        }
-
-        if (evflag) ev_tally(i,j,nlocal,newton_pair,
-                             evdwl,0.0,fpair,delx_bs,dely_bs,delz_bs);
-      }
-
-      // base-base LJ part
-
-      if (rsq_bb < cutsq_bb_lj[itype][jtype]) {
-
-        r2inv = 1.0/rsq_bb;
-        r6inv = r2inv*r2inv*r2inv;
-        forcelj = r6inv * (lj1_bb[itype][jtype]*r6inv - lj2_bb[itype][jtype]);
-        fpair = forcelj*r2inv;
-
-	delf[0] = delx_bb*fpair;
-	delf[1] = dely_bb*fpair;
-	delf[2] = delz_bb*fpair;
-
-        f[i][0] += delf[0];
-        f[i][1] += delf[1];
-        f[i][2] += delf[2];
-	torque[i][0] += e_comb1[1]*delf[2] - e_comb1[2]*delf[1]; 
-	torque[i][1] += e_comb1[2]*delf[0] - e_comb1[0]*delf[2];
-	torque[i][2] += e_comb1[0]*delf[1] - e_comb1[1]*delf[0];
-
-        if (newton_pair || j < nlocal) {
-          f[j][0] -= delf[0];
-          f[j][1] -= delf[1];
-          f[j][2] -= delf[2];
-	  torque[j][0] -= e_comb2[1]*delf[2] - e_comb2[2]*delf[1]; 
-	  torque[j][1] -= e_comb2[2]*delf[0] - e_comb2[0]*delf[2];
-	  torque[j][2] -= e_comb2[0]*delf[1] - e_comb2[1]*delf[0];
-        }
-
-        if (eflag) {
-          evdwl = r6inv*(lj3_bb[itype][jtype]*r6inv-lj4_bb[itype][jtype]) -
-            offset_bb[itype][jtype];
-        }
-
-        if (evflag) ev_tally(i,j,nlocal,newton_pair,
-                             evdwl,0.0,fpair,delx_bb,dely_bb,delz_bb);
-      }
-
-       // base-base smoothing part
-
-      if (cutsq_bb_lj[itype][jtype] <= rsq_bb && rsq_bb < cutsq_bb_sm[itype][jtype]) {
-
-	r = sqrt(rsq_bb);
-	rinv = 1.0/r;
-
-	fpair = epsilon_bb[itype][jtype]*2.0*b_bb[itype][jtype]*(cut_bb_sm[itype][jtype]*rinv - 1.0);
-
-	delf[0] = delx_bb*fpair; 
-	delf[1] = dely_bb*fpair; 
-	delf[2] = delz_bb*fpair; 
-
-        f[i][0] += delf[0];
-        f[i][1] += delf[1];
-        f[i][2] += delf[2];
-        torque[i][0] += e_comb1[1]*delf[2] - e_comb1[2]*delf[1];
-        torque[i][1] += e_comb1[2]*delf[0] - e_comb1[0]*delf[2];
-        torque[i][2] += e_comb1[0]*delf[1] - e_comb1[1]*delf[0];
-
-        if (newton_pair || j < nlocal) {
-          f[j][0] -= delf[0];
-          f[j][1] -= delf[1];
-          f[j][2] -= delf[2];
-          torque[j][0] -= e_comb2[1]*delf[2] - e_comb2[2]*delf[1];
-          torque[j][1] -= e_comb2[2]*delf[0] - e_comb2[0]*delf[2];
-          torque[j][2] -= e_comb2[0]*delf[1] - e_comb2[1]*delf[0];
-        }
-
-        if (eflag) {
-          evdwl = b_bb[itype][jtype]*
-		(cut_bb_sm[itype][jtype]-r)*(cut_bb_sm[itype][jtype]-r);
-        }
-
-        if (evflag) ev_tally(i,j,nlocal,newton_pair,
-                             evdwl,0.0,fpair,delx_bb,dely_bb,delz_bb);
-      }
+      // excluded volume interaction done
 
     }
   }
@@ -1005,3 +912,31 @@ void *PairOxdna::extract(const char *str, int &dim)
   if (strcmp(str,"cut_bb_sm") == 0) return (void *) cut_bb_sm;
   return NULL;
 }
+
+/* ----------------------------------------------------------------------
+   calculates the lj part of the excluded volume interaction 
+------------------------------------------------------------------------- */
+inline void PairOxdna::calculate_excv_lj(double factor_lj, double rsq, 
+	double lj1, double lj2, double & r6inv, double & fpair) 
+{
+  double r2inv,forcelj;
+
+  r2inv = 1.0/rsq;
+  r6inv = r2inv*r2inv*r2inv;
+  forcelj = r6inv * (lj1* r6inv - lj2);
+  fpair = factor_lj*forcelj*r2inv;
+}
+
+/* ----------------------------------------------------------------------
+   calculates the smooting part of the excluded volume interaction 
+------------------------------------------------------------------------- */
+inline void PairOxdna::calculate_excv_sm(double factor_lj, double rsq, 
+	double eps, double b, double cut, double & r, double & fpair) 
+{
+  double rinv;
+
+  r = sqrt(rsq);
+  rinv = 1.0/r;
+  fpair = factor_lj*eps*2.0*b*(cut*rinv - 1.0);
+}
+	
