@@ -44,8 +44,8 @@ BondOxdna::~BondOxdna()
   if (allocated) {
     memory->destroy(setflag);
     memory->destroy(k);
+    memory->destroy(Delta);
     memory->destroy(r0);
-    memory->destroy(shift);
   }
 }
 
@@ -55,8 +55,8 @@ void BondOxdna::compute(int eflag, int vflag)
 {
   int i1,i2,n,type;
   double delx,dely,delz,ebond,fbond, delf[3];
-  double rsq,r0sq,rlogarg;//,sr2,sr6;
-  double r,rshift,rshiftsq;
+  double rsq,Deltasq,rlogarg;//,sr2,sr6;
+  double r,rr0,rr0sq;
   double d_coms=-0.24; // distance backbone - COM
 
   ebond = 0.0;
@@ -103,14 +103,14 @@ void BondOxdna::compute(int eflag, int vflag)
 
     rsq = delx*delx + dely*dely + delz*delz;
     r = sqrt(rsq);
-    rshift = r - shift[type];
-    rshiftsq = rshift*rshift;
-    r0sq = r0[type] * r0[type];
-    rlogarg = 1.0 - rshiftsq/r0sq;
+    rr0 = r - r0[type];
+    rr0sq = rr0*rr0;
+    Deltasq = Delta[type] * Delta[type];
+    rlogarg = 1.0 - rr0sq/Deltasq;
 
-    // if r -> r0, then rlogarg < 0.0 which is an error
+    // if r -> Delta, then rlogarg < 0.0 which is an error
     // issue a warning and reset rlogarg = epsilon
-    // if r > 2*r0 something serious is wrong, abort
+    // if r > 2*Delta something serious is wrong, abort
 
     if (rlogarg < 0.1) {
       char str[128];
@@ -122,7 +122,7 @@ void BondOxdna::compute(int eflag, int vflag)
 //      rlogarg = 0.1;
     }
 
-    fbond = -k[type]*rshift/rlogarg/r0sq/r;
+    fbond = -k[type]*rr0/rlogarg/Deltasq/r;
     delf[0] = delx*fbond;
     delf[1] = dely*fbond;
     delf[2] = delz*fbond;
@@ -166,8 +166,8 @@ void BondOxdna::allocate()
   int n = atom->nbondtypes;
 
   memory->create(k,n+1,"bond:k");
+  memory->create(Delta,n+1,"bond:Delta");
   memory->create(r0,n+1,"bond:r0");
-  memory->create(shift,n+1,"bond:shift");
   memory->create(setflag,n+1,"bond:setflag");
   for (int i = 1; i <= n; i++) setflag[i] = 0;
 }
@@ -185,14 +185,14 @@ void BondOxdna::coeff(int narg, char **arg)
   force->bounds(arg[0],atom->nbondtypes,ilo,ihi);
 
   double k_one = force->numeric(FLERR,arg[1]);
-  double shift_one = force->numeric(FLERR,arg[2]);
+  double Delta_one = force->numeric(FLERR,arg[2]);
   double r0_one = force->numeric(FLERR,arg[3]);
 
   int count = 0;
   for (int i = ilo; i <= ihi; i++) {
     k[i] = k_one;
+    Delta[i] = Delta_one;
     r0[i] = r0_one;
-    shift[i] = shift_one;
     setflag[i] = 1;
     count++;
   }
@@ -235,7 +235,7 @@ void BondOxdna::init_style()
 
 double BondOxdna::equilibrium_distance(int i)
 {
-  return shift[i];
+  return r0[i];
 }
 
 /* ----------------------------------------------------------------------
@@ -245,8 +245,8 @@ double BondOxdna::equilibrium_distance(int i)
 void BondOxdna::write_restart(FILE *fp)
 {
   fwrite(&k[1],sizeof(double),atom->nbondtypes,fp);
+  fwrite(&Delta[1],sizeof(double),atom->nbondtypes,fp);
   fwrite(&r0[1],sizeof(double),atom->nbondtypes,fp);
-  fwrite(&shift[1],sizeof(double),atom->nbondtypes,fp);
 }
 
 /* ----------------------------------------------------------------------
@@ -259,12 +259,12 @@ void BondOxdna::read_restart(FILE *fp)
 
   if (comm->me == 0) {
     fread(&k[1],sizeof(double),atom->nbondtypes,fp);
+    fread(&Delta[1],sizeof(double),atom->nbondtypes,fp);
     fread(&r0[1],sizeof(double),atom->nbondtypes,fp);
-    fread(&shift[1],sizeof(double),atom->nbondtypes,fp);
   }
   MPI_Bcast(&k[1],atom->nbondtypes,MPI_DOUBLE,0,world);
+  MPI_Bcast(&Delta[1],atom->nbondtypes,MPI_DOUBLE,0,world);
   MPI_Bcast(&r0[1],atom->nbondtypes,MPI_DOUBLE,0,world);
-  MPI_Bcast(&shift[1],atom->nbondtypes,MPI_DOUBLE,0,world);
 
   for (int i = 1; i <= atom->nbondtypes; i++) setflag[i] = 1;
 }
@@ -276,7 +276,7 @@ void BondOxdna::read_restart(FILE *fp)
 void BondOxdna::write_data(FILE *fp)
 {
   for (int i = 1; i <= atom->nbondtypes; i++)
-    fprintf(fp,"%d %g %g %g\n",i,k[i],shift[i],r0[i]);
+    fprintf(fp,"%d %g %g %g\n",i,k[i],r0[i],Delta[i]);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -285,14 +285,14 @@ double BondOxdna::single(int type, double rsq, int i, int j,
                         double &fforce)
 {
   double r = sqrt(rsq);
-  double rshift = r - shift[type];
-  double rshiftsq = rshift*rshift;
-  double r0sq = r0[type] * r0[type];
-  double rlogarg = 1.0 - rshiftsq/r0sq;
+  double rr0 = r - r0[type];
+  double rr0sq = rr0*rr0;
+  double Deltasq = Delta[type] * Delta[type];
+  double rlogarg = 1.0 - rr0sq/Deltasq;
 
-  // if r -> r0, then rlogarg < 0.0 which is an error
+  // if r -> Delta, then rlogarg < 0.0 which is an error
   // issue a warning and reset rlogarg = epsilon
-  // if r > 2*r0 something serious is wrong, abort
+  // if r > 2*Delta something serious is wrong, abort
 
   if (rlogarg < 0.1) {
     char str[128];
@@ -304,7 +304,7 @@ double BondOxdna::single(int type, double rsq, int i, int j,
   }
 
   double eng = -0.5 * k[type]*log(rlogarg);
-  fforce = -k[type]*rshift/rlogarg/r0sq/r;
+  fforce = -k[type]*rr0/rlogarg/Deltasq/r;
 
   return eng;
 }

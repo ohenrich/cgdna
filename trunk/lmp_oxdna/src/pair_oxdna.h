@@ -46,6 +46,7 @@ class PairOxdna : public Pair {
   void *extract(const char *, int &);
 
  protected:
+  // s=sugar-phosphate backbone site, b=base site, st=stacking site
   double **epsilon_ss, **sigma_ss, **cut_ss_lj, **cutsq_ss_lj; 
   double **b_ss, **cut_ss_sm, **cutsq_ss_sm;
   double **lj1_ss, **lj2_ss, **lj3_ss, **lj4_ss, **offset_ss;
@@ -55,6 +56,11 @@ class PairOxdna : public Pair {
   double **epsilon_bb, **sigma_bb, **cut_bb_lj, **cutsq_bb_lj; 
   double **b_bb, **cut_bb_sm, **cutsq_bb_sm;
   double **lj1_bb, **lj2_bb, **lj3_bb, **lj4_bb, **offset_bb;
+
+  double **epsilon_st, **a_st, **b_st_lo, **b_st_hi;
+  double **cut_st_0, **cut_st_c, **cut_st_lo, **cut_st_hi; 
+  double **cutsq_st_0, **cutsq_st_c, **cutsq_st_lo, **cutsq_st_hi; 
+  double **cut_st_lc, **cut_st_hc, **cutsq_st_lc, **cutsq_st_hc; 
 
   virtual void allocate();
 

@@ -42,7 +42,7 @@ class BondOxdna : public Bond {
   double single(int, double, int, int, double &);
 
  protected:
-  double *k,*r0,*shift;
+  double *k,*Delta,*r0;
 
   void allocate();
 };
