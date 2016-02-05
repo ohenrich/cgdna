@@ -42,22 +42,30 @@ BondOxdna::BondOxdna(LAMMPS *lmp) : Bond(lmp)
 BondOxdna::~BondOxdna()
 {
   if (allocated) {
+
     memory->destroy(setflag);
     memory->destroy(k);
     memory->destroy(Delta);
     memory->destroy(r0);
+
   }
 }
 
-/* ---------------------------------------------------------------------- */
-
+/* ----------------------------------------------------------------------
+   compute function for oxDNA FENE-bond interaction
+   s=sugar-phosphate backbone site, b=base site, st=stacking site
+------------------------------------------------------------------------- */
 void BondOxdna::compute(int eflag, int vflag)
 {
-  int i1,i2,n,type;
-  double delx,dely,delz,ebond,fbond, delf[3];
-  double rsq,Deltasq,rlogarg;//,sr2,sr6;
+  int i,j,n,type;
+  double delf[3],delt[3]; // force, torque increment;;
+  double delr[3],ebond,fbond;
+  double rsq,Deltasq,rlogarg;
   double r,rr0,rr0sq;
-  double d_coms=-0.24; // distance backbone - COM
+  // distances COM-backbone
+  double d_cs=-0.24; 
+  // vectors COM-backbone in lab frame
+  double r_cs_i[3],r_cs_j[3];
 
   ebond = 0.0;
   if (eflag || vflag) ev_setup(eflag,vflag);
@@ -65,43 +73,44 @@ void BondOxdna::compute(int eflag, int vflag)
 
   double **x = atom->x;
   double **f = atom->f;
-
   double **torque = atom->torque;
+
   int *ellipsoid = atom->ellipsoid;
   AtomVecEllipsoid *avec = (AtomVecEllipsoid *) atom->style_match("ellipsoid");
   AtomVecEllipsoid::Bonus *bonus = avec->bonus;
-  double *quat1,ex1[3],ey1[3],ez1[3],e_coms1[3];
-  double *quat2,ex2[3],ey2[3],ez2[3],e_coms2[3];
+  double *quat_i,ex_i[3],ey_i[3],ez_i[3];
+  double *quat_j,ex_j[3],ey_j[3],ez_j[3];
 
   int **bondlist = neighbor->bondlist;
   int nbondlist = neighbor->nbondlist;
   int nlocal = atom->nlocal;
   int newton_bond = force->newton_bond;
 
+ // loop over FENE bonds 
+
   for (n = 0; n < nbondlist; n++) {
-    i1 = bondlist[n][0];
-    i2 = bondlist[n][1];
+
+    i = bondlist[n][0];
+    j = bondlist[n][1];
     type = bondlist[n][2];
 
-    quat1=bonus[i1].quat;
-    MathExtra::q_to_exyz(quat1,ex1,ey1,ez1);
-    quat2=bonus[i2].quat;
-    MathExtra::q_to_exyz(quat2,ex2,ey2,ez2);
+    quat_i=bonus[i].quat;
+    MathExtra::q_to_exyz(quat_i,ex_i,ey_i,ez_i);
+    quat_j=bonus[j].quat;
+    MathExtra::q_to_exyz(quat_j,ex_j,ey_j,ez_j);
 
-    e_coms1[0] = d_coms*ex1[0];
-    e_coms1[1] = d_coms*ex1[1];
-    e_coms1[2] = d_coms*ex1[2];
-    e_coms2[0] = d_coms*ex2[0];
-    e_coms2[1] = d_coms*ex2[1];
-    e_coms2[2] = d_coms*ex2[2];
+    r_cs_i[0] = d_cs*ex_i[0];
+    r_cs_i[1] = d_cs*ex_i[1];
+    r_cs_i[2] = d_cs*ex_i[2];
+    r_cs_j[0] = d_cs*ex_j[0];
+    r_cs_j[1] = d_cs*ex_j[1];
+    r_cs_j[2] = d_cs*ex_j[2];
 
-    delx = (x[i1][0] + e_coms1[0]) - (x[i2][0] + e_coms2[0]);
-    dely = (x[i1][1] + e_coms1[1]) - (x[i2][1] + e_coms2[1]);
-    delz = (x[i1][2] + e_coms1[2]) - (x[i2][2] + e_coms2[2]);
+    delr[0] = x[i][0] + r_cs_i[0] - x[j][0] - r_cs_j[0];
+    delr[1] = x[i][1] + r_cs_i[1] - x[j][1] - r_cs_j[1];
+    delr[2] = x[i][2] + r_cs_i[2] - x[j][2] - r_cs_j[2];
+    rsq = delr[0]*delr[0] + delr[1]*delr[1] + delr[2]*delr[2];
 
-    // force from log term
-
-    rsq = delx*delx + dely*dely + delz*delz;
     r = sqrt(rsq);
     rr0 = r - r0[type];
     rr0sq = rr0*rr0;
@@ -116,16 +125,15 @@ void BondOxdna::compute(int eflag, int vflag)
       char str[128];
       sprintf(str,"FENE bond too long: " BIGINT_FORMAT " " 
               TAGINT_FORMAT " " TAGINT_FORMAT " %g",
-              update->ntimestep,atom->tag[i1],atom->tag[i2],sqrt(rsq));
+              update->ntimestep,atom->tag[i],atom->tag[j],sqrt(rsq));
       error->warning(FLERR,str,0);
       if (rlogarg <= -3.0) error->one(FLERR,"Bad FENE bond");
-//      rlogarg = 0.1;
     }
 
     fbond = -k[type]*rr0/rlogarg/Deltasq/r;
-    delf[0] = delx*fbond;
-    delf[1] = dely*fbond;
-    delf[2] = delz*fbond;
+    delf[0] = delr[0]*fbond;
+    delf[1] = delr[1]*fbond;
+    delf[2] = delr[2]*fbond;
 
     // energy
 
@@ -133,27 +141,38 @@ void BondOxdna::compute(int eflag, int vflag)
       ebond = -0.5 * k[type]*log(rlogarg);
     }
 
-    // apply force to each of 2 atoms
+    // apply force and torque to each of 2 atoms
 
-    if (newton_bond || i1 < nlocal) {
-      f[i1][0] += delf[0];
-      f[i1][1] += delf[1];
-      f[i1][2] += delf[2];
-      torque[i1][0] += e_coms1[1]*delf[2] - e_coms1[2]*delf[1];
-      torque[i1][1] += e_coms1[2]*delf[0] - e_coms1[0]*delf[2];
-      torque[i1][2] += e_coms1[0]*delf[1] - e_coms1[1]*delf[0];
+    if (newton_bond || i < nlocal) {
+
+      f[i][0] += delf[0];
+      f[i][1] += delf[1];
+      f[i][2] += delf[2];
+
+      MathExtra::cross3(r_cs_i,delf,delt);
+
+      torque[i][0] += delt[0];
+      torque[i][1] += delt[1];
+      torque[i][2] += delt[2];
+
     }
 
-    if (newton_bond || i2 < nlocal) {
-      f[i2][0] -= delf[0];
-      f[i2][1] -= delf[1];
-      f[i2][2] -= delf[2];
-      torque[i2][0] -= e_coms2[1]*delf[2] - e_coms2[2]*delf[1];
-      torque[i2][1] -= e_coms2[2]*delf[0] - e_coms2[0]*delf[2];
-      torque[i2][2] -= e_coms2[0]*delf[1] - e_coms2[1]*delf[0];
+    if (newton_bond || j < nlocal) {
+
+      f[j][0] -= delf[0];
+      f[j][1] -= delf[1];
+      f[j][2] -= delf[2];
+
+      MathExtra::cross3(r_cs_j,delf,delt);
+
+      torque[j][0] -= delt[0];
+      torque[j][1] -= delt[1];
+      torque[j][2] -= delt[2];
+
     }
 
-    if (evflag) ev_tally(i1,i2,nlocal,newton_bond,ebond,fbond,delx,dely,delz);
+    if (evflag) ev_tally(i,j,nlocal,newton_bond,ebond,fbond,delr[0],delr[1],delr[2]);
+
   }
 
 }
@@ -169,7 +188,9 @@ void BondOxdna::allocate()
   memory->create(Delta,n+1,"bond:Delta");
   memory->create(r0,n+1,"bond:r0");
   memory->create(setflag,n+1,"bond:setflag");
+
   for (int i = 1; i <= n; i++) setflag[i] = 0;
+
 }
 
 /* ----------------------------------------------------------------------
@@ -189,6 +210,7 @@ void BondOxdna::coeff(int narg, char **arg)
   double r0_one = force->numeric(FLERR,arg[3]);
 
   int count = 0;
+
   for (int i = ilo; i <= ihi; i++) {
     k[i] = k_one;
     Delta[i] = Delta_one;
@@ -198,6 +220,7 @@ void BondOxdna::coeff(int narg, char **arg)
   }
 
   if (count == 0) error->all(FLERR,"Incorrect args for bond coefficients");
+
 }
 
 /* ----------------------------------------------------------------------
@@ -206,8 +229,8 @@ void BondOxdna::coeff(int narg, char **arg)
 
 void BondOxdna::init_style()
 {
-  /* special bonds should be lj = 0 1 1 and coul = 1 1 1 to exclude the 
-     excluded volume interaction of nearest neighbours on the backbone */ 
+  /* special bonds have to be lj = 0 1 1 and coul = 1 1 1 to exclude 
+     the ss excluded volume interaction between nearest neighbours   */ 
 
   force->special_lj[1] = 0.0;
   force->special_lj[2] = 1.0;
@@ -227,7 +250,6 @@ void BondOxdna::init_style()
     if (comm->me == 0)
       error->warning(FLERR,"Use special bonds lj = 0,1,1 and coul = 1,1,1 with bond style oxdna");
   }
-
 
 }
 
@@ -300,7 +322,6 @@ double BondOxdna::single(int type, double rsq, int i, int j,
             update->ntimestep,sqrt(rsq));
     error->warning(FLERR,str,0);
     if (rlogarg <= -3.0) error->one(FLERR,"Bad FENE bond");
-//    rlogarg = 0.1;
   }
 
   double eng = -0.5 * k[type]*log(rlogarg);
