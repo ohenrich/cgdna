@@ -56,33 +56,33 @@ PairOxdna::~PairOxdna()
 
     memory->destroy(epsilon_ss);
     memory->destroy(sigma_ss);
-    memory->destroy(cut_ss_lj);
+    memory->destroy(cut_ss_ast);
     memory->destroy(b_ss);
-    memory->destroy(cut_ss_sm);
+    memory->destroy(cut_ss_c);
     memory->destroy(lj1_ss);
     memory->destroy(lj2_ss);
-    memory->destroy(cutsq_ss_lj);
-    memory->destroy(cutsq_ss_sm);
+    memory->destroy(cutsq_ss_ast);
+    memory->destroy(cutsq_ss_c);
 
     memory->destroy(epsilon_sb);
     memory->destroy(sigma_sb);
-    memory->destroy(cut_sb_lj);
+    memory->destroy(cut_sb_ast);
     memory->destroy(b_sb);
-    memory->destroy(cut_sb_sm);
+    memory->destroy(cut_sb_c);
     memory->destroy(lj1_sb);
     memory->destroy(lj2_sb);
-    memory->destroy(cutsq_sb_lj);
-    memory->destroy(cutsq_sb_sm);
+    memory->destroy(cutsq_sb_ast);
+    memory->destroy(cutsq_sb_c);
 
     memory->destroy(epsilon_bb);
     memory->destroy(sigma_bb);
-    memory->destroy(cut_bb_lj);
+    memory->destroy(cut_bb_ast);
     memory->destroy(b_bb);
-    memory->destroy(cut_bb_sm);
+    memory->destroy(cut_bb_c);
     memory->destroy(lj1_bb);
     memory->destroy(lj2_bb);
-    memory->destroy(cutsq_bb_lj);
-    memory->destroy(cutsq_bb_sm);
+    memory->destroy(cutsq_bb_ast);
+    memory->destroy(cutsq_bb_c);
 
     memory->destroy(epsilon_st);
     memory->destroy(a_st);
@@ -90,17 +90,12 @@ PairOxdna::~PairOxdna()
     memory->destroy(cut_st_c);
     memory->destroy(cut_st_lo);
     memory->destroy(cut_st_hi);
-    memory->destroy(cutsq_st_0);
-    memory->destroy(cutsq_st_c);
-    memory->destroy(cutsq_st_lo);
-    memory->destroy(cutsq_st_hi);
     memory->destroy(cut_st_lc);
     memory->destroy(cut_st_hc);
-    memory->destroy(cutsq_st_lc);
-    memory->destroy(cutsq_st_hc);
-    memory->destroy(b_st_lo);
-    memory->destroy(b_st_hi);
+    memory->destroy(b_st1_lo);
+    memory->destroy(b_st1_hi);
     memory->destroy(shift_st);
+    memory->destroy(cutsq_st_hc);
 
   }
 }
@@ -243,9 +238,9 @@ void PairOxdna::compute(int eflag, int vflag)
       // excluded volume interaction
 
       // backbone-backbone
-      if (rsq_ss < cutsq_ss_sm[itype][jtype]) {
+      if (rsq_ss < cutsq_ss_c[itype][jtype]) {
 
-	evdwl = F3(rsq_ss,cutsq_ss_lj[itype][jtype],cut_ss_sm[itype][jtype],lj1_ss[itype][jtype],
+	evdwl = F3(rsq_ss,cutsq_ss_ast[itype][jtype],cut_ss_c[itype][jtype],lj1_ss[itype][jtype],
 			lj2_ss[itype][jtype],epsilon_ss[itype][jtype],b_ss[itype][jtype],fpair);
 
 	// knock out nearest-neighbour interaction between ss
@@ -285,9 +280,9 @@ void PairOxdna::compute(int eflag, int vflag)
       }
 
       // backbone-base
-      if (rsq_sb < cutsq_sb_sm[itype][jtype]) {
+      if (rsq_sb < cutsq_sb_c[itype][jtype]) {
 
-	evdwl = F3(rsq_sb,cutsq_sb_lj[itype][jtype],cut_sb_sm[itype][jtype],lj1_sb[itype][jtype],
+	evdwl = F3(rsq_sb,cutsq_sb_ast[itype][jtype],cut_sb_c[itype][jtype],lj1_sb[itype][jtype],
 			lj2_sb[itype][jtype],epsilon_sb[itype][jtype],b_sb[itype][jtype],fpair);
 
 	if (evflag) ev_tally(i,j,nlocal,newton_pair,
@@ -323,9 +318,9 @@ void PairOxdna::compute(int eflag, int vflag)
       }
 
       // base-backbone
-      if (rsq_bs < cutsq_sb_sm[itype][jtype]) {
+      if (rsq_bs < cutsq_sb_c[itype][jtype]) {
 
-	evdwl = F3(rsq_bs,cutsq_sb_lj[itype][jtype],cut_sb_sm[itype][jtype],lj1_sb[itype][jtype],
+	evdwl = F3(rsq_bs,cutsq_sb_ast[itype][jtype],cut_sb_c[itype][jtype],lj1_sb[itype][jtype],
 			lj2_sb[itype][jtype],epsilon_sb[itype][jtype],b_sb[itype][jtype],fpair);
 
 	if (evflag) ev_tally(i,j,nlocal,newton_pair,
@@ -361,9 +356,9 @@ void PairOxdna::compute(int eflag, int vflag)
       }
 
       // base-base
-      if (rsq_bb < cutsq_bb_sm[itype][jtype]) {
+      if (rsq_bb < cutsq_bb_c[itype][jtype]) {
 
-	evdwl = F3(rsq_bb,cutsq_bb_lj[itype][jtype],cut_bb_sm[itype][jtype],lj1_bb[itype][jtype],
+	evdwl = F3(rsq_bb,cutsq_bb_ast[itype][jtype],cut_bb_c[itype][jtype],lj1_bb[itype][jtype],
 			lj2_bb[itype][jtype],epsilon_bb[itype][jtype],b_bb[itype][jtype],fpair);
 
 	if (evflag) ev_tally(i,j,nlocal,newton_pair, evdwl,0.0,fpair,
@@ -437,11 +432,11 @@ void PairOxdna::compute(int eflag, int vflag)
 
       f1 = F1(rsq_stst, epsilon_st[itype][jtype], a_st[itype][jtype], cut_st_0[itype][jtype], 
 	cut_st_lc[itype][jtype], cut_st_hc[itype][jtype], cut_st_lo[itype][jtype], cut_st_hi[itype][jtype], 
-	b_st_lo[itype][jtype], b_st_hi[itype][jtype], shift_st[itype][jtype]);
+	b_st1_lo[itype][jtype], b_st1_hi[itype][jtype], shift_st[itype][jtype]);
 
       df1 = DF1(rsq_stst, epsilon_st[itype][jtype], a_st[itype][jtype], cut_st_0[itype][jtype], 
 	cut_st_lc[itype][jtype], cut_st_hc[itype][jtype], cut_st_lo[itype][jtype], cut_st_hi[itype][jtype], 
-	b_st_lo[itype][jtype], b_st_hi[itype][jtype]);
+	b_st1_lo[itype][jtype], b_st1_hi[itype][jtype]);
 
       fpair = -df1;
 
@@ -505,33 +500,33 @@ void PairOxdna::allocate()
 
   memory->create(epsilon_ss,n+1,n+1,"pair:epsilon_ss");
   memory->create(sigma_ss,n+1,n+1,"pair:sigma_ss");
-  memory->create(cut_ss_lj,n+1,n+1,"pair:cut_ss_lj");
+  memory->create(cut_ss_ast,n+1,n+1,"pair:cut_ss_ast");
   memory->create(b_ss,n+1,n+1,"pair:b_ss");
-  memory->create(cut_ss_sm,n+1,n+1,"pair:cut_ss_sm");
+  memory->create(cut_ss_c,n+1,n+1,"pair:cut_ss_c");
   memory->create(lj1_ss,n+1,n+1,"pair:lj1_ss");
   memory->create(lj2_ss,n+1,n+1,"pair:lj2_ss");
-  memory->create(cutsq_ss_lj,n+1,n+1,"pair:cutsq_ss_lj");
-  memory->create(cutsq_ss_sm,n+1,n+1,"pair:cutsq_ss_sm");
+  memory->create(cutsq_ss_ast,n+1,n+1,"pair:cutsq_ss_ast");
+  memory->create(cutsq_ss_c,n+1,n+1,"pair:cutsq_ss_c");
 
   memory->create(epsilon_sb,n+1,n+1,"pair:epsilon_sb");
   memory->create(sigma_sb,n+1,n+1,"pair:sigma_sb");
-  memory->create(cut_sb_lj,n+1,n+1,"pair:cut_sb_lj");
+  memory->create(cut_sb_ast,n+1,n+1,"pair:cut_sb_ast");
   memory->create(b_sb,n+1,n+1,"pair:b_sb");
-  memory->create(cut_sb_sm,n+1,n+1,"pair:cut_sb_sm");
+  memory->create(cut_sb_c,n+1,n+1,"pair:cut_sb_c");
   memory->create(lj1_sb,n+1,n+1,"pair:lj1_sb");
   memory->create(lj2_sb,n+1,n+1,"pair:lj2_sb");
-  memory->create(cutsq_sb_lj,n+1,n+1,"pair:cutsq_sb_lj");
-  memory->create(cutsq_sb_sm,n+1,n+1,"pair:cutsq_sb_sm");
+  memory->create(cutsq_sb_ast,n+1,n+1,"pair:cutsq_sb_ast");
+  memory->create(cutsq_sb_c,n+1,n+1,"pair:cutsq_sb_c");
 
   memory->create(epsilon_bb,n+1,n+1,"pair:epsilon_bb");
   memory->create(sigma_bb,n+1,n+1,"pair:sigma_bb");
-  memory->create(cut_bb_lj,n+1,n+1,"pair:cut_bb_lj");
+  memory->create(cut_bb_ast,n+1,n+1,"pair:cut_bb_ast");
   memory->create(b_bb,n+1,n+1,"pair:b_bb");
-  memory->create(cut_bb_sm,n+1,n+1,"pair:cut_bb_sm");
+  memory->create(cut_bb_c,n+1,n+1,"pair:cut_bb_c");
   memory->create(lj1_bb,n+1,n+1,"pair:lj1_bb");
   memory->create(lj2_bb,n+1,n+1,"pair:lj2_bb");
-  memory->create(cutsq_bb_lj,n+1,n+1,"pair:cutsq_bb_lj");
-  memory->create(cutsq_bb_sm,n+1,n+1,"pair:cutsq_bb_sm");
+  memory->create(cutsq_bb_ast,n+1,n+1,"pair:cutsq_bb_ast");
+  memory->create(cutsq_bb_c,n+1,n+1,"pair:cutsq_bb_c");
 
   memory->create(epsilon_st,n+1,n+1,"pair:epsilon_st");
   memory->create(a_st,n+1,n+1,"pair:a_st");
@@ -539,17 +534,12 @@ void PairOxdna::allocate()
   memory->create(cut_st_c,n+1,n+1,"pair:cut_st_c");
   memory->create(cut_st_lo,n+1,n+1,"pair:cut_st_lo");
   memory->create(cut_st_hi,n+1,n+1,"pair:cut_st_hi");
-  memory->create(cutsq_st_0,n+1,n+1,"pair:cutsq_st_0");
-  memory->create(cutsq_st_c,n+1,n+1,"pair:cutsq_st_c");
-  memory->create(cutsq_st_lo,n+1,n+1,"pair:cutsq_st_lo");
-  memory->create(cutsq_st_hi,n+1,n+1,"pair:cutsq_st_hi");
   memory->create(cut_st_lc,n+1,n+1,"pair:cut_st_lc");
   memory->create(cut_st_hc,n+1,n+1,"pair:cut_st_hc");
-  memory->create(cutsq_st_lc,n+1,n+1,"pair:cutsq_st_lc");
-  memory->create(cutsq_st_hc,n+1,n+1,"pair:cutsq_st_hc");
-  memory->create(b_st_lo,n+1,n+1,"pair:b_st_lo");
-  memory->create(b_st_hi,n+1,n+1,"pair:b_st_hi");
+  memory->create(b_st1_lo,n+1,n+1,"pair:b_st1_lo");
+  memory->create(b_st1_hi,n+1,n+1,"pair:b_st1_hi");
   memory->create(shift_st,n+1,n+1,"pair:shift_st");
+  memory->create(cutsq_st_hc,n+1,n+1,"pair:cutsq_st_hc");
 
 }
 
@@ -581,31 +571,31 @@ void PairOxdna::coeff(int narg, char **arg)
   count = 0;
 
   double epsilon_ss_one, sigma_ss_one;
-  double cut_ss_lj_one, cut_ss_sm_one, b_ss_one;
+  double cut_ss_ast_one, cut_ss_c_one, b_ss_one;
 
   // Excluded volume interaction
   // LJ parameters
   epsilon_ss_one = force->numeric(FLERR,arg[2]);
   sigma_ss_one = force->numeric(FLERR,arg[3]);
-  cut_ss_lj_one = force->numeric(FLERR,arg[4]);
+  cut_ss_ast_one = force->numeric(FLERR,arg[4]);
 
   // smoothing - determined through continuity and differentiability
   b_ss_one = 4.0/sigma_ss_one
-      *(6.0*pow(sigma_ss_one/cut_ss_lj_one,7)-12.0*pow(sigma_ss_one/cut_ss_lj_one,13))
-      *4.0/sigma_ss_one*(6.0*pow(sigma_ss_one/cut_ss_lj_one,7)-12.0*pow(sigma_ss_one/cut_ss_lj_one,13))
-      /4.0/(4.0*(pow(sigma_ss_one/cut_ss_lj_one,12)-pow(sigma_ss_one/cut_ss_lj_one,6)));
+      *(6.0*pow(sigma_ss_one/cut_ss_ast_one,7)-12.0*pow(sigma_ss_one/cut_ss_ast_one,13))
+      *4.0/sigma_ss_one*(6.0*pow(sigma_ss_one/cut_ss_ast_one,7)-12.0*pow(sigma_ss_one/cut_ss_ast_one,13))
+      /4.0/(4.0*(pow(sigma_ss_one/cut_ss_ast_one,12)-pow(sigma_ss_one/cut_ss_ast_one,6)));
 
-  cut_ss_sm_one = cut_ss_lj_one 
-      - 2.0*4.0*(pow(sigma_ss_one/cut_ss_lj_one,12)-pow(sigma_ss_one/cut_ss_lj_one,6))
-      /(4.0/sigma_ss_one*(6.0*pow(sigma_ss_one/cut_ss_lj_one,7)-12.0*pow(sigma_ss_one/cut_ss_lj_one,13)));
+  cut_ss_c_one = cut_ss_ast_one 
+      - 2.0*4.0*(pow(sigma_ss_one/cut_ss_ast_one,12)-pow(sigma_ss_one/cut_ss_ast_one,6))
+      /(4.0/sigma_ss_one*(6.0*pow(sigma_ss_one/cut_ss_ast_one,7)-12.0*pow(sigma_ss_one/cut_ss_ast_one,13)));
 
   for (int i = ilo; i <= ihi; i++) {
     for (int j = MAX(jlo,i); j <= jhi; j++) {
       epsilon_ss[i][j] = epsilon_ss_one;
       sigma_ss[i][j] = sigma_ss_one;
-      cut_ss_lj[i][j] = cut_ss_lj_one;
+      cut_ss_ast[i][j] = cut_ss_ast_one;
       b_ss[i][j] = b_ss_one;
-      cut_ss_sm[i][j] = cut_ss_sm_one;
+      cut_ss_c[i][j] = cut_ss_c_one;
       setflag[i][j] = 1;
       count++;
     }
@@ -616,30 +606,30 @@ void PairOxdna::coeff(int narg, char **arg)
   count = 0;
   
   double epsilon_sb_one, sigma_sb_one;
-  double cut_sb_lj_one, cut_sb_sm_one, b_sb_one;
+  double cut_sb_ast_one, cut_sb_c_one, b_sb_one;
 
   // LJ parameters
   epsilon_sb_one = force->numeric(FLERR,arg[5]);
   sigma_sb_one = force->numeric(FLERR,arg[6]);
-  cut_sb_lj_one = force->numeric(FLERR,arg[7]);
+  cut_sb_ast_one = force->numeric(FLERR,arg[7]);
 
   // smoothing - determined through continuity and differentiability 
   b_sb_one = 4.0/sigma_sb_one
-      *(6.0*pow(sigma_sb_one/cut_sb_lj_one,7)-12.0*pow(sigma_sb_one/cut_sb_lj_one,13))
-      *4.0/sigma_sb_one*(6.0*pow(sigma_sb_one/cut_sb_lj_one,7)-12.0*pow(sigma_sb_one/cut_sb_lj_one,13))
-      /4.0/(4.0*(pow(sigma_sb_one/cut_sb_lj_one,12)-pow(sigma_sb_one/cut_sb_lj_one,6)));
+      *(6.0*pow(sigma_sb_one/cut_sb_ast_one,7)-12.0*pow(sigma_sb_one/cut_sb_ast_one,13))
+      *4.0/sigma_sb_one*(6.0*pow(sigma_sb_one/cut_sb_ast_one,7)-12.0*pow(sigma_sb_one/cut_sb_ast_one,13))
+      /4.0/(4.0*(pow(sigma_sb_one/cut_sb_ast_one,12)-pow(sigma_sb_one/cut_sb_ast_one,6)));
 
-  cut_sb_sm_one = cut_sb_lj_one 
-      - 2.0*4.0*(pow(sigma_sb_one/cut_sb_lj_one,12)-pow(sigma_sb_one/cut_sb_lj_one,6))
-      /(4.0/sigma_sb_one*(6.0*pow(sigma_sb_one/cut_sb_lj_one,7)-12.0*pow(sigma_sb_one/cut_sb_lj_one,13)));
+  cut_sb_c_one = cut_sb_ast_one 
+      - 2.0*4.0*(pow(sigma_sb_one/cut_sb_ast_one,12)-pow(sigma_sb_one/cut_sb_ast_one,6))
+      /(4.0/sigma_sb_one*(6.0*pow(sigma_sb_one/cut_sb_ast_one,7)-12.0*pow(sigma_sb_one/cut_sb_ast_one,13)));
 
   for (int i = ilo; i <= ihi; i++) {
     for (int j = MAX(jlo,i); j <= jhi; j++) {
       epsilon_sb[i][j] = epsilon_sb_one;
       sigma_sb[i][j] = sigma_sb_one;
-      cut_sb_lj[i][j] = cut_sb_lj_one;
+      cut_sb_ast[i][j] = cut_sb_ast_one;
       b_sb[i][j] = b_sb_one;
-      cut_sb_sm[i][j] = cut_sb_sm_one;
+      cut_sb_c[i][j] = cut_sb_c_one;
       setflag[i][j] = 1;
       count++;
     }
@@ -650,30 +640,30 @@ void PairOxdna::coeff(int narg, char **arg)
   count = 0;
   
   double epsilon_bb_one, sigma_bb_one;
-  double cut_bb_lj_one, cut_bb_sm_one, b_bb_one;
+  double cut_bb_ast_one, cut_bb_c_one, b_bb_one;
 
   // LJ parameters
   epsilon_bb_one = force->numeric(FLERR,arg[8]);
   sigma_bb_one = force->numeric(FLERR,arg[9]);
-  cut_bb_lj_one = force->numeric(FLERR,arg[10]);
+  cut_bb_ast_one = force->numeric(FLERR,arg[10]);
 
   // smoothing - determined through continuity and differentiability 
   b_bb_one = 4.0/sigma_bb_one
-      *(6.0*pow(sigma_bb_one/cut_bb_lj_one,7)-12.0*pow(sigma_bb_one/cut_bb_lj_one,13))
-      *4.0/sigma_bb_one*(6.0*pow(sigma_bb_one/cut_bb_lj_one,7)-12.0*pow(sigma_bb_one/cut_bb_lj_one,13))
-      /4.0/(4.0*(pow(sigma_bb_one/cut_bb_lj_one,12)-pow(sigma_bb_one/cut_bb_lj_one,6)));
+      *(6.0*pow(sigma_bb_one/cut_bb_ast_one,7)-12.0*pow(sigma_bb_one/cut_bb_ast_one,13))
+      *4.0/sigma_bb_one*(6.0*pow(sigma_bb_one/cut_bb_ast_one,7)-12.0*pow(sigma_bb_one/cut_bb_ast_one,13))
+      /4.0/(4.0*(pow(sigma_bb_one/cut_bb_ast_one,12)-pow(sigma_bb_one/cut_bb_ast_one,6)));
 
-  cut_bb_sm_one = cut_bb_lj_one 
-      - 2.0*4.0*(pow(sigma_bb_one/cut_bb_lj_one,12)-pow(sigma_bb_one/cut_bb_lj_one,6))
-      /(4.0/sigma_bb_one*(6.0*pow(sigma_bb_one/cut_bb_lj_one,7)-12.0*pow(sigma_bb_one/cut_bb_lj_one,13)));
+  cut_bb_c_one = cut_bb_ast_one 
+      - 2.0*4.0*(pow(sigma_bb_one/cut_bb_ast_one,12)-pow(sigma_bb_one/cut_bb_ast_one,6))
+      /(4.0/sigma_bb_one*(6.0*pow(sigma_bb_one/cut_bb_ast_one,7)-12.0*pow(sigma_bb_one/cut_bb_ast_one,13)));
 
   for (int i = ilo; i <= ihi; i++) {
     for (int j = MAX(jlo,i); j <= jhi; j++) {
       epsilon_bb[i][j] = epsilon_bb_one;
       sigma_bb[i][j] = sigma_bb_one;
-      cut_bb_lj[i][j] = cut_bb_lj_one;
+      cut_bb_ast[i][j] = cut_bb_ast_one;
       b_bb[i][j] = b_bb_one;
-      cut_bb_sm[i][j] = cut_bb_sm_one;
+      cut_bb_c[i][j] = cut_bb_c_one;
       setflag[i][j] = 1;
       count++;
     }
@@ -685,7 +675,7 @@ void PairOxdna::coeff(int narg, char **arg)
   // stacking interaction
   count =0;
 
-  double epsilon_st_one, a_st_one, b_st_lo_one, b_st_hi_one;
+  double epsilon_st_one, a_st_one, b_st1_lo_one, b_st1_hi_one;
   double cut_st_0_one, cut_st_c_one, cut_st_lo_one, cut_st_hi_one;
   double cut_st_lc_one, cut_st_hc_one, tmp, shift_st_one;
 
@@ -696,7 +686,7 @@ void PairOxdna::coeff(int narg, char **arg)
   cut_st_lo_one = force->numeric(FLERR,arg[15]);
   cut_st_hi_one = force->numeric(FLERR,arg[16]);
 
-  b_st_lo_one = 2*a_st_one*exp(-a_st_one*(cut_st_lo_one-cut_st_0_one))*
+  b_st1_lo_one = 2*a_st_one*exp(-a_st_one*(cut_st_lo_one-cut_st_0_one))*
 	2*a_st_one*exp(-a_st_one*(cut_st_lo_one-cut_st_0_one))*
 	(1-exp(-a_st_one*(cut_st_lo_one-cut_st_0_one)))*
 	(1-exp(-a_st_one*(cut_st_lo_one-cut_st_0_one)))/
@@ -706,9 +696,9 @@ void PairOxdna::coeff(int narg, char **arg)
 	(1-exp(-a_st_one*(cut_st_c_one-cut_st_0_one)))));
 
   cut_st_lc_one = cut_st_lo_one - a_st_one*exp(-a_st_one*(cut_st_lo_one-cut_st_0_one))*
-	(1-exp(-a_st_one*(cut_st_lo_one-cut_st_0_one)))/b_st_lo_one;
+	(1-exp(-a_st_one*(cut_st_lo_one-cut_st_0_one)))/b_st1_lo_one;
 
-  b_st_hi_one = 2*a_st_one*exp(-a_st_one*(cut_st_hi_one-cut_st_0_one))*
+  b_st1_hi_one = 2*a_st_one*exp(-a_st_one*(cut_st_hi_one-cut_st_0_one))*
 	2*a_st_one*exp(-a_st_one*(cut_st_hi_one-cut_st_0_one))*
 	(1-exp(-a_st_one*(cut_st_hi_one-cut_st_0_one)))*
 	(1-exp(-a_st_one*(cut_st_hi_one-cut_st_0_one)))/
@@ -718,7 +708,7 @@ void PairOxdna::coeff(int narg, char **arg)
 	(1-exp(-a_st_one*(cut_st_c_one-cut_st_0_one)))));
 
   cut_st_hc_one = cut_st_hi_one - a_st_one*exp(-a_st_one*(cut_st_hi_one-cut_st_0_one))*
-	(1-exp(-a_st_one*(cut_st_hi_one-cut_st_0_one)))/b_st_hi_one;
+	(1-exp(-a_st_one*(cut_st_hi_one-cut_st_0_one)))/b_st1_hi_one;
 
   tmp = 1 - exp(-(cut_st_c_one-cut_st_0_one) * a_st_one);
   shift_st_one = epsilon_st_one * tmp * tmp;
@@ -733,8 +723,8 @@ void PairOxdna::coeff(int narg, char **arg)
       cut_st_hi[i][j] = cut_st_hi_one;
       cut_st_lc[i][j] = cut_st_lc_one;
       cut_st_hc[i][j] = cut_st_hc_one;
-      b_st_lo[i][j] = b_st_lo_one;
-      b_st_hi[i][j] = b_st_hi_one;
+      b_st1_lo[i][j] = b_st1_lo_one;
+      b_st1_hi[i][j] = b_st1_hi_one;
       shift_st[i][j] = shift_st_one;
       setflag[i][j] = 1;
       count++;
@@ -805,42 +795,31 @@ double PairOxdna::init_one(int i, int j)
   lj1_bb[j][i] = lj1_bb[i][j];
   lj2_bb[j][i] = lj2_bb[i][j];
 
-  cutsq_ss_lj[i][j] = cut_ss_lj[i][j]*cut_ss_lj[i][j];
-  cutsq_ss_sm[i][j]  = cut_ss_sm[i][j]*cut_ss_sm[i][j];
+  cutsq_ss_ast[i][j] = cut_ss_ast[i][j]*cut_ss_ast[i][j];
+  cutsq_ss_c[i][j]  = cut_ss_c[i][j]*cut_ss_c[i][j];
 
-  cutsq_sb_lj[i][j] = cut_sb_lj[i][j]*cut_sb_lj[i][j];
-  cutsq_sb_sm[i][j]  = cut_sb_sm[i][j]*cut_sb_sm[i][j];
+  cutsq_sb_ast[i][j] = cut_sb_ast[i][j]*cut_sb_ast[i][j];
+  cutsq_sb_c[i][j]  = cut_sb_c[i][j]*cut_sb_c[i][j];
 
-  cutsq_bb_lj[i][j] = cut_bb_lj[i][j]*cut_bb_lj[i][j];
-  cutsq_bb_sm[i][j]  = cut_bb_sm[i][j]*cut_bb_sm[i][j];
+  cutsq_bb_ast[i][j] = cut_bb_ast[i][j]*cut_bb_ast[i][j];
+  cutsq_bb_c[i][j]  = cut_bb_c[i][j]*cut_bb_c[i][j];
 
-  cutsq_ss_lj[j][i] = cutsq_ss_lj[i][j];
-  cutsq_ss_sm[j][i]  = cutsq_ss_sm[i][j];
+  cutsq_ss_ast[j][i] = cutsq_ss_ast[i][j];
+  cutsq_ss_c[j][i]  = cutsq_ss_c[i][j];
 
-  cutsq_sb_lj[j][i] = cutsq_sb_lj[i][j];
-  cutsq_sb_sm[j][i]  = cutsq_sb_sm[i][j];
+  cutsq_sb_ast[j][i] = cutsq_sb_ast[i][j];
+  cutsq_sb_c[j][i]  = cutsq_sb_c[i][j];
 
-  cutsq_bb_lj[j][i] = cutsq_bb_lj[i][j];
-  cutsq_bb_sm[j][i]  = cutsq_bb_sm[i][j];
+  cutsq_bb_ast[j][i] = cutsq_bb_ast[i][j];
+  cutsq_bb_c[j][i]  = cutsq_bb_c[i][j];
 
   // stacking auxiliary parameters
 
   shift_st[j][i] = shift_st[i][j];
-  b_st_lo[j][i] = b_st_lo[i][j];
-  b_st_hi[j][i] = b_st_hi[i][j];
+  b_st1_lo[j][i] = b_st1_lo[i][j];
+  b_st1_hi[j][i] = b_st1_hi[i][j];
 
-  cutsq_st_0[i][j] = cut_st_0[i][j]*cut_st_0[i][j];
-  cutsq_st_c[i][j] = cut_st_c[i][j]*cut_st_c[i][j];
-  cutsq_st_lo[i][j] = cut_st_lo[i][j]*cut_st_lo[i][j];
-  cutsq_st_hi[i][j] = cut_st_hi[i][j]*cut_st_hi[i][j];
-  cutsq_st_lc[i][j] = cut_st_lc[i][j]*cut_st_lc[i][j];
   cutsq_st_hc[i][j] = cut_st_hc[i][j]*cut_st_hc[i][j];
-
-  cutsq_st_0[j][i] = cutsq_st_0[i][j];
-  cutsq_st_c[j][i] = cutsq_st_c[i][j];
-  cutsq_st_lo[j][i] = cutsq_st_lo[i][j];
-  cutsq_st_hi[j][i] = cutsq_st_hi[i][j];
-  cutsq_st_lc[j][i] = cutsq_st_lc[i][j];
   cutsq_st_hc[j][i] = cutsq_st_hc[i][j];
 
   // compute I,J contribution to long-range tail correction
@@ -861,7 +840,7 @@ double PairOxdna::init_one(int i, int j)
     /* TODO: Energy and pressure tail corrections */
     double sig2 = sigma_ss[i][j]*sigma_ss[i][j];
     double sig6 = sig2*sig2*sig2;
-    double rc3 = cut_ss_lj[i][j]*cut_ss_lj[i][j]*cut_ss_lj[i][j];
+    double rc3 = cut_ss_ast[i][j]*cut_ss_ast[i][j]*cut_ss_ast[i][j];
     double rc6 = rc3*rc3;
     double rc9 = rc3*rc6;
     etail_ij = 8.0*MY_PI*all[0]*all[1]*epsilon_ss[i][j] *
@@ -870,7 +849,7 @@ double PairOxdna::init_one(int i, int j)
       sig6 * (2.0*sig6 - 3.0*rc6) / (9.0*rc9);
   }
 
-  return cut_ss_lj[i][j];
+  return cut_ss_ast[i][j];
 }
 
 /* ----------------------------------------------------------------------
@@ -889,19 +868,19 @@ void PairOxdna::write_restart(FILE *fp)
 
         fwrite(&epsilon_ss[i][j],sizeof(double),1,fp);
         fwrite(&sigma_ss[i][j],sizeof(double),1,fp);
-        fwrite(&cut_ss_lj[i][j],sizeof(double),1,fp);
+        fwrite(&cut_ss_ast[i][j],sizeof(double),1,fp);
         fwrite(&b_ss[i][j],sizeof(double),1,fp);
-        fwrite(&cut_ss_sm[i][j],sizeof(double),1,fp);
+        fwrite(&cut_ss_c[i][j],sizeof(double),1,fp);
         fwrite(&epsilon_sb[i][j],sizeof(double),1,fp);
         fwrite(&sigma_sb[i][j],sizeof(double),1,fp);
-        fwrite(&cut_sb_lj[i][j],sizeof(double),1,fp);
+        fwrite(&cut_sb_ast[i][j],sizeof(double),1,fp);
         fwrite(&b_sb[i][j],sizeof(double),1,fp);
-        fwrite(&cut_sb_sm[i][j],sizeof(double),1,fp);
+        fwrite(&cut_sb_c[i][j],sizeof(double),1,fp);
         fwrite(&epsilon_bb[i][j],sizeof(double),1,fp);
         fwrite(&sigma_bb[i][j],sizeof(double),1,fp);
-        fwrite(&cut_bb_lj[i][j],sizeof(double),1,fp);
+        fwrite(&cut_bb_ast[i][j],sizeof(double),1,fp);
         fwrite(&b_bb[i][j],sizeof(double),1,fp);
-        fwrite(&cut_bb_sm[i][j],sizeof(double),1,fp);
+        fwrite(&cut_bb_c[i][j],sizeof(double),1,fp);
 
         fwrite(&epsilon_st[i][j],sizeof(double),1,fp);
         fwrite(&a_st[i][j],sizeof(double),1,fp);
@@ -909,11 +888,11 @@ void PairOxdna::write_restart(FILE *fp)
         fwrite(&cut_st_c[i][j],sizeof(double),1,fp);
         fwrite(&cut_st_lo[i][j],sizeof(double),1,fp);
         fwrite(&cut_st_hi[i][j],sizeof(double),1,fp);
-
-        fwrite(&b_st_lo[i][j],sizeof(double),1,fp);
-        fwrite(&b_st_hi[i][j],sizeof(double),1,fp);
         fwrite(&cut_st_lc[i][j],sizeof(double),1,fp);
         fwrite(&cut_st_hc[i][j],sizeof(double),1,fp);
+        fwrite(&b_st1_lo[i][j],sizeof(double),1,fp);
+        fwrite(&b_st1_hi[i][j],sizeof(double),1,fp);
+        fwrite(&shift_st[i][j],sizeof(double),1,fp);
 
     }
   }
@@ -939,19 +918,19 @@ void PairOxdna::read_restart(FILE *fp)
 
           fread(&epsilon_ss[i][j],sizeof(double),1,fp);
           fread(&sigma_ss[i][j],sizeof(double),1,fp);
-          fread(&cut_ss_lj[i][j],sizeof(double),1,fp);
+          fread(&cut_ss_ast[i][j],sizeof(double),1,fp);
           fread(&b_ss[i][j],sizeof(double),1,fp);
-          fread(&cut_ss_sm[i][j],sizeof(double),1,fp);
+          fread(&cut_ss_c[i][j],sizeof(double),1,fp);
           fread(&epsilon_sb[i][j],sizeof(double),1,fp);
           fread(&sigma_sb[i][j],sizeof(double),1,fp);
-          fread(&cut_sb_lj[i][j],sizeof(double),1,fp);
+          fread(&cut_sb_ast[i][j],sizeof(double),1,fp);
           fread(&b_sb[i][j],sizeof(double),1,fp);
-          fread(&cut_sb_sm[i][j],sizeof(double),1,fp);
+          fread(&cut_sb_c[i][j],sizeof(double),1,fp);
           fread(&epsilon_bb[i][j],sizeof(double),1,fp);
           fread(&sigma_bb[i][j],sizeof(double),1,fp);
-          fread(&cut_bb_lj[i][j],sizeof(double),1,fp);
+          fread(&cut_bb_ast[i][j],sizeof(double),1,fp);
           fread(&b_bb[i][j],sizeof(double),1,fp);
-          fread(&cut_bb_sm[i][j],sizeof(double),1,fp);
+          fread(&cut_bb_c[i][j],sizeof(double),1,fp);
 
           fread(&epsilon_st[i][j],sizeof(double),1,fp);
           fread(&a_st[i][j],sizeof(double),1,fp);
@@ -959,29 +938,29 @@ void PairOxdna::read_restart(FILE *fp)
           fread(&cut_st_c[i][j],sizeof(double),1,fp);
           fread(&cut_st_lo[i][j],sizeof(double),1,fp);
           fread(&cut_st_hi[i][j],sizeof(double),1,fp);
-
-          fread(&b_st_lo[i][j],sizeof(double),1,fp);
-          fread(&b_st_hi[i][j],sizeof(double),1,fp);
           fread(&cut_st_lc[i][j],sizeof(double),1,fp);
           fread(&cut_st_hc[i][j],sizeof(double),1,fp);
+          fread(&b_st1_lo[i][j],sizeof(double),1,fp);
+          fread(&b_st1_hi[i][j],sizeof(double),1,fp);
+          fread(&shift_st[i][j],sizeof(double),1,fp);
 
         }
 
         MPI_Bcast(&epsilon_ss[i][j],1,MPI_DOUBLE,0,world);
         MPI_Bcast(&sigma_ss[i][j],1,MPI_DOUBLE,0,world);
-        MPI_Bcast(&cut_ss_lj[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&cut_ss_ast[i][j],1,MPI_DOUBLE,0,world);
 	MPI_Bcast(&b_ss[i][j],1,MPI_DOUBLE,0,world);
-        MPI_Bcast(&cut_ss_sm[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&cut_ss_c[i][j],1,MPI_DOUBLE,0,world);
         MPI_Bcast(&epsilon_sb[i][j],1,MPI_DOUBLE,0,world);
         MPI_Bcast(&sigma_sb[i][j],1,MPI_DOUBLE,0,world);
-        MPI_Bcast(&cut_sb_lj[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&cut_sb_ast[i][j],1,MPI_DOUBLE,0,world);
 	MPI_Bcast(&b_sb[i][j],1,MPI_DOUBLE,0,world);
-        MPI_Bcast(&cut_sb_sm[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&cut_sb_c[i][j],1,MPI_DOUBLE,0,world);
         MPI_Bcast(&epsilon_bb[i][j],1,MPI_DOUBLE,0,world);
         MPI_Bcast(&sigma_bb[i][j],1,MPI_DOUBLE,0,world);
-        MPI_Bcast(&cut_bb_lj[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&cut_bb_ast[i][j],1,MPI_DOUBLE,0,world);
 	MPI_Bcast(&b_bb[i][j],1,MPI_DOUBLE,0,world);
-        MPI_Bcast(&cut_bb_sm[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&cut_bb_c[i][j],1,MPI_DOUBLE,0,world);
  
         MPI_Bcast(&epsilon_st[i][j],1,MPI_DOUBLE,0,world);
         MPI_Bcast(&a_st[i][j],1,MPI_DOUBLE,0,world);
@@ -989,11 +968,11 @@ void PairOxdna::read_restart(FILE *fp)
         MPI_Bcast(&cut_st_c[i][j],1,MPI_DOUBLE,0,world);
         MPI_Bcast(&cut_st_lo[i][j],1,MPI_DOUBLE,0,world);
         MPI_Bcast(&cut_st_hi[i][j],1,MPI_DOUBLE,0,world);
-
-        MPI_Bcast(&b_st_lo[i][j],1,MPI_DOUBLE,0,world);
-        MPI_Bcast(&b_st_hi[i][j],1,MPI_DOUBLE,0,world);
         MPI_Bcast(&cut_st_lc[i][j],1,MPI_DOUBLE,0,world);
         MPI_Bcast(&cut_st_hc[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&b_st1_lo[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&b_st1_hi[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&shift_st[i][j],1,MPI_DOUBLE,0,world);
 
       }
     }
@@ -1039,11 +1018,13 @@ void PairOxdna::write_data(FILE *fp)
 	 %g %g %g %g %g\
 	 %g %g %g %g %g\
 	 %g %g %g %g %g %g\
+	 %g %g %g %g %g\
 	 \n",i,
-	epsilon_ss[i][i],sigma_ss[i][i],cut_ss_lj[i][i],b_ss[i][i],cut_ss_sm[i][i],
-	epsilon_sb[i][i],sigma_sb[i][i],cut_sb_lj[i][i],b_sb[i][i],cut_sb_sm[i][i],
-	epsilon_bb[i][i],sigma_bb[i][i],cut_bb_lj[i][i],b_bb[i][i],cut_bb_sm[i][i],
-	epsilon_st[i][i],a_st[i][i],cut_st_0[i][i],cut_st_c[i][i],cut_st_lo[i][i],cut_st_hi[i][i]);
+	epsilon_ss[i][i],sigma_ss[i][i],cut_ss_ast[i][i],b_ss[i][i],cut_ss_c[i][i],
+	epsilon_sb[i][i],sigma_sb[i][i],cut_sb_ast[i][i],b_sb[i][i],cut_sb_c[i][i],
+	epsilon_bb[i][i],sigma_bb[i][i],cut_bb_ast[i][i],b_bb[i][i],cut_bb_c[i][i],
+	epsilon_st[i][i],a_st[i][i],cut_st_0[i][i],cut_st_c[i][i],cut_st_lo[i][i],cut_st_hi[i][i],
+	cut_st_lc[i][i],cut_st_hc[i][i],b_st1_lo[i][i],b_st1_hi[i][i],shift_st[i][i]);
 }
 
 /* ----------------------------------------------------------------------
@@ -1059,11 +1040,13 @@ void PairOxdna::write_data_all(FILE *fp)
 	 %g %g %g %g %g\
 	 %g %g %g %g %g\
 	 %g %g %g %g %g %g\
+	 %g %g %g %g %g\
 	 \n",i,j,
-	epsilon_ss[i][j],sigma_ss[i][j],cut_ss_lj[i][j],b_ss[i][j],cut_ss_sm[i][j],
-	epsilon_sb[i][j],sigma_sb[i][j],cut_sb_lj[i][j],b_sb[i][j],cut_sb_sm[i][j],
-	epsilon_bb[i][j],sigma_bb[i][j],cut_bb_lj[i][j],b_bb[i][j],cut_bb_sm[i][j],
-	epsilon_st[i][j],a_st[i][j],cut_st_0[i][j],cut_st_c[i][j],cut_st_lo[i][j],cut_st_hi[i][j]);
+	epsilon_ss[i][j],sigma_ss[i][j],cut_ss_ast[i][j],b_ss[i][j],cut_ss_c[i][j],
+	epsilon_sb[i][j],sigma_sb[i][j],cut_sb_ast[i][j],b_sb[i][j],cut_sb_c[i][j],
+	epsilon_bb[i][j],sigma_bb[i][j],cut_bb_ast[i][j],b_bb[i][j],cut_bb_c[i][j],
+	epsilon_st[i][j],a_st[i][j],cut_st_0[i][j],cut_st_c[i][j],cut_st_lo[i][j],cut_st_hi[i][j],
+	cut_st_lc[i][j],cut_st_hc[i][j],b_st1_lo[i][j],b_st1_hi[i][j],shift_st[i][j]);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -1074,19 +1057,19 @@ void *PairOxdna::extract(const char *str, int &dim)
 
   if (strcmp(str,"epsilon_ss") == 0) return (void *) epsilon_ss;
   if (strcmp(str,"sigma_ss") == 0) return (void *) sigma_ss;
-  if (strcmp(str,"cut_ss_lj") == 0) return (void *) cut_ss_lj;
+  if (strcmp(str,"cut_ss_ast") == 0) return (void *) cut_ss_ast;
   if (strcmp(str,"b_ss") == 0) return (void *) b_ss;
-  if (strcmp(str,"cut_ss_sm") == 0) return (void *) cut_ss_sm;
+  if (strcmp(str,"cut_ss_c") == 0) return (void *) cut_ss_c;
   if (strcmp(str,"epsilon_sb") == 0) return (void *) epsilon_sb;
   if (strcmp(str,"sigma_sb") == 0) return (void *) sigma_sb;
-  if (strcmp(str,"cut_sb_lj") == 0) return (void *) cut_sb_lj;
+  if (strcmp(str,"cut_sb_ast") == 0) return (void *) cut_sb_ast;
   if (strcmp(str,"b_sb") == 0) return (void *) b_sb;
-  if (strcmp(str,"cut_sb_sm") == 0) return (void *) cut_sb_sm;
+  if (strcmp(str,"cut_sb_c") == 0) return (void *) cut_sb_c;
   if (strcmp(str,"epsilon_bb") == 0) return (void *) epsilon_bb;
   if (strcmp(str,"sigma_bb") == 0) return (void *) sigma_bb;
-  if (strcmp(str,"cut_bb_lj") == 0) return (void *) cut_bb_lj;
+  if (strcmp(str,"cut_bb_ast") == 0) return (void *) cut_bb_ast;
   if (strcmp(str,"b_bb") == 0) return (void *) b_bb;
-  if (strcmp(str,"cut_bb_sm") == 0) return (void *) cut_bb_sm;
+  if (strcmp(str,"cut_bb_c") == 0) return (void *) cut_bb_c;
 
   
   if (strcmp(str,"epsilon_st") == 0) return (void *) epsilon_st;
@@ -1095,11 +1078,11 @@ void *PairOxdna::extract(const char *str, int &dim)
   if (strcmp(str,"cut_st_c") == 0) return (void *) cut_st_c;
   if (strcmp(str,"cut_st_lo") == 0) return (void *) cut_st_lo;
   if (strcmp(str,"cut_st_hi") == 0) return (void *) cut_st_hi;
-
-  if (strcmp(str,"b_st_lo") == 0) return (void *) b_st_lo;
-  if (strcmp(str,"b_st_hi") == 0) return (void *) b_st_hi;
   if (strcmp(str,"cut_st_lc") == 0) return (void *) cut_st_lc;
   if (strcmp(str,"cut_st_hc") == 0) return (void *) cut_st_hc;
+  if (strcmp(str,"b_st1_lo") == 0) return (void *) b_st1_lo;
+  if (strcmp(str,"b_st1_hi") == 0) return (void *) b_st1_hi;
+  if (strcmp(str,"shift_st") == 0) return (void *) shift_st;
 
   return NULL;
 }
@@ -1107,12 +1090,12 @@ void *PairOxdna::extract(const char *str, int &dim)
 /* ----------------------------------------------------------------------
    f3 modulation factor 
 ------------------------------------------------------------------------- */
-inline double PairOxdna::F3(double rsq, double cutsq_lj, double cut_sm, 
+inline double PairOxdna::F3(double rsq, double cutsq_ast, double cut_c, 
 	double lj1, double lj2, double eps, double b, double & fpair) 
 {
   double evdwl = 0.0;
 
-  if (rsq < cutsq_lj) {
+  if (rsq < cutsq_ast) {
     double r2inv = 1.0/rsq;
     double r6inv = r2inv*r2inv*r2inv;
     fpair = r2inv*r6inv*(12*lj1*r6inv - 6*lj2);
@@ -1121,8 +1104,8 @@ inline double PairOxdna::F3(double rsq, double cutsq_lj, double cut_sm,
   else {
     double r = sqrt(rsq);
     double rinv = 1.0/r;
-    fpair = eps*2*b*(cut_sm*rinv - 1);
-    evdwl = b*(cut_sm-r)*(cut_sm-r);
+    fpair = eps*2*b*(cut_c*rinv - 1);
+    evdwl = b*(cut_c-r)*(cut_c-r);
   }
 
   return evdwl;

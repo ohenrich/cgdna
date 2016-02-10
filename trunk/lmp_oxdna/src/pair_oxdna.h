@@ -49,21 +49,18 @@ class PairOxdna : public Pair {
   // s=sugar-phosphate backbone site, b=base site, st=stacking site
 
   // excluded volume interaction
-  double **epsilon_ss, **sigma_ss, **cut_ss_lj, **cutsq_ss_lj; 
-  double **lj1_ss, **lj2_ss, **b_ss, **cut_ss_sm, **cutsq_ss_sm;
-  double **epsilon_sb, **sigma_sb, **cut_sb_lj, **cutsq_sb_lj; 
-  double **lj1_sb, **lj2_sb, **b_sb, **cut_sb_sm, **cutsq_sb_sm;
-  double **epsilon_bb, **sigma_bb, **cut_bb_lj, **cutsq_bb_lj; 
-  double **lj1_bb, **lj2_bb, **b_bb, **cut_bb_sm, **cutsq_bb_sm;
+  double **epsilon_ss, **sigma_ss, **cut_ss_ast, **cutsq_ss_ast; 
+  double **lj1_ss, **lj2_ss, **b_ss, **cut_ss_c, **cutsq_ss_c;
+  double **epsilon_sb, **sigma_sb, **cut_sb_ast, **cutsq_sb_ast; 
+  double **lj1_sb, **lj2_sb, **b_sb, **cut_sb_c, **cutsq_sb_c;
+  double **epsilon_bb, **sigma_bb, **cut_bb_ast, **cutsq_bb_ast; 
+  double **lj1_bb, **lj2_bb, **b_bb, **cut_bb_c, **cutsq_bb_c;
 
   // stacking interaction
-  double **epsilon_st, **b_st_lo, **cut_st_lc, **cut_st_lo;
-  double **cut_st_0, **cut_st_c, **a_st;
-  double **b_st_hi, **cut_st_hi, **cut_st_hc;
-
-  double **cutsq_st_0, **cutsq_st_c, **cutsq_st_lo, **cutsq_st_hi;
-  double **cutsq_st_lc, **cutsq_st_hc;
-  double **shift_st;
+  double **epsilon_st, **a_st, **cut_st_0, **cut_st_c;
+  double **cut_st_lo, **cut_st_hi;
+  double **cut_st_lc, **cut_st_hc, **b_st1_lo, **b_st1_hi, **shift_st;
+  double **cutsq_st_hc;
 
   virtual void allocate();
 
