@@ -47,6 +47,7 @@ class PairOxdna : public Pair {
 
  protected:
   // s=sugar-phosphate backbone site, b=base site, st=stacking site
+
   // excluded volume interaction
   double **epsilon_ss, **sigma_ss, **cut_ss_lj, **cutsq_ss_lj; 
   double **lj1_ss, **lj2_ss, **b_ss, **cut_ss_sm, **cutsq_ss_sm;
@@ -55,15 +56,20 @@ class PairOxdna : public Pair {
   double **epsilon_bb, **sigma_bb, **cut_bb_lj, **cutsq_bb_lj; 
   double **lj1_bb, **lj2_bb, **b_bb, **cut_bb_sm, **cutsq_bb_sm;
 
-// stacking interaction
-  double **epsilon_st, **a_st, **b_st_lo, **b_st_hi;
-  double **cut_st_0, **cut_st_c, **cut_st_lo, **cut_st_hi;
+  // stacking interaction
+  double **epsilon_st, **b_st_lo, **cut_st_lc, **cut_st_lo;
+  double **cut_st_0, **cut_st_c, **a_st;
+  double **b_st_hi, **cut_st_hi, **cut_st_hc;
+
   double **cutsq_st_0, **cutsq_st_c, **cutsq_st_lo, **cutsq_st_hi;
-  double **cut_st_lc, **cut_st_hc, **cutsq_st_lc, **cutsq_st_hc;
+  double **cutsq_st_lc, **cutsq_st_hc;
+  double **shift_st;
 
   virtual void allocate();
 
-  inline double f3(double, double, double, double, double, double, double, double &);
+  inline double F3(double, double, double, double, double, double, double, double &);
+  inline double F1(double, double, double, double, double, double, double, double, double, double, double);
+  inline double DF1(double, double, double, double, double, double, double, double, double, double);
 
 };
 
