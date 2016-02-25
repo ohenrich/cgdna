@@ -1,0 +1,8 @@
+chr5
+28750000
+29750000
+400
+ATACseq ../../input_data/ATACseqData/ATAC_NotCTCF.bed
+CTCF ../../input_data/ATACseqData/CTCF_ATAC_overlaps.bed
+H3K4me1 ../../input_data/HisoneModsData/H3K4me1_chr5_cutoff.bed
+H3K27ac ../../input_data/HisoneModsData/H3K27ac_chr5_cutoff.bed
