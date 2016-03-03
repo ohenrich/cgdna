@@ -57,15 +57,15 @@ BondOxdna::~BondOxdna()
 ------------------------------------------------------------------------- */
 void BondOxdna::compute(int eflag, int vflag)
 {
-  int i,j,n,type;
-  double delf[3],delt[3]; // force, torque increment;;
+  int a,b,n,type;
+  double delf[3],delta[3],deltb[3]; // force, torque increment;;
   double delr[3],ebond,fbond;
   double rsq,Deltasq,rlogarg;
   double r,rr0,rr0sq;
   // distances COM-backbone
   double d_cs=-0.24; 
-  // vectors COM-backbone in lab frame
-  double r_cs_i[3],r_cs_j[3];
+  // vectors COM-backbone site in lab frame
+  double ra_cs[3],rb_cs[3];
 
   ebond = 0.0;
   if (eflag || vflag) ev_setup(eflag,vflag);
@@ -78,37 +78,40 @@ void BondOxdna::compute(int eflag, int vflag)
   int *ellipsoid = atom->ellipsoid;
   AtomVecEllipsoid *avec = (AtomVecEllipsoid *) atom->style_match("ellipsoid");
   AtomVecEllipsoid::Bonus *bonus = avec->bonus;
-  double *quat_i,ex_i[3],ey_i[3],ez_i[3];
-  double *quat_j,ex_j[3],ey_j[3],ez_j[3];
+
+  double *qa,ax[3],ay[3],az[3];
+  double *qb,bx[3],by[3],bz[3];
 
   int **bondlist = neighbor->bondlist;
   int nbondlist = neighbor->nbondlist;
   int nlocal = atom->nlocal;
   int newton_bond = force->newton_bond;
 
- // loop over FENE bonds 
+  // loop over FENE bonds 
 
   for (n = 0; n < nbondlist; n++) {
 
-    i = bondlist[n][0];
-    j = bondlist[n][1];
+    a = bondlist[n][0];
+    b = bondlist[n][1];
     type = bondlist[n][2];
 
-    quat_i=bonus[i].quat;
-    MathExtra::q_to_exyz(quat_i,ex_i,ey_i,ez_i);
-    quat_j=bonus[j].quat;
-    MathExtra::q_to_exyz(quat_j,ex_j,ey_j,ez_j);
+    qa=bonus[a].quat;
+    MathExtra::q_to_exyz(qa,ax,ay,az);
+    qb=bonus[b].quat;
+    MathExtra::q_to_exyz(qb,bx,by,bz);
 
-    r_cs_i[0] = d_cs*ex_i[0];
-    r_cs_i[1] = d_cs*ex_i[1];
-    r_cs_i[2] = d_cs*ex_i[2];
-    r_cs_j[0] = d_cs*ex_j[0];
-    r_cs_j[1] = d_cs*ex_j[1];
-    r_cs_j[2] = d_cs*ex_j[2];
+    // vector COM-backbone site a and b
+    ra_cs[0] = d_cs*ax[0];
+    ra_cs[1] = d_cs*ax[1];
+    ra_cs[2] = d_cs*ax[2];
+    rb_cs[0] = d_cs*bx[0];
+    rb_cs[1] = d_cs*bx[1];
+    rb_cs[2] = d_cs*bx[2];
 
-    delr[0] = x[i][0] + r_cs_i[0] - x[j][0] - r_cs_j[0];
-    delr[1] = x[i][1] + r_cs_i[1] - x[j][1] - r_cs_j[1];
-    delr[2] = x[i][2] + r_cs_i[2] - x[j][2] - r_cs_j[2];
+    // vector backbone site a to b
+    delr[0] = x[b][0] + rb_cs[0] - x[a][0] - ra_cs[0];
+    delr[1] = x[b][1] + rb_cs[1] - x[a][1] - ra_cs[1];
+    delr[2] = x[b][2] + rb_cs[2] - x[a][2] - ra_cs[2];
     rsq = delr[0]*delr[0] + delr[1]*delr[1] + delr[2]*delr[2];
 
     r = sqrt(rsq);
@@ -125,7 +128,7 @@ void BondOxdna::compute(int eflag, int vflag)
       char str[128];
       sprintf(str,"FENE bond too long: " BIGINT_FORMAT " " 
               TAGINT_FORMAT " " TAGINT_FORMAT " %g",
-              update->ntimestep,atom->tag[i],atom->tag[j],sqrt(rsq));
+              update->ntimestep,atom->tag[a],atom->tag[b],sqrt(rsq));
       error->warning(FLERR,str,0);
       if (rlogarg <= -3.0) error->one(FLERR,"Bad FENE bond");
     }
@@ -143,35 +146,35 @@ void BondOxdna::compute(int eflag, int vflag)
 
     // apply force and torque to each of 2 atoms
 
-    if (newton_bond || i < nlocal) {
+    if (newton_bond || a < nlocal) {
 
-      f[i][0] += delf[0];
-      f[i][1] += delf[1];
-      f[i][2] += delf[2];
+      f[a][0] -= delf[0];
+      f[a][1] -= delf[1];
+      f[a][2] -= delf[2];
 
-      MathExtra::cross3(r_cs_i,delf,delt);
+      MathExtra::cross3(ra_cs,delf,delta);
 
-      torque[i][0] += delt[0];
-      torque[i][1] += delt[1];
-      torque[i][2] += delt[2];
-
-    }
-
-    if (newton_bond || j < nlocal) {
-
-      f[j][0] -= delf[0];
-      f[j][1] -= delf[1];
-      f[j][2] -= delf[2];
-
-      MathExtra::cross3(r_cs_j,delf,delt);
-
-      torque[j][0] -= delt[0];
-      torque[j][1] -= delt[1];
-      torque[j][2] -= delt[2];
+      torque[a][0] -= delta[0];
+      torque[a][1] -= delta[1];
+      torque[a][2] -= delta[2];
 
     }
 
-    if (evflag) ev_tally(i,j,nlocal,newton_bond,ebond,fbond,delr[0],delr[1],delr[2]);
+    if (newton_bond || b < nlocal) {
+
+      f[b][0] += delf[0];
+      f[b][1] += delf[1];
+      f[b][2] += delf[2];
+
+      MathExtra::cross3(rb_cs,delf,deltb);
+
+      torque[b][0] += deltb[0];
+      torque[b][1] += deltb[1];
+      torque[b][2] += deltb[2];
+
+    }
+
+    if (evflag) ev_tally(a,b,nlocal,newton_bond,ebond,fbond,delr[0],delr[1],delr[2]);
 
   }
 

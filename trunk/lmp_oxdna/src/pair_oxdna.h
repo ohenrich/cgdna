@@ -64,6 +64,10 @@ class PairOxdna : public Pair {
   double **cutsq_st_hc;
   double **a_st4, **theta_st4_0, **dtheta_st4_ast;
   double **b_st4, **dtheta_st4_c;
+  double **a_st5, **theta_st5_0, **dtheta_st5_ast;
+  double **b_st5, **dtheta_st5_c;
+  double **a_st6, **theta_st6_0, **dtheta_st6_ast;
+  double **b_st6, **dtheta_st6_c;
 
   virtual void allocate();
 
