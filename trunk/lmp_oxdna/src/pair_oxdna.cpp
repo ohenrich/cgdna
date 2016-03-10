@@ -503,11 +503,11 @@ void PairOxdna::compute(int eflag, int vflag)
 
     f4t6 = F4(theta6p, a_st6[atype][btype], theta_st6_0[atype][btype], dtheta_st6_ast[atype][btype], 
 	b_st6[atype][btype], dtheta_st6_c[atype][btype]);  
-    f4t6 = 1; 
+//    f4t6 = 1; 
 
     df4t6 = DF4(theta6p, a_st6[atype][btype], theta_st6_0[atype][btype], dtheta_st6_ast[atype][btype], 
 	b_st6[atype][btype], dtheta_st6_c[atype][btype]);  
-    df4t6 = 0; 
+//    df4t6 = 0; 
 
 
     /* TODO: Early rejection criteria */
@@ -622,7 +622,55 @@ void PairOxdna::compute(int eflag, int vflag)
 
       }
 
+   }
 
+    // theta6p
+    if (theta6p) {
+
+      finc   = f1 * f4t4 * f4t5 * df4t6 * rinv_st;
+      fpair += finc;
+
+      delf[0] = (bz[0] - delr_st_norm[0]*cost6p) * finc;
+      delf[1] = (bz[1] - delr_st_norm[1]*cost6p) * finc;
+      delf[2] = (bz[2] - delr_st_norm[2]*cost6p) * finc;
+
+      if (newton_bond || a < nlocal) {
+
+	f[a][0] += delf[0];
+	f[a][1] += delf[1];
+	f[a][2] += delf[2];
+
+	MathExtra::cross3(ra_cst,delf,delta);	
+
+	torque[a][0] += delta[0];
+	torque[a][1] += delta[1];
+	torque[a][2] += delta[2];
+
+      }
+
+      if (newton_bond || b < nlocal) {
+
+	f[b][0] -= delf[0];
+	f[b][1] -= delf[1];
+	f[b][2] -= delf[2];
+
+	MathExtra::cross3(rb_cst,delf,deltb);
+
+	tpair = f1 * f4t4 * f4t5 * df4t6;
+
+	MathExtra::cross3(delr_st_norm,bz,t6pdir);
+
+	deltb[0] += t6pdir[0] * tpair;
+	deltb[1] += t6pdir[1] * tpair;
+	deltb[2] += t6pdir[2] * tpair;
+
+	torque[b][0] -= deltb[0];
+	torque[b][1] -= deltb[1];
+	torque[b][2] -= deltb[2];
+
+      }
+
+    }
 
 /*
 double tau[3], delr0[3], sum[3];
@@ -654,52 +702,6 @@ printf("\n");
 
 */
 
-//printf("%d %d  %22.15le %22.15le %22.15le %22.15le %22.15le %22.15le\n",a,b, -delf[0], -delf[1], -delf[2], -delta[0],-delta[1],-delta[2]);
-//printf("\n");
-
-   }
-
-    // theta6p
-    if (theta6p) {
-
-      finc   = -f1 * f4t4 * f4t5 * df4t6 * rinv_st;
-      fpair += finc;
-
-      delf[0] = (delr_st_norm[0]*cost6p - bz[0]) * finc;
-      delf[1] = (delr_st_norm[1]*cost6p - bz[1]) * finc;
-      delf[2] = (delr_st_norm[2]*cost6p - bz[2]) * finc;
-
-      MathExtra::cross3(rb_cst,delf,deltb);
-
-      tpair = f1 * f4t4 * f4t5 * df4t6;
-
-      MathExtra::cross3(delr_st_norm,bz,t6pdir);
-
-      deltb[0] += -t6pdir[0] * tpair;
-      deltb[1] += -t6pdir[1] * tpair;
-      deltb[2] += -t6pdir[2] * tpair;
-
-      if (newton_bond || a < nlocal) {
-
-	f[a][0] -= delf[0];
-	f[a][1] -= delf[1];
-	f[a][2] -= delf[2];
-
-      }
-
-      if (newton_bond || b < nlocal) {
-
-	f[b][0] += delf[0];
-	f[b][1] += delf[1];
-	f[b][2] += delf[2];
-
-	torque[b][0] += deltb[0];
-	torque[b][1] += deltb[1];
-	torque[b][2] += deltb[2];
-
-     }
-
-    }
 
     /* TODO Energy calculation for stacking pair interaction */
     if (eflag)  evdwl = f1 * f4t4 * f4t5 * f4t6;
