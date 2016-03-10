@@ -428,8 +428,8 @@ void PairOxdna::compute(int eflag, int vflag)
 
   for (in = 0; in < nbondlist; in++) {
 
-    a = bondlist[in][0];
-    b = bondlist[in][1];
+    a = bondlist[in][1];
+    b = bondlist[in][0];
 
     atype = type[a];
     btype = type[b];
@@ -449,10 +449,10 @@ void PairOxdna::compute(int eflag, int vflag)
     rb_cst[1] = d_cst*bx[1];
     rb_cst[2] = d_cst*bx[2];
 
-    // vector stacking site a to b
-    delr_st[0] = x[b][0] + rb_cst[0] - x[a][0] - ra_cst[0];
-    delr_st[1] = x[b][1] + rb_cst[1] - x[a][1] - ra_cst[1] ;
-    delr_st[2] = x[b][2] + rb_cst[2] - x[a][2] - ra_cst[2] ;
+    // vector stacking site b to a
+    delr_st[0] = x[a][0] + ra_cst[0] - x[b][0] - rb_cst[0];
+    delr_st[1] = x[a][1] + ra_cst[1] - x[b][1] - rb_cst[1] ;
+    delr_st[2] = x[a][2] + ra_cst[2] - x[b][2] - rb_cst[2] ;
 
     rsq_st = delr_st[0]*delr_st[0] + delr_st[1]*delr_st[1] + delr_st[2]*delr_st[2];
     r_st = sqrt(rsq_st);
@@ -503,14 +503,17 @@ void PairOxdna::compute(int eflag, int vflag)
 
     f4t6 = F4(theta6p, a_st6[atype][btype], theta_st6_0[atype][btype], dtheta_st6_ast[atype][btype], 
 	b_st6[atype][btype], dtheta_st6_c[atype][btype]);  
+    f4t6 = 1; 
 
     df4t6 = DF4(theta6p, a_st6[atype][btype], theta_st6_0[atype][btype], dtheta_st6_ast[atype][btype], 
 	b_st6[atype][btype], dtheta_st6_c[atype][btype]);  
+    df4t6 = 0; 
+
 
     /* TODO: Early rejection criteria */
 
     // radial
-    finc   = -df1 * f4t4;// * f4t5 * f4t6;
+    finc   = -df1 * f4t4 * f4t5 * f4t6;
     fpair += finc;
 
     delf[0] = delr_st[0]*finc;
@@ -519,73 +522,118 @@ void PairOxdna::compute(int eflag, int vflag)
 
     if (newton_bond || a < nlocal) {
 
-      f[a][0] -= delf[0];
-      f[a][1] -= delf[1];
-      f[a][2] -= delf[2];
+      f[a][0] += delf[0];
+      f[a][1] += delf[1];
+      f[a][2] += delf[2];
 
       MathExtra::cross3(ra_cst,delf,delta);
 
-      torque[a][0] -= delta[0];
-      torque[a][1] -= delta[1];
-      torque[a][2] -= delta[2];
+      torque[a][0] += delta[0];
+      torque[a][1] += delta[1];
+      torque[a][2] += delta[2];
 
     }
 
     if (newton_bond || b < nlocal) {
 
-      f[b][0] += delf[0];
-      f[b][1] += delf[1];
-      f[b][2] += delf[2];
+      f[b][0] -= delf[0];
+      f[b][1] -= delf[1];
+      f[b][2] -= delf[2];
 
       MathExtra::cross3(rb_cst,delf,deltb);
 
-      torque[b][0] += deltb[0];
-      torque[b][1] += deltb[1];
-      torque[b][2] += deltb[2];
+      torque[b][0] -= deltb[0];
+      torque[b][1] -= deltb[1];
+      torque[b][2] -= deltb[2];
 
     }
-
 
     // theta4 - pure torque, no force
     if (theta4) {
 
-      MathExtra::cross3(az,bz,t4dir);
-      tpair = f1 * df4t4;// * f4t5 * f4t6;
-//      tpair = 0.0;
+      MathExtra::cross3(bz,az,t4dir);
+      tpair = f1 * df4t4 * f4t5 * f4t6;
 
       delta[0] = -t4dir[0]*tpair;
       delta[1] = -t4dir[1]*tpair;
       delta[2] = -t4dir[2]*tpair;
-      // for debugging purposes
-      deltb[0] = -t4dir[0]*tpair;
-      deltb[1] = -t4dir[1]*tpair;
-      deltb[2] = -t4dir[2]*tpair;
 
       if (newton_bond || a < nlocal) {
 
-	torque[a][0] -= delta[0];
-	torque[a][1] -= delta[1];
-	torque[a][2] -= delta[2];
+	torque[a][0] += delta[0];
+	torque[a][1] += delta[1];
+	torque[a][2] += delta[2];
 
       }
       if (newton_bond || b < nlocal) {
 
-	torque[b][0] += deltb[0];
-	torque[b][1] += deltb[1];
-	torque[b][2] += deltb[2];
+	torque[b][0] -= delta[0];
+	torque[b][1] -= delta[1];
+	torque[b][2] -= delta[2];
 
       }
+
+    }
+
+
+    // theta5p
+    if (theta5p) {
+
+      finc   = f1 * f4t4 * df4t5 * f4t6 * rinv_st;
+      fpair += finc;
+
+      delf[0] = (az[0] - delr_st_norm[0]*cost5p) * finc;
+      delf[1] = (az[1] - delr_st_norm[1]*cost5p) * finc;
+      delf[2] = (az[2] - delr_st_norm[2]*cost5p) * finc;
+
+      if (newton_bond || a < nlocal) {
+
+	f[a][0] += delf[0];
+	f[a][1] += delf[1];
+	f[a][2] += delf[2];
+
+	MathExtra::cross3(ra_cst,delf,delta);	
+
+	tpair = f1 * f4t4 * df4t5 * f4t6;
+
+	MathExtra::cross3(delr_st_norm,az,t5pdir);
+
+	delta[0] -= t5pdir[0] * tpair;
+	delta[1] -= t5pdir[1] * tpair;
+	delta[2] -= t5pdir[2] * tpair;
+
+	torque[a][0] += delta[0];
+	torque[a][1] += delta[1];
+	torque[a][2] += delta[2];
+
+      }
+
+      if (newton_bond || b < nlocal) {
+
+	f[b][0] -= delf[0];
+	f[b][1] -= delf[1];
+	f[b][2] -= delf[2];
+
+	MathExtra::cross3(rb_cst,delf,deltb);
+
+	torque[b][0] -= deltb[0];
+	torque[b][1] -= deltb[1];
+	torque[b][2] -= deltb[2];
+
+      }
+
+
 
 /*
 double tau[3], delr0[3], sum[3];
 
-delf[0] = 0.0;
-delf[1] = 0.0;
-delf[2] = 0.0;
+//delf[0] = 0;
+//delf[1] = 0;
+//delf[2] = 0;
 
-delr0[0] = x[a][0] - x[b][0];
-delr0[1] = x[a][1] - x[b][1];
-delr0[2] = x[a][2] - x[b][2];
+delr0[0] = x[b][0] - x[a][0];
+delr0[1] = x[b][1] - x[a][1];
+delr0[2] = x[b][2] - x[a][2];
 
 MathExtra::cross3(delr0,delf,tau);
 
@@ -594,77 +642,42 @@ sum[1] = -delta[1] + deltb[1] - tau[1];
 sum[2] = -delta[2] + deltb[2] - tau[2];
 
 printf("Timestep %d\n", update->ntimestep);
-printf("%d %d  %le %le %le  %le\n",a,b,-delta[0],deltb[0],-tau[0],sum[0]);
-printf("%d %d  %le %le %le  %le\n",a,b,-delta[1],deltb[1],-tau[1],sum[1]);
-printf("%d %d  %le %le %le  %le\n",a,b,-delta[2],deltb[2],-tau[2],sum[2]);
+printf("%d %d  %le %le %le\n",a,b,-delta[0],-delta[1],-delta[2]);
+printf("%d %d  %le %le %le\n",a,b,deltb[0],deltb[1],deltb[2]);
+printf("%d %d  %le %le %le\n",a,b,tau[0],tau[1],tau[2]);
+printf("%d %d  %le %le %le\n",a,b,sum[0],sum[1],sum[2]);
 printf("\n");
+printf("%d %d  %le %le %le\n",a,b,-delf[0],-delf[1],-delf[2]);
+printf("\n");
+printf("\n");
+
 
 */
 
+//printf("%d %d  %22.15le %22.15le %22.15le %22.15le %22.15le %22.15le\n",a,b, -delf[0], -delf[1], -delf[2], -delta[0],-delta[1],-delta[2]);
+//printf("\n");
 
-    }
-
-    // theta5p
-    if (theta5p) {
-
-      finc   = -f1 * f4t4 * df4t5 * f4t6 * rinv_st;
-      finc   = 0.0;
-      fpair += finc;
-
-      delf[0] = (delr_st_norm[0]*cost5p - az[0]) * finc;
-      delf[1] = (delr_st_norm[1]*cost5p - az[1]) * finc;
-      delf[2] = (delr_st_norm[2]*cost5p - az[2]) * finc;
-
-      tpair = f1 * f4t4 * df4t5 * f4t6;
-      tpair = 0.0;
-
-      MathExtra::cross3(delr_st_norm,az,t5pdir);
-
-      delta[0] = t5pdir[0] * tpair;
-      delta[1] = t5pdir[1] * tpair;
-      delta[2] = t5pdir[2] * tpair;
-
-      if (newton_bond || a < nlocal) {
-
-	f[a][0] -= delf[0];
-	f[a][1] -= delf[1];
-	f[a][2] -= delf[2];
-
-	torque[a][0] -= delta[0];
-	torque[a][1] -= delta[1];
-	torque[a][2] -= delta[2];
-
-      }
-
-      if (newton_bond || b < nlocal) {
-
-	f[b][0] += delf[0];
-	f[b][1] += delf[1];
-	f[b][2] += delf[2];
-
-      }
-
-    }
+   }
 
     // theta6p
     if (theta6p) {
 
       finc   = -f1 * f4t4 * f4t5 * df4t6 * rinv_st;
-      finc   = 0.0;
       fpair += finc;
 
       delf[0] = (delr_st_norm[0]*cost6p - bz[0]) * finc;
       delf[1] = (delr_st_norm[1]*cost6p - bz[1]) * finc;
       delf[2] = (delr_st_norm[2]*cost6p - bz[2]) * finc;
 
+      MathExtra::cross3(rb_cst,delf,deltb);
+
       tpair = f1 * f4t4 * f4t5 * df4t6;
-      tpair = 0.0;
 
       MathExtra::cross3(delr_st_norm,bz,t6pdir);
 
-      deltb[0] = t6pdir[0] * tpair;
-      deltb[1] = t6pdir[1] * tpair;
-      deltb[2] = t6pdir[2] * tpair;
+      deltb[0] += -t6pdir[0] * tpair;
+      deltb[1] += -t6pdir[1] * tpair;
+      deltb[2] += -t6pdir[2] * tpair;
 
       if (newton_bond || a < nlocal) {
 
@@ -680,11 +693,11 @@ printf("\n");
 	f[b][1] += delf[1];
 	f[b][2] += delf[2];
 
-	torque[b][0] -= deltb[0] * tpair;
-	torque[b][1] -= deltb[1] * tpair;
-	torque[b][2] -= deltb[2] * tpair;
+	torque[b][0] += deltb[0];
+	torque[b][1] += deltb[1];
+	torque[b][2] += deltb[2];
 
-      }
+     }
 
     }
 
