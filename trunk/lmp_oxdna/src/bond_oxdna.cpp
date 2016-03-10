@@ -91,8 +91,8 @@ void BondOxdna::compute(int eflag, int vflag)
 
   for (n = 0; n < nbondlist; n++) {
 
-    a = bondlist[n][0];
-    b = bondlist[n][1];
+    a = bondlist[n][1];
+    b = bondlist[n][0];
     type = bondlist[n][2];
 
     qa=bonus[a].quat;
@@ -108,10 +108,10 @@ void BondOxdna::compute(int eflag, int vflag)
     rb_cs[1] = d_cs*bx[1];
     rb_cs[2] = d_cs*bx[2];
 
-    // vector backbone site a to b
-    delr[0] = x[b][0] + rb_cs[0] - x[a][0] - ra_cs[0];
-    delr[1] = x[b][1] + rb_cs[1] - x[a][1] - ra_cs[1];
-    delr[2] = x[b][2] + rb_cs[2] - x[a][2] - ra_cs[2];
+    // vector backbone site b to a
+    delr[0] = x[a][0] + ra_cs[0] - x[b][0] - rb_cs[0];
+    delr[1] = x[a][1] + ra_cs[1] - x[b][1] - rb_cs[1];
+    delr[2] = x[a][2] + ra_cs[2] - x[b][2] - rb_cs[2];
     rsq = delr[0]*delr[0] + delr[1]*delr[1] + delr[2]*delr[2];
 
     r = sqrt(rsq);
@@ -148,29 +148,29 @@ void BondOxdna::compute(int eflag, int vflag)
 
     if (newton_bond || a < nlocal) {
 
-      f[a][0] -= delf[0];
-      f[a][1] -= delf[1];
-      f[a][2] -= delf[2];
+      f[a][0] += delf[0];
+      f[a][1] += delf[1];
+      f[a][2] += delf[2];
 
       MathExtra::cross3(ra_cs,delf,delta);
 
-      torque[a][0] -= delta[0];
-      torque[a][1] -= delta[1];
-      torque[a][2] -= delta[2];
+      torque[a][0] += delta[0];
+      torque[a][1] += delta[1];
+      torque[a][2] += delta[2];
 
     }
 
     if (newton_bond || b < nlocal) {
 
-      f[b][0] += delf[0];
-      f[b][1] += delf[1];
-      f[b][2] += delf[2];
+      f[b][0] -= delf[0];
+      f[b][1] -= delf[1];
+      f[b][2] -= delf[2];
 
       MathExtra::cross3(rb_cs,delf,deltb);
 
-      torque[b][0] += deltb[0];
-      torque[b][1] += deltb[1];
-      torque[b][2] += deltb[2];
+      torque[b][0] -= deltb[0];
+      torque[b][1] -= deltb[1];
+      torque[b][2] -= deltb[2];
 
     }
 

@@ -232,28 +232,28 @@ void PairOxdna::compute(int eflag, int vflag)
       rb_cst[1] = d_cst*bx[1];
       rb_cst[2] = d_cst*bx[2];
 
-      // vector backbone site a to b
-      delr_ss[0] = x[b][0] + rb_cs[0] - rtmp_s[0];
-      delr_ss[1] = x[b][1] + rb_cs[1] - rtmp_s[1];
-      delr_ss[2] = x[b][2] + rb_cs[2] - rtmp_s[2] ;
+      // vector backbone site b to a
+      delr_ss[0] = rtmp_s[0] - (x[b][0] + rb_cs[0]);
+      delr_ss[1] = rtmp_s[1] - (x[b][1] + rb_cs[1]);
+      delr_ss[2] = rtmp_s[2] - (x[b][2] + rb_cs[2]);
       rsq_ss = delr_ss[0]*delr_ss[0] + delr_ss[1]*delr_ss[1] + delr_ss[2]*delr_ss[2];
 
-      // vector backbone site a to base site b
-      delr_sb[0] = x[b][0] + rb_cb[0] - rtmp_s[0];
-      delr_sb[1] = x[b][1] + rb_cb[1] - rtmp_s[1];
-      delr_sb[2] = x[b][2] + rb_cb[2] - rtmp_s[2];
+      // vector base site b to backbone site a
+      delr_sb[0] =  rtmp_s[0] - (x[b][0] + rb_cb[0]);
+      delr_sb[1] =  rtmp_s[1] - (x[b][1] + rb_cb[1]);
+      delr_sb[2] =  rtmp_s[2] - (x[b][2] + rb_cb[2]);
       rsq_sb = delr_sb[0]*delr_sb[0] + delr_sb[1]*delr_sb[1] + delr_sb[2]*delr_sb[2];
 
-      // vector base site a to backbone site b
-      delr_bs[0] = x[b][0] + rb_cs[0] - rtmp_b[0];
-      delr_bs[1] = x[b][1] + rb_cs[1] - rtmp_b[1];
-      delr_bs[2] = x[b][2] + rb_cs[2] - rtmp_b[2];
+      // vector backbone site b to base site a
+      delr_bs[0] = rtmp_b[0] - (x[b][0] + rb_cs[0]);
+      delr_bs[1] = rtmp_b[1] - (x[b][1] + rb_cs[1]);
+      delr_bs[2] = rtmp_b[2] - (x[b][2] + rb_cs[2]);
       rsq_bs = delr_bs[0]*delr_bs[0] + delr_bs[1]*delr_bs[1] + delr_bs[2]*delr_bs[2];
 
-      // vector base site a to b
-      delr_bb[0] = x[b][0] + rb_cb[0] - rtmp_b[0] ;
-      delr_bb[1] = x[b][1] + rb_cb[1] - rtmp_b[1] ;
-      delr_bb[2] = x[b][2] + rb_cb[2] - rtmp_b[2] ;
+      // vector base site b to a
+      delr_bb[0] = rtmp_b[0] - (x[b][0] + rb_cb[0]);
+      delr_bb[1] = rtmp_b[1] - (x[b][1] + rb_cb[1]);
+      delr_bb[2] = rtmp_b[2] - (x[b][2] + rb_cb[2]);
       rsq_bb = delr_bb[0]*delr_bb[0] + delr_bb[1]*delr_bb[1] + delr_bb[2]*delr_bb[2];
 
 
@@ -276,27 +276,27 @@ void PairOxdna::compute(int eflag, int vflag)
 	delf[1] = delr_ss[1]*fpair; 
 	delf[2] = delr_ss[2]*fpair; 
 
-        f[a][0] -= delf[0];
-        f[a][1] -= delf[1];
-        f[a][2] -= delf[2];
+        f[a][0] += delf[0];
+        f[a][1] += delf[1];
+        f[a][2] += delf[2];
 
 	MathExtra::cross3(ra_cs,delf,delta);
 
-	torque[a][0] -= delta[0];
-	torque[a][1] -= delta[1];
-	torque[a][2] -= delta[2];
+	torque[a][0] += delta[0];
+	torque[a][1] += delta[1];
+	torque[a][2] += delta[2];
 
         if (newton_pair || b < nlocal) {
 
-          f[b][0] += delf[0];
-          f[b][1] += delf[1];
-          f[b][2] += delf[2];
+          f[b][0] -= delf[0];
+          f[b][1] -= delf[1];
+          f[b][2] -= delf[2];
 
 	  MathExtra::cross3(rb_cs,delf,deltb);
 
-	  torque[b][0] += deltb[0];
-	  torque[b][1] += deltb[1];
-	  torque[b][2] += deltb[2];
+	  torque[b][0] -= deltb[0];
+	  torque[b][1] -= deltb[1];
+	  torque[b][2] -= deltb[2];
 
         }
 
@@ -316,27 +316,27 @@ void PairOxdna::compute(int eflag, int vflag)
 	delf[1] = delr_sb[1]*fpair; 
 	delf[2] = delr_sb[2]*fpair; 
 
-	f[a][0] -= delf[0];
-	f[a][1] -= delf[1];
-	f[a][2] -= delf[2];
+	f[a][0] += delf[0];
+	f[a][1] += delf[1];
+	f[a][2] += delf[2];
 
 	MathExtra::cross3(ra_cs,delf,delta);
 
-	torque[a][0] -= delta[0];
-	torque[a][1] -= delta[1];
-	torque[a][2] -= delta[2];
+	torque[a][0] += delta[0];
+	torque[a][1] += delta[1];
+	torque[a][2] += delta[2];
 
 	if (newton_pair || b < nlocal) {
 
-	  f[b][0] += delf[0];
-	  f[b][1] += delf[1];
-	  f[b][2] += delf[2];
+	  f[b][0] -= delf[0];
+	  f[b][1] -= delf[1];
+	  f[b][2] -= delf[2];
 
 	  MathExtra::cross3(rb_cb,delf,deltb);
 
-	  torque[b][0] += deltb[0];
-	  torque[b][1] += deltb[1];
-	  torque[b][2] += deltb[2];
+	  torque[b][0] -= deltb[0];
+	  torque[b][1] -= deltb[1];
+	  torque[b][2] -= deltb[2];
 
 	}
 
@@ -355,27 +355,27 @@ void PairOxdna::compute(int eflag, int vflag)
 	delf[1] = delr_bs[1]*fpair; 
 	delf[2] = delr_bs[2]*fpair; 
 
-	f[a][0] -= delf[0];
-	f[a][1] -= delf[1];
-	f[a][2] -= delf[2];
+	f[a][0] += delf[0];
+	f[a][1] += delf[1];
+	f[a][2] += delf[2];
  
 	MathExtra::cross3(ra_cb,delf,delta);
 
-	torque[a][0] -= delta[0];
-	torque[a][1] -= delta[1];
-	torque[a][2] -= delta[2];
+	torque[a][0] += delta[0];
+	torque[a][1] += delta[1];
+	torque[a][2] += delta[2];
 
 	if (newton_pair || b < nlocal) {
 
-	  f[b][0] += delf[0];
-	  f[b][1] += delf[1];
-	  f[b][2] += delf[2];
+	  f[b][0] -= delf[0];
+	  f[b][1] -= delf[1];
+	  f[b][2] -= delf[2];
 
 	  MathExtra::cross3(rb_cs,delf,deltb);
 
-	  torque[b][0] += deltb[0];
-	  torque[b][1] += deltb[1];
-	  torque[b][2] += deltb[2];
+	  torque[b][0] -= deltb[0];
+	  torque[b][1] -= deltb[1];
+	  torque[b][2] -= deltb[2];
 
 	}
 
@@ -394,27 +394,27 @@ void PairOxdna::compute(int eflag, int vflag)
 	delf[1] = delr_bb[1]*fpair; 
 	delf[2] = delr_bb[2]*fpair; 
 
-	f[a][0] -= delf[0];
-	f[a][1] -= delf[1];
-	f[a][2] -= delf[2];
+	f[a][0] += delf[0];
+	f[a][1] += delf[1];
+	f[a][2] += delf[2];
 
 	MathExtra::cross3(ra_cb,delf,delta);
 
-	torque[a][0] -= delta[0];
-	torque[a][1] -= delta[1];
-	torque[a][2] -= delta[2];
+	torque[a][0] += delta[0];
+	torque[a][1] += delta[1];
+	torque[a][2] += delta[2];
 
 	if (newton_pair || b < nlocal) {
 
-	  f[b][0] += delf[0];
-	  f[b][1] += delf[1];
-	  f[b][2] += delf[2];
+	  f[b][0] -= delf[0];
+	  f[b][1] -= delf[1];
+	  f[b][2] -= delf[2];
 
 	  MathExtra::cross3(rb_cb,delf,deltb);
 
-	  torque[b][0] += deltb[0];
-	  torque[b][1] += deltb[1];
-	  torque[b][2] += deltb[2];
+	  torque[b][0] -= deltb[0];
+	  torque[b][1] -= deltb[1];
+	  torque[b][2] -= deltb[2];
 
 	}
 
