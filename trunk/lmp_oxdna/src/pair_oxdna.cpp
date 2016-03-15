@@ -115,6 +115,15 @@ PairOxdna::~PairOxdna()
     memory->destroy(b_st6);
     memory->destroy(dtheta_st6_c);
 
+    memory->destroy(a_st1);
+    memory->destroy(cosphi_st1_ast);
+    memory->destroy(b_st1);
+    memory->destroy(cosphi_st1_c);
+    memory->destroy(a_st2);
+    memory->destroy(cosphi_st2_ast);
+    memory->destroy(b_st2);
+    memory->destroy(cosphi_st2_c);
+
   }
 }
 
@@ -129,12 +138,13 @@ void PairOxdna::compute(int eflag, int vflag)
   double delf[3],delt[3],delta[3],deltb[3]; // force, torque increment;
   double evdwl,fpair,finc,tpair,factor_lj;
   double rtmp_s[3],rtmp_b[3],rtmp_st[3];
-  double delr_ss[3],rsq_ss,delr_sb[3],rsq_sb;
-  double delr_bs[3],rsq_bs,delr_bb[3],rsq_bb;
+  double delr_ss[3],delr_ss_norm[3],rsq_ss,r_ss,rinv_ss;
+  double delr_sb[3],rsq_sb,delr_bs[3],rsq_bs,delr_bb[3],rsq_bb;
   double delr_st[3],delr_st_norm[3],rsq_st,r_st,rinv_st;
   double theta4,t4dir[3],cost4;
   double theta5p,t5pdir[3],cost5p;
   double theta6p,t6pdir[3],cost6p;
+  double cosphi1,cosphi2,cosphi1dir[3],cosphi2dir[3];
 
   // distances COM-backbone, COM-base, COM-stack
   double d_cs=-0.24, d_cb=0.56, d_cst=0.5; 
@@ -151,8 +161,8 @@ void PairOxdna::compute(int eflag, int vflag)
   double **f = atom->f;
   double **torque = atom->torque;
 
-  double f1,f4t4,f4t5,f4t6;
-  double df1,df4t4,df4t5,df4t6;
+  double f1,f4t4,f4t5,f4t6,f5c1,f5c2;
+  double df1,df4t4,df4t5,df4t6,df5c1,df5c2;
 
   int a,b,ia,ib,in,anum,bnum,atype,btype;
 
@@ -462,7 +472,30 @@ void PairOxdna::compute(int eflag, int vflag)
     delr_st_norm[1] = delr_st[1] * rinv_st;
     delr_st_norm[2] = delr_st[2] * rinv_st;
 
-    // cosines and corrections
+    // vector COM a - backbone site a
+    ra_cs[0] = d_cs*ax[0];
+    ra_cs[1] = d_cs*ax[1];
+    ra_cs[2] = d_cs*ax[2];
+
+    // vector COM b - backbone site b
+    rb_cs[0] = d_cs*bx[0];
+    rb_cs[1] = d_cs*bx[1];
+    rb_cs[2] = d_cs*bx[2];
+
+    // vector backbone site b to a
+    delr_ss[0] = x[a][0] + ra_cs[0] - x[b][0] - rb_cs[0];
+    delr_ss[1] = x[a][1] + ra_cs[1] - x[b][1] - rb_cs[1] ;
+    delr_ss[2] = x[a][2] + ra_cs[2] - x[b][2] - rb_cs[2] ;
+
+    rsq_ss = delr_ss[0]*delr_ss[0] + delr_ss[1]*delr_ss[1] + delr_ss[2]*delr_ss[2];
+    r_ss = sqrt(rsq_ss);
+    rinv_ss = 1.0/r_ss;
+
+    delr_ss_norm[0] = delr_ss[0] * rinv_ss;
+    delr_ss_norm[1] = delr_ss[1] * rinv_ss;
+    delr_ss_norm[2] = delr_ss[2] * rinv_ss;
+
+    // angles and corrections
 
     cost4 = MathExtra::dot3(az,bz);
     if (cost4 >  1.0) cost4 =  1.0;
@@ -479,6 +512,13 @@ void PairOxdna::compute(int eflag, int vflag)
     if (cost6p < -1.0) cost6p = -1.0;
     theta6p = acos(cost6p);
 
+    cosphi1 = MathExtra::dot3(delr_ss_norm,ay);
+    if (cosphi1 >  1.0) cosphi1 =  1.0;
+    if (cosphi1 < -1.0) cosphi1 = -1.0;
+
+    cosphi2 = MathExtra::dot3(delr_ss_norm,by);
+    if (cosphi2 >  1.0) cosphi2 =  1.0;
+    if (cosphi2 < -1.0) cosphi2 = -1.0;
 
 
     f1 = F1(r_st, epsilon_st[atype][btype], a_st[atype][btype], cut_st_0[atype][btype], 
@@ -507,42 +547,68 @@ void PairOxdna::compute(int eflag, int vflag)
     df4t6 = DF4(theta6p, a_st6[atype][btype], theta_st6_0[atype][btype], dtheta_st6_ast[atype][btype], 
 	b_st6[atype][btype], dtheta_st6_c[atype][btype]);  
 
+    f5c1 = F5(-cosphi1, a_st1[atype][btype], -cosphi_st1_ast[atype][btype], b_st1[atype][btype], 
+	cosphi_st1_c[atype][btype]); 
+
+    df5c1 = DF5(-cosphi1, a_st1[atype][btype], -cosphi_st1_ast[atype][btype], b_st1[atype][btype], 
+	cosphi_st1_c[atype][btype]); 
+
+    f5c2 = F5(-cosphi2, a_st2[atype][btype], -cosphi_st2_ast[atype][btype], b_st2[atype][btype], 
+	cosphi_st2_c[atype][btype]);
+
+    df5c2 = DF5(-cosphi2, a_st2[atype][btype], -cosphi_st2_ast[atype][btype], b_st2[atype][btype], 
+	cosphi_st2_c[atype][btype]);
+
 
     /* TODO: Early rejection criteria */
 
-    // radial force
-    finc  = -df1 * f4t4 * f4t5 * f4t6;
-    fpair = finc;
+    // forces, torques and virial contribution for forces between stacking sites
 
-    delf[0] = delr_st[0]*finc;
-    delf[1] = delr_st[1]*finc;
-    delf[2] = delr_st[2]*finc;
+    fpair = 0.0;
+    delf[0] = 0.0;
+    delf[1] = 0.0;
+    delf[2] = 0.0;
+    delta[0] = 0.0;
+    delta[1] = 0.0;
+    delta[2] = 0.0;
+    deltb[0] = 0.0;
+    deltb[1] = 0.0;
+    deltb[2] = 0.0;
+
+    // radial force
+    finc  = -df1 * f4t4 * f4t5 * f4t6 * f5c1 * f5c2;
+    fpair += finc;
+
+    delf[0] += delr_st[0]*finc;
+    delf[1] += delr_st[1]*finc;
+    delf[2] += delr_st[2]*finc;
 
     // theta5p force
     if (theta5p) {
 
-      finc   = f1 * f4t4 * df4t5 * f4t6 * rinv_st;
+      finc   = -f1 * f4t4 * df4t5 * f4t6 * f5c1 * f5c2 * rinv_st;
       fpair += finc;
 
-      delf[0] += (az[0] - delr_st_norm[0]*cost5p) * finc;
-      delf[1] += (az[1] - delr_st_norm[1]*cost5p) * finc;
-      delf[2] += (az[2] - delr_st_norm[2]*cost5p) * finc;
+      delf[0] += (delr_st_norm[0]*cost5p - az[0]) * finc;
+      delf[1] += (delr_st_norm[1]*cost5p - az[1]) * finc;
+      delf[2] += (delr_st_norm[2]*cost5p - az[2]) * finc;
 
     }
 
     // theta6p force
     if (theta6p) {
 
-      finc   = f1 * f4t4 * f4t5 * df4t6 * rinv_st;
+      finc   = -f1 * f4t4 * f4t5 * df4t6 * f5c1 * f5c2 * rinv_st;
       fpair += finc;
 
-      delf[0] += (bz[0] - delr_st_norm[0]*cost6p) * finc;
-      delf[1] += (bz[1] - delr_st_norm[1]*cost6p) * finc;
-      delf[2] += (bz[2] - delr_st_norm[2]*cost6p) * finc;
+      delf[0] += (delr_st_norm[0]*cost6p - bz[0]) * finc;
+      delf[1] += (delr_st_norm[1]*cost6p - bz[1]) * finc;
+      delf[2] += (delr_st_norm[2]*cost6p - bz[2]) * finc;
 
     }
 
-    // increment forces and calculate according torque increments
+    // increment forces, torques and virial contribution
+
     if (newton_bond || a < nlocal) {
 
       f[a][0] += delf[0];
@@ -563,43 +629,171 @@ void PairOxdna::compute(int eflag, int vflag)
 
     }
 
-    // theta4 pure torque
+    if (newton_bond || a < nlocal) {
+
+      torque[a][0] += delta[0];
+      torque[a][1] += delta[1];
+      torque[a][2] += delta[2];
+
+    }
+    if (newton_bond || b < nlocal) {
+
+      torque[b][0] -= deltb[0];
+      torque[b][1] -= deltb[1];
+      torque[b][2] -= deltb[2];
+
+    }
+
+    if (eflag)  evdwl = f1 * f4t4 * f4t5 * f4t6 * f5c1 * f5c2;
+    if (evflag) ev_tally(a,b,nlocal,newton_bond,evdwl,0.0,fpair,delr_st[0],delr_st[1],delr_st[2]);
+
+    // forces, torques and virial contribution for forces between backbone sites
+
+    fpair = 0.0;
+    delf[0] = 0.0;
+    delf[1] = 0.0;
+    delf[2] = 0.0;
+    delta[0] = 0.0;
+    delta[1] = 0.0;
+    delta[2] = 0.0;
+    deltb[0] = 0.0;
+    deltb[1] = 0.0;
+    deltb[2] = 0.0;
+
+    // cosphi1 force
+    if (cosphi1) {
+
+      finc   = -f1 * f4t4 * f4t5 * f4t6 * df5c1 * f5c2 * rinv_ss;
+      fpair += finc;
+
+      delf[0] += (delr_ss_norm[0]*cosphi1 - ay[0]) * finc;
+      delf[1] += (delr_ss_norm[1]*cosphi1 - ay[1]) * finc;
+      delf[2] += (delr_ss_norm[2]*cosphi1 - ay[2]) * finc;
+
+    }
+
+    // cosphi2 force
+    if (cosphi2) {
+
+      finc   = -f1 * f4t4 * f4t5 * f4t6 * f5c1 * df5c2 * rinv_ss;
+      fpair += finc;
+
+      delf[0] += (delr_ss_norm[0]*cosphi2 - by[0]) * finc;
+      delf[1] += (delr_ss_norm[1]*cosphi2 - by[1]) * finc;
+      delf[2] += (delr_ss_norm[2]*cosphi2 - by[2]) * finc;
+
+    }
+
+    // increment forces, torques and virial contribution
+
+    if (newton_bond || a < nlocal) {
+
+      f[a][0] += delf[0];
+      f[a][1] += delf[1];
+      f[a][2] += delf[2];
+
+      MathExtra::cross3(ra_cs,delf,delta);
+
+    }
+
+    if (newton_bond || b < nlocal) {
+
+      f[b][0] -= delf[0];
+      f[b][1] -= delf[1];
+      f[b][2] -= delf[2];
+
+      MathExtra::cross3(rb_cs,delf,deltb);
+
+    }
+
+    if (newton_bond || a < nlocal) {
+
+      torque[a][0] += delta[0];
+      torque[a][1] += delta[1];
+      torque[a][2] += delta[2];
+
+    }
+    if (newton_bond || b < nlocal) {
+
+      torque[b][0] -= deltb[0];
+      torque[b][1] -= deltb[1];
+      torque[b][2] -= deltb[2];
+
+    }
+
+    if (eflag)  evdwl = f1 * f4t4 * f4t5 * f4t6 * f5c1 * f5c2;
+    if (evflag) ev_tally(a,b,nlocal,newton_bond,evdwl,0.0,fpair,delr_ss[0],delr_ss[1],delr_ss[2]);
+
+    delta[0] = 0.0;
+    delta[1] = 0.0;
+    delta[2] = 0.0;
+    deltb[0] = 0.0;
+    deltb[1] = 0.0;
+    deltb[2] = 0.0;
+
+    // pure torques
+
+    // theta4 torque
     if (theta4) {
 
-      tpair = f1 * df4t4 * f4t5 * f4t6;
+      tpair = -f1 * df4t4 * f4t5 * f4t6 * f5c1 * f5c2;
       MathExtra::cross3(bz,az,t4dir);
 
-      delta[0] -= t4dir[0]*tpair;
-      delta[1] -= t4dir[1]*tpair;
-      delta[2] -= t4dir[2]*tpair;
+      delta[0] += t4dir[0]*tpair;
+      delta[1] += t4dir[1]*tpair;
+      delta[2] += t4dir[2]*tpair;
 
-      deltb[0] -= t4dir[0]*tpair;
-      deltb[1] -= t4dir[1]*tpair;
-      deltb[2] -= t4dir[2]*tpair;
+      deltb[0] += t4dir[0]*tpair;
+      deltb[1] += t4dir[1]*tpair;
+      deltb[2] += t4dir[2]*tpair;
 
     }
 
-    // theta5p pure torque
+    // theta5p torque
     if (theta5p) {
 
-      tpair = f1 * f4t4 * df4t5 * f4t6;
+      tpair = -f1 * f4t4 * df4t5 * f4t6 * f5c1 * f5c2;
       MathExtra::cross3(delr_st_norm,az,t5pdir);
 
-      delta[0] -= t5pdir[0] * tpair;
-      delta[1] -= t5pdir[1] * tpair;
-      delta[2] -= t5pdir[2] * tpair;
+      delta[0] += t5pdir[0] * tpair;
+      delta[1] += t5pdir[1] * tpair;
+      delta[2] += t5pdir[2] * tpair;
 
     }
 
-    // theta6p pure torque
+    // theta6p torque
     if (theta6p) {
 
-      tpair = f1 * f4t4 * f4t5 * df4t6;
+      tpair = -f1 * f4t4 * f4t5 * df4t6 * f5c1 * f5c2;
       MathExtra::cross3(delr_st_norm,bz,t6pdir);
 
-      deltb[0] += t6pdir[0] * tpair;
-      deltb[1] += t6pdir[1] * tpair;
-      deltb[2] += t6pdir[2] * tpair;
+      deltb[0] -= t6pdir[0] * tpair;
+      deltb[1] -= t6pdir[1] * tpair;
+      deltb[2] -= t6pdir[2] * tpair;
+
+    }
+
+    // cosphi1 torque
+    if (cosphi1) {
+
+      tpair   = -f1 * f4t4 * f4t5 * f4t6 * df5c1 * f5c2;
+      MathExtra::cross3(delr_ss_norm,ay,cosphi1dir);
+
+      delta[0] += cosphi1dir[0] * tpair;
+      delta[1] += cosphi1dir[1] * tpair;
+      delta[2] += cosphi1dir[2] * tpair;
+
+    }
+
+    // cosphi2 torque
+    if (cosphi2) {
+
+      tpair   = -f1 * f4t4 * f4t5 * f4t6 * f5c1 * df5c2;
+      MathExtra::cross3(delr_ss_norm,by,cosphi2dir);
+
+      deltb[0] -= cosphi2dir[0] * tpair;
+      deltb[1] -= cosphi2dir[1] * tpair;
+      deltb[2] -= cosphi2dir[2] * tpair;
 
     }
 
@@ -649,11 +843,6 @@ printf("\n");
 
 
 */
-
-
-    /* TODO Energy calculation for stacking pair interaction */
-    if (eflag)  evdwl = f1 * f4t4 * f4t5 * f4t6;
-    if (evflag) ev_tally(a,b,nlocal,newton_bond,evdwl,0.0,fpair,delr_st[0],delr_st[1],delr_st[2]);
 
   }
 
@@ -737,6 +926,15 @@ void PairOxdna::allocate()
   memory->create(b_st6,n+1,n+1,"pair:b_st6");
   memory->create(dtheta_st6_c,n+1,n+1,"pair:dtheta_st6_c");
 
+  memory->create(a_st1,n+1,n+1,"pair:a_st1");
+  memory->create(cosphi_st1_ast,n+1,n+1,"pair:cosphi_st1_ast");
+  memory->create(b_st1,n+1,n+1,"pair:b_st1");
+  memory->create(cosphi_st1_c,n+1,n+1,"pair:cosphi_st1_c");
+  memory->create(a_st2,n+1,n+1,"pair:a_st2");
+  memory->create(cosphi_st2_ast,n+1,n+1,"pair:cosphi_st2_ast");
+  memory->create(b_st2,n+1,n+1,"pair:b_st2");
+  memory->create(cosphi_st2_c,n+1,n+1,"pair:cosphi_st2_c");
+
 }
 
 /* ----------------------------------------------------------------------
@@ -757,7 +955,7 @@ void PairOxdna::coeff(int narg, char **arg)
 {
   int count;
 
-  if (narg != 26) error->all(FLERR,"Incorrect args for pair coefficients");
+  if (narg != 30) error->all(FLERR,"Incorrect args for pair coefficients");
   if (!allocated) allocate();
 
   int ilo,ihi,jlo,jhi;
@@ -880,6 +1078,8 @@ void PairOxdna::coeff(int narg, char **arg)
   double b_st5_one, dtheta_st5_c_one;
   double a_st6_one, theta_st6_0_one, dtheta_st6_ast_one;
   double b_st6_one, dtheta_st6_c_one;
+  double a_st1_one, cosphi_st1_ast_one, b_st1_one, cosphi_st1_c_one;
+  double a_st2_one, cosphi_st2_ast_one, b_st2_one, cosphi_st2_c_one;
 
   epsilon_st_one = force->numeric(FLERR,arg[11]);
   a_st_one = force->numeric(FLERR,arg[12]);
@@ -897,6 +1097,10 @@ void PairOxdna::coeff(int narg, char **arg)
   a_st6_one = force->numeric(FLERR,arg[23]);
   theta_st6_0_one = force->numeric(FLERR,arg[24]);
   dtheta_st6_ast_one = force->numeric(FLERR,arg[25]);
+  a_st1_one = force->numeric(FLERR,arg[26]);
+  cosphi_st1_ast_one = force->numeric(FLERR,arg[27]);
+  a_st2_one = force->numeric(FLERR,arg[28]);
+  cosphi_st2_ast_one = force->numeric(FLERR,arg[29]);
 
   b_st1_lo_one = 2*a_st_one*exp(-a_st_one*(cut_st_lo_one-cut_st_0_one))*
 	2*a_st_one*exp(-a_st_one*(cut_st_lo_one-cut_st_0_one))*
@@ -934,6 +1138,13 @@ void PairOxdna::coeff(int narg, char **arg)
   b_st6_one = a_st6_one*a_st6_one*dtheta_st6_ast_one*dtheta_st6_ast_one/(1-a_st6_one*dtheta_st6_ast_one*dtheta_st6_ast_one);
   dtheta_st6_c_one = 1/(a_st6_one*dtheta_st6_ast_one);
 
+  b_st1_one = a_st1_one*a_st1_one*cosphi_st1_ast_one*cosphi_st1_ast_one/(1-a_st1_one*cosphi_st1_ast_one*cosphi_st1_ast_one);
+  cosphi_st1_c_one=1/(a_st1_one*cosphi_st1_ast_one);
+
+  b_st2_one = a_st2_one*a_st2_one*cosphi_st2_ast_one*cosphi_st2_ast_one/(1-a_st2_one*cosphi_st2_ast_one*cosphi_st2_ast_one);
+  cosphi_st2_c_one=1/(a_st2_one*cosphi_st2_ast_one);
+
+
   for (int i = ilo; i <= ihi; i++) {
     for (int j = MAX(jlo,i); j <= jhi; j++) {
 
@@ -966,6 +1177,16 @@ void PairOxdna::coeff(int narg, char **arg)
       dtheta_st6_ast[i][j] = dtheta_st6_ast_one;
       b_st6[i][j] = b_st6_one;
       dtheta_st6_c[i][j] = dtheta_st6_c_one;
+
+      a_st1[i][j] = a_st1_one;
+      cosphi_st1_ast[i][j] = cosphi_st1_ast_one;
+      b_st1[i][j] = b_st1_one;
+      cosphi_st1_c[i][j] = cosphi_st1_c_one;
+
+      a_st2[i][j] = a_st2_one;
+      cosphi_st2_ast[i][j] = cosphi_st2_ast_one;
+      b_st2[i][j] = b_st2_one;
+      cosphi_st2_c[i][j] = cosphi_st2_c_one;
 
       setflag[i][j] = 1;
       count++;
@@ -1072,6 +1293,12 @@ double PairOxdna::init_one(int i, int j)
   b_st6[j][i] = b_st6[i][j];
   dtheta_st6_c[j][i] = dtheta_st6_c[i][j];
 
+  b_st1[j][i] = b_st1[i][j];
+  cosphi_st1_c[j][i] = cosphi_st1_c[i][j];
+
+  b_st2[j][i] = b_st2[i][j];
+  cosphi_st2_c[j][i] = cosphi_st2_c[i][j];
+
   // set the master list distance cutoff
   return cut_ss_ast[i][j];
 
@@ -1136,6 +1363,15 @@ void PairOxdna::write_restart(FILE *fp)
         fwrite(&dtheta_st6_ast[i][j],sizeof(double),1,fp);
         fwrite(&b_st6[i][j],sizeof(double),1,fp);
         fwrite(&dtheta_st6_c[i][j],sizeof(double),1,fp);
+
+        fwrite(&a_st1[i][j],sizeof(double),1,fp);
+        fwrite(&cosphi_st1_ast[i][j],sizeof(double),1,fp);
+        fwrite(&b_st1[i][j],sizeof(double),1,fp);
+        fwrite(&cosphi_st1_c[i][j],sizeof(double),1,fp);
+        fwrite(&a_st2[i][j],sizeof(double),1,fp);
+        fwrite(&cosphi_st2_ast[i][j],sizeof(double),1,fp);
+        fwrite(&b_st2[i][j],sizeof(double),1,fp);
+        fwrite(&cosphi_st2_c[i][j],sizeof(double),1,fp);
 
     }
   }
@@ -1205,6 +1441,15 @@ void PairOxdna::read_restart(FILE *fp)
 	  fread(&b_st6[i][j],sizeof(double),1,fp);
 	  fread(&dtheta_st6_c[i][j],sizeof(double),1,fp);
 
+	  fread(&a_st1[i][j],sizeof(double),1,fp);
+	  fread(&cosphi_st1_ast[i][j],sizeof(double),1,fp);
+	  fread(&b_st1[i][j],sizeof(double),1,fp);
+	  fread(&cosphi_st1_c[i][j],sizeof(double),1,fp);
+	  fread(&a_st2[i][j],sizeof(double),1,fp);
+	  fread(&cosphi_st2_ast[i][j],sizeof(double),1,fp);
+	  fread(&b_st2[i][j],sizeof(double),1,fp);
+	  fread(&cosphi_st2_c[i][j],sizeof(double),1,fp);
+
         }
 
         MPI_Bcast(&epsilon_ss[i][j],1,MPI_DOUBLE,0,world);
@@ -1252,6 +1497,15 @@ void PairOxdna::read_restart(FILE *fp)
         MPI_Bcast(&dtheta_st6_ast[i][j],1,MPI_DOUBLE,0,world);
         MPI_Bcast(&b_st6[i][j],1,MPI_DOUBLE,0,world);
         MPI_Bcast(&dtheta_st6_c[i][j],1,MPI_DOUBLE,0,world);
+
+        MPI_Bcast(&a_st1[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&cosphi_st1_ast[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&b_st1[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&cosphi_st1_c[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&a_st2[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&cosphi_st2_ast[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&b_st2[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&cosphi_st2_c[i][j],1,MPI_DOUBLE,0,world);
 
       }
     }
@@ -1301,6 +1555,8 @@ void PairOxdna::write_data(FILE *fp)
 	 %g %g %g %g %g\
 	 %g %g %g %g %g\
 	 %g %g %g %g %g\
+	 %g %g %g %g\
+	 %g %g %g %g\
 	 \n",i,
 	epsilon_ss[i][i],sigma_ss[i][i],cut_ss_ast[i][i],b_ss[i][i],cut_ss_c[i][i],
 	epsilon_sb[i][i],sigma_sb[i][i],cut_sb_ast[i][i],b_sb[i][i],cut_sb_c[i][i],
@@ -1309,7 +1565,9 @@ void PairOxdna::write_data(FILE *fp)
 	cut_st_lc[i][i],cut_st_hc[i][i],b_st1_lo[i][i],b_st1_hi[i][i],shift_st[i][i],
 	a_st4[i][i],theta_st4_0[i][i],dtheta_st4_ast[i][i],b_st4[i][i],dtheta_st4_c[i][i],
 	a_st5[i][i],theta_st5_0[i][i],dtheta_st5_ast[i][i],b_st5[i][i],dtheta_st5_c[i][i],
-	a_st6[i][i],theta_st6_0[i][i],dtheta_st6_ast[i][i],b_st6[i][i],dtheta_st6_c[i][i]);
+	a_st6[i][i],theta_st6_0[i][i],dtheta_st6_ast[i][i],b_st6[i][i],dtheta_st6_c[i][i],
+	a_st1[i][i],cosphi_st1_ast[i][i],b_st1[i][i], cosphi_st1_c[i][i],
+	a_st2[i][i],cosphi_st2_ast[i][i],b_st2[i][i], cosphi_st2_c[i][i]);
 }
 
 /* ----------------------------------------------------------------------
@@ -1329,6 +1587,8 @@ void PairOxdna::write_data_all(FILE *fp)
 	 %g %g %g %g %g\
 	 %g %g %g %g %g\
 	 %g %g %g %g %g\
+	 %g %g %g %g\
+	 %g %g %g %g\
 	 \n",i,j,
 	epsilon_ss[i][j],sigma_ss[i][j],cut_ss_ast[i][j],b_ss[i][j],cut_ss_c[i][j],
 	epsilon_sb[i][j],sigma_sb[i][j],cut_sb_ast[i][j],b_sb[i][j],cut_sb_c[i][j],
@@ -1337,7 +1597,9 @@ void PairOxdna::write_data_all(FILE *fp)
 	cut_st_lc[i][j],cut_st_hc[i][j],b_st1_lo[i][j],b_st1_hi[i][j],shift_st[i][j],
 	a_st4[i][j],theta_st4_0[i][j],dtheta_st4_ast[i][j],b_st4[i][j],dtheta_st4_c[i][j],
 	a_st5[i][j],theta_st5_0[i][j],dtheta_st5_ast[i][j],b_st5[i][j],dtheta_st5_c[i][j],
-	a_st6[i][j],theta_st6_0[i][j],dtheta_st6_ast[i][j],b_st6[i][j],dtheta_st6_c[i][j]);
+	a_st6[i][j],theta_st6_0[i][j],dtheta_st6_ast[i][j],b_st6[i][j],dtheta_st6_c[i][j],
+	a_st1[i][j],cosphi_st1_ast[i][j],b_st1[i][j],cosphi_st1_c[i][j],
+	a_st2[i][j],cosphi_st2_ast[i][j],b_st2[i][j],cosphi_st2_c[i][j]);
 }
 
 /* ---------------------------------------------------------------------- */
@@ -1392,6 +1654,15 @@ void *PairOxdna::extract(const char *str, int &dim)
   if (strcmp(str,"dtheta_st6_ast") == 0) return (void *) dtheta_st6_ast;
   if (strcmp(str,"b_st6") == 0) return (void *) b_st6;
   if (strcmp(str,"dtheta_st6_c") == 0) return (void *) dtheta_st6_c;
+
+  if (strcmp(str,"a_st1") == 0) return (void *) a_st1;
+  if (strcmp(str,"cosphi_st1_ast") == 0) return (void *) cosphi_st1_ast;
+  if (strcmp(str,"b_st1") == 0) return (void *) b_st1;
+  if (strcmp(str,"cosphi_st1_c") == 0) return (void *) cosphi_st1_c;
+  if (strcmp(str,"a_st2") == 0) return (void *) a_st2;
+  if (strcmp(str,"cosphi_st2_ast") == 0) return (void *) cosphi_st2_ast;
+  if (strcmp(str,"b_st2") == 0) return (void *) b_st2;
+  if (strcmp(str,"cosphi_st2_c") == 0) return (void *) cosphi_st2_c;
 
   return NULL;
 }
@@ -1477,22 +1748,22 @@ inline double PairOxdna::DF1(double r, double eps, double a, double cut_0,
 /* ----------------------------------------------------------------------
    f4 modulation factor 
 ------------------------------------------------------------------------- */
-inline double PairOxdna::F4(double theta, double a_st, double theta_st_0, 
-	double dtheta_st_ast, double b_st, double dtheta_st_c) 
+inline double PairOxdna::F4(double theta, double a, double theta_0, 
+	double dtheta_ast, double b, double dtheta_c) 
 {
-  double dtheta = theta-theta_st_0;
+  double dtheta = theta-theta_0;
 
-  if (fabs(dtheta) > dtheta_st_c) {
+  if (fabs(dtheta) > dtheta_c) {
     return 0.0;
   }
-  else if (dtheta > dtheta_st_ast) {
-    return b_st * (dtheta-dtheta_st_c)*(dtheta-dtheta_st_c);
+  else if (dtheta > dtheta_ast) {
+    return b * (dtheta-dtheta_c)*(dtheta-dtheta_c);
   }
-  else if(dtheta > -dtheta_st_ast) {
-    return 1 - a_st * dtheta*dtheta;
+  else if(dtheta > -dtheta_ast) {
+    return 1 - a * dtheta*dtheta;
   }
   else {
-    return b_st * (dtheta+dtheta_st_c)*(dtheta+dtheta_st_c);
+    return b * (dtheta+dtheta_c)*(dtheta+dtheta_c);
   }
 
 }
@@ -1500,22 +1771,65 @@ inline double PairOxdna::F4(double theta, double a_st, double theta_st_0,
 /* ----------------------------------------------------------------------
    derivative of f4 modulation factor 
 ------------------------------------------------------------------------- */
-inline double PairOxdna::DF4(double theta, double a_st, double theta_st_0,
-        double dtheta_st_ast, double b_st, double dtheta_st_c) 
+inline double PairOxdna::DF4(double theta, double a, double theta_0,
+        double dtheta_ast, double b, double dtheta_c) 
 {
-  double dtheta = theta-theta_st_0;
+  double dtheta = theta-theta_0;
 
-  if(fabs(dtheta) > dtheta_st_c) {
+  if (fabs(dtheta) > dtheta_c) {
     return 0.0;
   }
-  else if(dtheta > dtheta_st_ast) {
-    return 2*b_st * (dtheta-dtheta_st_c) / sin(theta);
+  else if (dtheta > dtheta_ast) {
+    return 2*b * (dtheta-dtheta_c) / sin(theta);
   }
-  else if(dtheta > -dtheta_st_ast) {
-    return -2*a_st * dtheta / sin(theta);
+  else if (dtheta > -dtheta_ast) {
+    return -2*a * dtheta / sin(theta);
   }
   else {
-    return 2*b_st * (dtheta+dtheta_st_c) / sin(theta);
+    return 2*b * (dtheta+dtheta_c) / sin(theta);
   } 
 
+}
+
+/* ----------------------------------------------------------------------
+   f5 modulation factor 
+------------------------------------------------------------------------- */
+inline double PairOxdna::F5(double x, double a, double x_ast, 
+	double b, double x_c) 
+{
+
+  if (x >= 0) {
+    return 1.0;
+  }
+  else if (x > x_ast) {
+    return 1 - a * x * x;
+  }
+  else if (x > x_c) {
+    return b * (x-x_c) * (x-x_c);
+  }
+  else {
+    return 0.0;
+  }
+}
+
+/* ----------------------------------------------------------------------
+   derivative of f5 modulation factor 
+------------------------------------------------------------------------- */
+inline double PairOxdna::DF5(double x, double a, double x_ast, 
+	double b, double x_c) 
+{
+  if(x >= 0) {
+    return 0.0;
+  }
+  else if (x > x_ast) {
+    return -2 * a * x;
+  }
+  else if(x > x_c) {
+    return 2 * b * (x-x_c);
+  }
+  else {
+    return 0.0;
+  }
+
+return 0;
 }

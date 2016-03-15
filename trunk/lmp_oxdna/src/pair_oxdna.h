@@ -68,6 +68,8 @@ class PairOxdna : public Pair {
   double **b_st5, **dtheta_st5_c;
   double **a_st6, **theta_st6_0, **dtheta_st6_ast;
   double **b_st6, **dtheta_st6_c;
+  double **a_st1, **cosphi_st1_ast, **b_st1, **cosphi_st1_c;
+  double **a_st2, **cosphi_st2_ast, **b_st2, **cosphi_st2_c;  
 
   virtual void allocate();
 
@@ -77,6 +79,8 @@ class PairOxdna : public Pair {
   inline double DF1(double, double, double, double, double, double, double, double, double, double);
   inline double F4(double, double, double, double, double, double);
   inline double DF4(double, double, double, double, double, double);
+  inline double F5(double, double, double, double, double);
+  inline double DF5(double, double, double, double, double);
 
 };
 
