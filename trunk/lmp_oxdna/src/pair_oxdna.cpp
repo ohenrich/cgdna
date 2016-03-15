@@ -397,8 +397,8 @@ void PairOxdna::compute(int eflag, int vflag)
 	evdwl = F3(rsq_bb,cutsq_bb_ast[atype][btype],cut_bb_c[atype][btype],lj1_bb[atype][btype],
 			lj2_bb[atype][btype],epsilon_bb[atype][btype],b_bb[atype][btype],fpair);
 
-	if (evflag) ev_tally(a,b,nlocal,newton_pair, evdwl,0.0,fpair,
-			delr_bb[0],delr_bb[1],delr_bb[2]);
+	if (evflag) ev_tally(a,b,nlocal,newton_pair,
+		evdwl,0.0,fpair,delr_bb[0],delr_bb[1],delr_bb[2]);
 
 	delf[0] = delr_bb[0]*fpair; 
 	delf[1] = delr_bb[1]*fpair; 
@@ -525,12 +525,18 @@ void PairOxdna::compute(int eflag, int vflag)
 	cut_st_lc[atype][btype], cut_st_hc[atype][btype], cut_st_lo[atype][btype], cut_st_hi[atype][btype], 
 	b_st1_lo[atype][btype], b_st1_hi[atype][btype], shift_st[atype][btype]);
 
+    // early rejection criterium
+    if (f1) {
+
     df1 = DF1(r_st, epsilon_st[atype][btype], a_st[atype][btype], cut_st_0[atype][btype], 
 	cut_st_lc[atype][btype], cut_st_hc[atype][btype], cut_st_lo[atype][btype], cut_st_hi[atype][btype], 
 	b_st1_lo[atype][btype], b_st1_hi[atype][btype]);
 
     f4t4 = F4(theta4, a_st4[atype][btype], theta_st4_0[atype][btype], dtheta_st4_ast[atype][btype], 
 	b_st4[atype][btype], dtheta_st4_c[atype][btype]);  
+
+    // early rejection criterium
+    if (f4t4) {
 
     df4t4 = DF4(theta4, a_st4[atype][btype], theta_st4_0[atype][btype], dtheta_st4_ast[atype][btype], 
 	b_st4[atype][btype], dtheta_st4_c[atype][btype]);  
@@ -560,17 +566,26 @@ void PairOxdna::compute(int eflag, int vflag)
 	cosphi_st2_c[atype][btype]);
 
 
-    /* TODO: Early rejection criteria */
+    evdwl = f1 * f4t4 * f4t5 * f4t6 * f5c1 * f5c2;
 
-    // forces, torques and virial contribution for forces between stacking sites
+    // early rejection criterium
+    if (evdwl) {
+
+    // increment energy
+    if (evflag) ev_tally(a,b,nlocal,newton_bond,evdwl,0.0,0.0,0.0,0.0,0.0);
+
+    // force, torque and virial contribution for forces between stacking sites
 
     fpair = 0.0;
+
     delf[0] = 0.0;
     delf[1] = 0.0;
     delf[2] = 0.0;
+
     delta[0] = 0.0;
     delta[1] = 0.0;
     delta[2] = 0.0;
+
     deltb[0] = 0.0;
     deltb[1] = 0.0;
     deltb[2] = 0.0;
@@ -607,7 +622,7 @@ void PairOxdna::compute(int eflag, int vflag)
 
     }
 
-    // increment forces, torques and virial contribution
+    // increment forces, torques and virial
 
     if (newton_bond || a < nlocal) {
 
@@ -618,7 +633,6 @@ void PairOxdna::compute(int eflag, int vflag)
       MathExtra::cross3(ra_cst,delf,delta);
 
     }
-
     if (newton_bond || b < nlocal) {
 
       f[b][0] -= delf[0];
@@ -644,18 +658,20 @@ void PairOxdna::compute(int eflag, int vflag)
 
     }
 
-    if (eflag)  evdwl = f1 * f4t4 * f4t5 * f4t6 * f5c1 * f5c2;
-    if (evflag) ev_tally(a,b,nlocal,newton_bond,evdwl,0.0,fpair,delr_st[0],delr_st[1],delr_st[2]);
+    if (evflag) ev_tally(a,b,nlocal,newton_bond,0.0,0.0,fpair,delr_st[0],delr_st[1],delr_st[2]);
 
-    // forces, torques and virial contribution for forces between backbone sites
+    // force, torque and virial contribution for forces between backbone sites
 
     fpair = 0.0;
+
     delf[0] = 0.0;
     delf[1] = 0.0;
     delf[2] = 0.0;
+
     delta[0] = 0.0;
     delta[1] = 0.0;
     delta[2] = 0.0;
+
     deltb[0] = 0.0;
     deltb[1] = 0.0;
     deltb[2] = 0.0;
@@ -695,7 +711,6 @@ void PairOxdna::compute(int eflag, int vflag)
       MathExtra::cross3(ra_cs,delf,delta);
 
     }
-
     if (newton_bond || b < nlocal) {
 
       f[b][0] -= delf[0];
@@ -721,8 +736,7 @@ void PairOxdna::compute(int eflag, int vflag)
 
     }
 
-    if (eflag)  evdwl = f1 * f4t4 * f4t5 * f4t6 * f5c1 * f5c2;
-    if (evflag) ev_tally(a,b,nlocal,newton_bond,evdwl,0.0,fpair,delr_ss[0],delr_ss[1],delr_ss[2]);
+    if (evflag) ev_tally(a,b,nlocal,newton_bond,0.0,0.0,fpair,delr_ss[0],delr_ss[1],delr_ss[2]);
 
     delta[0] = 0.0;
     delta[1] = 0.0;
@@ -731,7 +745,7 @@ void PairOxdna::compute(int eflag, int vflag)
     deltb[1] = 0.0;
     deltb[2] = 0.0;
 
-    // pure torques
+    // pure torques not expressible as r x f 
 
     // theta4 torque
     if (theta4) {
@@ -813,38 +827,13 @@ void PairOxdna::compute(int eflag, int vflag)
 
     }
 
-
-/*
-double tau[3], delr0[3], sum[3];
-
-//delf[0] = 0;
-//delf[1] = 0;
-//delf[2] = 0;
-
-delr0[0] = x[b][0] - x[a][0];
-delr0[1] = x[b][1] - x[a][1];
-delr0[2] = x[b][2] - x[a][2];
-
-MathExtra::cross3(delr0,delf,tau);
-
-sum[0] = -delta[0] + deltb[0] - tau[0];
-sum[1] = -delta[1] + deltb[1] - tau[1];
-sum[2] = -delta[2] + deltb[2] - tau[2];
-
-printf("Timestep %d\n", update->ntimestep);
-printf("%d %d  %le %le %le\n",a,b,-delta[0],-delta[1],-delta[2]);
-printf("%d %d  %le %le %le\n",a,b,deltb[0],deltb[1],deltb[2]);
-printf("%d %d  %le %le %le\n",a,b,tau[0],tau[1],tau[2]);
-printf("%d %d  %le %le %le\n",a,b,sum[0],sum[1],sum[2]);
-printf("\n");
-printf("%d %d  %le %le %le\n",a,b,-delf[0],-delf[1],-delf[2]);
-printf("\n");
-printf("\n");
-
-
-*/
+    } 
+    }
+    }
+    // end early rejection criteria
 
   }
+  // end stacking interaction
 
   if (vflag_fdotr) virial_fdotr_compute();
 }
