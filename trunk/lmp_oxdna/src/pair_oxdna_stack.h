@@ -16,22 +16,21 @@
 
 #ifdef PAIR_CLASS
 
-PairStyle(oxdna,PairOxdna)
+PairStyle(oxdna_stack,PairOxdnaStack)
 
 #else
 
-#ifndef LMP_PAIR_OXDNA_H
-#define LMP_PAIR_OXDNA_H
+#ifndef LMP_PAIR_OXDNA_STACK_H
+#define LMP_PAIR_OXDNA_STACK_H
 
 #include "pair.h"
-#include "update.h"
 
 namespace LAMMPS_NS {
 
-class PairOxdna : public Pair {
+class PairOxdnaStack : public Pair {
  public:
-  PairOxdna(class LAMMPS *);
-  virtual ~PairOxdna();
+  PairOxdnaStack(class LAMMPS *);
+  virtual ~PairOxdnaStack();
   virtual void compute(int, int);
   void settings(int, char **);
   void coeff(int, char **);
@@ -47,16 +46,6 @@ class PairOxdna : public Pair {
   void *extract(const char *, int &);
 
  protected:
-  // s=sugar-phosphate backbone site, b=base site, st=stacking site
-
-  // excluded volume interaction
-  double **epsilon_ss, **sigma_ss, **cut_ss_ast, **cutsq_ss_ast; 
-  double **lj1_ss, **lj2_ss, **b_ss, **cut_ss_c, **cutsq_ss_c;
-  double **epsilon_sb, **sigma_sb, **cut_sb_ast, **cutsq_sb_ast; 
-  double **lj1_sb, **lj2_sb, **b_sb, **cut_sb_c, **cutsq_sb_c;
-  double **epsilon_bb, **sigma_bb, **cut_bb_ast, **cutsq_bb_ast; 
-  double **lj1_bb, **lj2_bb, **b_bb, **cut_bb_c, **cutsq_bb_c;
-
   // stacking interaction
   double **epsilon_st, **a_st, **cut_st_0, **cut_st_c;
   double **cut_st_lo, **cut_st_hi;
@@ -72,16 +61,6 @@ class PairOxdna : public Pair {
   double **a_st2, **cosphi_st2_ast, **b_st2, **cosphi_st2_c;  
 
   virtual void allocate();
-
-  // modulation factors
-  inline double F3(double, double, double, double, double, double, double, double &);
-  inline double F1(double, double, double, double, double, double, double, double, double, double, double);
-  inline double DF1(double, double, double, double, double, double, double, double, double, double);
-  inline double F4(double, double, double, double, double, double);
-  inline double DF4(double, double, double, double, double, double);
-  inline double F5(double, double, double, double, double);
-  inline double DF5(double, double, double, double, double);
-
 };
 
 }
