@@ -16,7 +16,7 @@
 
 #include "math.h"
 #include "stdlib.h"
-#include "bond_oxdna.h"
+#include "bond_oxdna_fene.h"
 #include "atom.h"
 #include "neighbor.h"
 #include "domain.h"
@@ -32,14 +32,14 @@ using namespace LAMMPS_NS;
 
 /* ---------------------------------------------------------------------- */
 
-BondOxdna::BondOxdna(LAMMPS *lmp) : Bond(lmp)
+BondOxdnaFene::BondOxdnaFene(LAMMPS *lmp) : Bond(lmp)
 {
 
 }
 
 /* ---------------------------------------------------------------------- */
 
-BondOxdna::~BondOxdna()
+BondOxdnaFene::~BondOxdnaFene()
 {
   if (allocated) {
 
@@ -55,21 +55,20 @@ BondOxdna::~BondOxdna()
    compute function for oxDNA FENE-bond interaction
    s=sugar-phosphate backbone site, b=base site, st=stacking site
 ------------------------------------------------------------------------- */
-void BondOxdna::compute(int eflag, int vflag)
+void BondOxdnaFene::compute(int eflag, int vflag)
 {
-  int a,b,n,type;
+  int a,b,in,type;
   double delf[3],delta[3],deltb[3]; // force, torque increment;;
   double delr[3],ebond,fbond;
   double rsq,Deltasq,rlogarg;
   double r,rr0,rr0sq;
-  // distances COM-backbone
+  // distances COM-backbone site
   double d_cs=-0.24; 
   // vectors COM-backbone site in lab frame
   double ra_cs[3],rb_cs[3];
 
-  ebond = 0.0;
-  if (eflag || vflag) ev_setup(eflag,vflag);
-  else evflag = 0;
+  double *qa,ax[3],ay[3],az[3];
+  double *qb,bx[3],by[3],bz[3];
 
   double **x = atom->x;
   double **f = atom->f;
@@ -79,21 +78,22 @@ void BondOxdna::compute(int eflag, int vflag)
   AtomVecEllipsoid *avec = (AtomVecEllipsoid *) atom->style_match("ellipsoid");
   AtomVecEllipsoid::Bonus *bonus = avec->bonus;
 
-  double *qa,ax[3],ay[3],az[3];
-  double *qb,bx[3],by[3],bz[3];
-
   int **bondlist = neighbor->bondlist;
   int nbondlist = neighbor->nbondlist;
   int nlocal = atom->nlocal;
   int newton_bond = force->newton_bond;
 
+  ebond = 0.0;
+  if (eflag || vflag) ev_setup(eflag,vflag);
+  else evflag = 0;
+
   // loop over FENE bonds 
 
-  for (n = 0; n < nbondlist; n++) {
+  for (in = 0; in < nbondlist; in++) {
 
-    a = bondlist[n][1];
-    b = bondlist[n][0];
-    type = bondlist[n][2];
+    a = bondlist[in][1];
+    b = bondlist[in][0];
+    type = bondlist[in][2];
 
     qa=bonus[a].quat;
     MathExtra::q_to_exyz(qa,ax,ay,az);
@@ -113,8 +113,8 @@ void BondOxdna::compute(int eflag, int vflag)
     delr[1] = x[a][1] + ra_cs[1] - x[b][1] - rb_cs[1];
     delr[2] = x[a][2] + ra_cs[2] - x[b][2] - rb_cs[2];
     rsq = delr[0]*delr[0] + delr[1]*delr[1] + delr[2]*delr[2];
-
     r = sqrt(rsq);
+
     rr0 = r - r0[type];
     rr0sq = rr0*rr0;
     Deltasq = Delta[type] * Delta[type];
@@ -128,7 +128,7 @@ void BondOxdna::compute(int eflag, int vflag)
       char str[128];
       sprintf(str,"FENE bond too long: " BIGINT_FORMAT " " 
               TAGINT_FORMAT " " TAGINT_FORMAT " %g",
-              update->ntimestep,atom->tag[a],atom->tag[b],sqrt(rsq));
+              update->ntimestep,atom->tag[a],atom->tag[b],r);
       error->warning(FLERR,str,0);
       if (rlogarg <= -3.0) error->one(FLERR,"Bad FENE bond");
     }
@@ -182,7 +182,7 @@ void BondOxdna::compute(int eflag, int vflag)
 
 /* ---------------------------------------------------------------------- */
 
-void BondOxdna::allocate()
+void BondOxdnaFene::allocate()
 {
   allocated = 1;
   int n = atom->nbondtypes;
@@ -200,9 +200,9 @@ void BondOxdna::allocate()
    set coeffs for one type
 ------------------------------------------------------------------------- */
 
-void BondOxdna::coeff(int narg, char **arg)
+void BondOxdnaFene::coeff(int narg, char **arg)
 {
-  if (narg != 4) error->all(FLERR,"Incorrect args for bond coefficients");
+  if (narg != 4) error->all(FLERR,"Incorrect args for bond coefficients oxdna_fene");
   if (!allocated) allocate();
 
   int ilo,ihi;
@@ -222,7 +222,7 @@ void BondOxdna::coeff(int narg, char **arg)
     count++;
   }
 
-  if (count == 0) error->all(FLERR,"Incorrect args for bond coefficients");
+  if (count == 0) error->all(FLERR,"Incorrect args for bond coefficients oxdna_fene");
 
 }
 
@@ -230,7 +230,7 @@ void BondOxdna::coeff(int narg, char **arg)
    set special_bond settings and check if valid
 ------------------------------------------------------------------------- */
 
-void BondOxdna::init_style()
+void BondOxdnaFene::init_style()
 {
   /* special bonds have to be lj = 0 1 1 and coul = 1 1 1 to exclude 
      the ss excluded volume interaction between nearest neighbours   */ 
@@ -239,8 +239,8 @@ void BondOxdna::init_style()
   force->special_lj[2] = 1.0;
   force->special_lj[3] = 1.0;
   force->special_coul[1] = 1.0;
-  force->special_coul[2] = 1.0;
-  force->special_coul[3] = 1.0;
+  force->special_coul[2] = 0.0;
+  force->special_coul[3] = 0.0;
 
   fprintf(screen,"Finding 1-2 1-3 1-4 neighbors ...\n"
 		 " Special bond factors lj:   %-10g %-10g %-10g\n"
@@ -248,17 +248,18 @@ void BondOxdna::init_style()
 		 force->special_lj[1],force->special_lj[2],force->special_lj[3],
 		 force->special_coul[1],force->special_coul[2],force->special_coul[3]);
 
-  if (force->special_lj[1] != 0.0 || force->special_lj[2] != 1.0 ||
-      force->special_lj[3] != 1.0) {
+  if (force->special_lj[1] != 0.0 || force->special_lj[2] != 1.0 || force->special_lj[3] != 1.0 ||  
+      force->special_coul[1] != 1.0 || force->special_coul[2] != 0.0 || force->special_coul[3] != 0.0)  
+  {
     if (comm->me == 0)
-      error->warning(FLERR,"Use special bonds lj = 0,1,1 and coul = 1,1,1 with bond style oxdna");
+      error->warning(FLERR,"Use special bonds lj = 0,1,1 and coul = 1,1,1 with bond style oxdna_fene");
   }
 
 }
 
 /* ---------------------------------------------------------------------- */
 
-double BondOxdna::equilibrium_distance(int i)
+double BondOxdnaFene::equilibrium_distance(int i)
 {
   return r0[i];
 }
@@ -267,7 +268,7 @@ double BondOxdna::equilibrium_distance(int i)
    proc 0 writes to restart file
 ------------------------------------------------------------------------- */
 
-void BondOxdna::write_restart(FILE *fp)
+void BondOxdnaFene::write_restart(FILE *fp)
 {
   fwrite(&k[1],sizeof(double),atom->nbondtypes,fp);
   fwrite(&Delta[1],sizeof(double),atom->nbondtypes,fp);
@@ -278,7 +279,7 @@ void BondOxdna::write_restart(FILE *fp)
    proc 0 reads from restart file, bcasts
 ------------------------------------------------------------------------- */
 
-void BondOxdna::read_restart(FILE *fp)
+void BondOxdnaFene::read_restart(FILE *fp)
 {
   allocate();
 
@@ -298,7 +299,7 @@ void BondOxdna::read_restart(FILE *fp)
    proc 0 writes to data file
 ------------------------------------------------------------------------- */
 
-void BondOxdna::write_data(FILE *fp)
+void BondOxdnaFene::write_data(FILE *fp)
 {
   for (int i = 1; i <= atom->nbondtypes; i++)
     fprintf(fp,"%d %g %g %g\n",i,k[i],r0[i],Delta[i]);
@@ -306,7 +307,7 @@ void BondOxdna::write_data(FILE *fp)
 
 /* ---------------------------------------------------------------------- */
 
-double BondOxdna::single(int type, double rsq, int i, int j,
+double BondOxdnaFene::single(int type, double rsq, int i, int j,
                         double &fforce)
 {
   double r = sqrt(rsq);

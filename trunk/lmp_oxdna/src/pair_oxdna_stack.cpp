@@ -116,9 +116,9 @@ void PairOxdnaStack::compute(int eflag, int vflag)
   double theta6p,t6pdir[3],cost6p;
   double cosphi1,cosphi2,cosphi1dir[3],cosphi2dir[3];
 
-  // distances COM-backbone, COM-stack
+  // distances COM-backbone site, COM-stacking site
   double d_cs=-0.24, d_cst=0.5; 
-  // vectors COM-backbone, -stack in lab frame
+  // vectors COM-backbone site, COM-stacking site in lab frame
   double ra_cs[3],ra_cst[3];
   double rb_cs[3],rb_cst[3];
 
@@ -129,29 +129,28 @@ void PairOxdnaStack::compute(int eflag, int vflag)
   double **x = atom->x;
   double **f = atom->f;
   double **torque = atom->torque;
-
-  double f1,f4t4,f4t5,f4t6,f5c1,f5c2;
-  double df1,df4t4,df4t5,df4t6,df5c1,df5c2;
-
-  int a,b,in,atype,btype;
   int *type = atom->type;
   int *molecule = atom->molecule;
   int *ellipsoid = atom->ellipsoid;
 
   int nlocal = atom->nlocal;
-
   int newton_bond = force->newton_bond;
 
   int **bondlist = neighbor->bondlist;
   int nbondlist = neighbor->nbondlist;
 
+  AtomVecEllipsoid *avec = (AtomVecEllipsoid *) atom->style_match("ellipsoid");
+  AtomVecEllipsoid::Bonus *bonus = avec->bonus;
+
+  int a,b,in,atype,btype;
+
+  double f1,f4t4,f4t5,f4t6,f5c1,f5c2;
+  double df1,df4t4,df4t5,df4t6,df5c1,df5c2;
+  double is_3pto5p;
 
   evdwl = 0.0;
   if (eflag || vflag) ev_setup(eflag,vflag);
   else evflag = vflag_fdotr = 0;
-
-  AtomVecEllipsoid *avec = (AtomVecEllipsoid *) atom->style_match("ellipsoid");
-  AtomVecEllipsoid::Bonus *bonus = avec->bonus;
 
   // loop over stacking interaction neighours using bond topology 
 
@@ -180,8 +179,16 @@ void PairOxdnaStack::compute(int eflag, int vflag)
 
     // vector stacking site b to a
     delr_st[0] = x[a][0] + ra_cst[0] - x[b][0] - rb_cst[0];
-    delr_st[1] = x[a][1] + ra_cst[1] - x[b][1] - rb_cst[1] ;
-    delr_st[2] = x[a][2] + ra_cst[2] - x[b][2] - rb_cst[2] ;
+    delr_st[1] = x[a][1] + ra_cst[1] - x[b][1] - rb_cst[1];
+    delr_st[2] = x[a][2] + ra_cst[2] - x[b][2] - rb_cst[2];
+
+    // test for directionality by projecting base normal of b onto delr_st
+    // returns 1 if a to b is 3' to 5', otherwise -1 
+    is_3pto5p = copysign(1.0,MathExtra::dot3(delr_st,bz));
+
+    delr_st[0] = (x[a][0] + ra_cst[0] - x[b][0] - rb_cst[0]) * is_3pto5p;
+    delr_st[1] = (x[a][1] + ra_cst[1] - x[b][1] - rb_cst[1]) * is_3pto5p;
+    delr_st[2] = (x[a][2] + ra_cst[2] - x[b][2] - rb_cst[2]) * is_3pto5p;
 
     rsq_st = delr_st[0]*delr_st[0] + delr_st[1]*delr_st[1] + delr_st[2]*delr_st[2];
     r_st = sqrt(rsq_st);
@@ -202,9 +209,9 @@ void PairOxdnaStack::compute(int eflag, int vflag)
     rb_cs[2] = d_cs*bx[2];
 
     // vector backbone site b to a
-    delr_ss[0] = x[a][0] + ra_cs[0] - x[b][0] - rb_cs[0];
-    delr_ss[1] = x[a][1] + ra_cs[1] - x[b][1] - rb_cs[1] ;
-    delr_ss[2] = x[a][2] + ra_cs[2] - x[b][2] - rb_cs[2] ;
+    delr_ss[0] = (x[a][0] + ra_cs[0] - x[b][0] - rb_cs[0]) * is_3pto5p;
+    delr_ss[1] = (x[a][1] + ra_cs[1] - x[b][1] - rb_cs[1]) * is_3pto5p;
+    delr_ss[2] = (x[a][2] + ra_cs[2] - x[b][2] - rb_cs[2]) * is_3pto5p;
 
     rsq_ss = delr_ss[0]*delr_ss[0] + delr_ss[1]*delr_ss[1] + delr_ss[2]*delr_ss[2];
     r_ss = sqrt(rsq_ss);
@@ -309,17 +316,17 @@ void PairOxdnaStack::compute(int eflag, int vflag)
     deltb[2] = 0.0;
 
     // radial force
-    finc  = -df1 * f4t4 * f4t5 * f4t6 * f5c1 * f5c2;
+    finc  = -df1 * f4t4 * f4t5 * f4t6 * f5c1 * f5c2 * is_3pto5p;
     fpair += finc;
 
-    delf[0] += delr_st[0]*finc;
-    delf[1] += delr_st[1]*finc;
-    delf[2] += delr_st[2]*finc;
+    delf[0] += delr_st[0] * finc;
+    delf[1] += delr_st[1] * finc;
+    delf[2] += delr_st[2] * finc;
 
     // theta5p force
     if (theta5p) {
 
-      finc   = -f1 * f4t4 * df4t5 * f4t6 * f5c1 * f5c2 * rinv_st;
+      finc   = -f1 * f4t4 * df4t5 * f4t6 * f5c1 * f5c2 * rinv_st  * is_3pto5p;
       fpair += finc;
 
       delf[0] += (delr_st_norm[0]*cost5p - az[0]) * finc;
@@ -331,7 +338,7 @@ void PairOxdnaStack::compute(int eflag, int vflag)
     // theta6p force
     if (theta6p) {
 
-      finc   = -f1 * f4t4 * f4t5 * df4t6 * f5c1 * f5c2 * rinv_st;
+      finc   = -f1 * f4t4 * f4t5 * df4t6 * f5c1 * f5c2 * rinv_st * is_3pto5p;
       fpair += finc;
 
       delf[0] += (delr_st_norm[0]*cost6p - bz[0]) * finc;
@@ -397,7 +404,7 @@ void PairOxdnaStack::compute(int eflag, int vflag)
     // cosphi1 force
     if (cosphi1) {
 
-      finc   = -f1 * f4t4 * f4t5 * f4t6 * df5c1 * f5c2 * rinv_ss;
+      finc   = -f1 * f4t4 * f4t5 * f4t6 * df5c1 * f5c2 * rinv_ss * is_3pto5p;
       fpair += finc;
 
       delf[0] += (delr_ss_norm[0]*cosphi1 - ay[0]) * finc;
@@ -409,7 +416,7 @@ void PairOxdnaStack::compute(int eflag, int vflag)
     // cosphi2 force
     if (cosphi2) {
 
-      finc   = -f1 * f4t4 * f4t5 * f4t6 * f5c1 * df5c2 * rinv_ss;
+      finc   = -f1 * f4t4 * f4t5 * f4t6 * f5c1 * df5c2 * rinv_ss * is_3pto5p;
       fpair += finc;
 
       delf[0] += (delr_ss_norm[0]*cosphi2 - by[0]) * finc;

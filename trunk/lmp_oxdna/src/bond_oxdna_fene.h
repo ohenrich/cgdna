@@ -16,22 +16,22 @@
 
 #ifdef BOND_CLASS
 
-BondStyle(oxdna,BondOxdna)
+BondStyle(oxdna_fene,BondOxdnaFene)
 
 #else
 
-#ifndef LMP_BOND_OXDNA_H
-#define LMP_BOND_OXDNA_H
+#ifndef LMP_BOND_OXDNA_FENE_H
+#define LMP_BOND_OXDNA_FENE_H
 
 #include "stdio.h"
 #include "bond.h"
 
 namespace LAMMPS_NS {
 
-class BondOxdna : public Bond {
+class BondOxdnaFene : public Bond {
  public:
-  BondOxdna(class LAMMPS *);
-  virtual ~BondOxdna();
+  BondOxdnaFene(class LAMMPS *);
+  virtual ~BondOxdnaFene();
   virtual void compute(int, int);
   void coeff(int, char **);
   void init_style();

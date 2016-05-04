@@ -103,9 +103,9 @@ void PairOxdnaExcv::compute(int eflag, int vflag)
   double delr_ss[3],rsq_ss,delr_sb[3],rsq_sb;
   double delr_bs[3],rsq_bs,delr_bb[3],rsq_bb;
 
-  // distances COM-backbone, COM-base
+  // distances COM-backbone site, COM-base site
   double d_cs=-0.24, d_cb=0.56; 
-  // vectors COM-backbone, -base in lab frame
+  // vectors COM-backbone site, COM-base site in lab frame
   double ra_cs[3],ra_cb[3];
   double rb_cs[3],rb_cb[3];
 
@@ -117,24 +117,22 @@ void PairOxdnaExcv::compute(int eflag, int vflag)
   double **x = atom->x;
   double **f = atom->f;
   double **torque = atom->torque;
-
-  int a,b,ia,ib,anum,bnum,atype,btype;
-
-  int *alist,*blist,*numneigh,**firstneigh;
   int *type = atom->type;
   int *molecule = atom->molecule;
   int *ellipsoid = atom->ellipsoid;
 
   int nlocal = atom->nlocal;
-
   int newton_pair = force->newton_pair;
+  int *alist,*blist,*numneigh,**firstneigh;
+
+  AtomVecEllipsoid *avec = (AtomVecEllipsoid *) atom->style_match("ellipsoid");
+  AtomVecEllipsoid::Bonus *bonus = avec->bonus;
+
+  int a,b,ia,ib,anum,bnum,atype,btype;
 
   evdwl = 0.0;
   if (eflag || vflag) ev_setup(eflag,vflag);
   else evflag = vflag_fdotr = 0;
-
-  AtomVecEllipsoid *avec = (AtomVecEllipsoid *) atom->style_match("ellipsoid");
-  AtomVecEllipsoid::Bonus *bonus = avec->bonus;
 
   anum = list->inum;
   alist = list->ilist;
@@ -146,6 +144,7 @@ void PairOxdnaExcv::compute(int eflag, int vflag)
   for (ia = 0; ia < anum; ia++) {
 
     a = alist[ia];
+    atype = type[a];
 
     qa=bonus[a].quat;
     MathExtra::q_to_exyz(qa,ax,ay,az);
@@ -158,7 +157,7 @@ void PairOxdnaExcv::compute(int eflag, int vflag)
     rtmp_s[1] = x[a][1] + ra_cs[1];
     rtmp_s[2] = x[a][2] + ra_cs[2];
 
-    // position of base site i
+    // position of base site a
     ra_cb[0] = d_cb*ax[0];
     ra_cb[1] = d_cb*ax[1];
     ra_cb[2] = d_cb*ax[2];
@@ -166,7 +165,6 @@ void PairOxdnaExcv::compute(int eflag, int vflag)
     rtmp_b[1] = x[a][1] + ra_cb[1];
     rtmp_b[2] = x[a][2] + ra_cb[2];
 
-    atype = type[a];
     blist = firstneigh[a];
     bnum = numneigh[a];
 
@@ -175,7 +173,6 @@ void PairOxdnaExcv::compute(int eflag, int vflag)
       b = blist[ib];
       factor_lj = special_lj[sbmask(b)]; // = 0 for nearest neighbours
       b &= NEIGHMASK;
-
       btype = type[b];
 
       qb=bonus[b].quat;
