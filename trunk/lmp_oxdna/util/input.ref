@@ -1,0 +1,64 @@
+variable number	equal 7
+variable freq	equal 1000
+
+units lj
+
+dimension 3
+
+newton off
+
+processors 2 2 2
+
+boundary  p p p
+
+atom_style hybrid bond ellipsoid
+atom_modify sort 0 2.0
+
+# Pair interactions require lists of neighbours to be calculated
+neighbor 2.0 bin
+neigh_modify every 1 delay 0 check yes
+
+read_data data.duplex1
+
+set atom * mass 3.1575
+
+group all type 1 2
+
+# oxDNA bond interactions - FENE backbone
+bond_style oxdna_fene
+bond_coeff * 2.0 0.25 0.7525
+
+# oxDNA pair interactions
+pair_style hybrid/overlay oxdna_excv oxdna_stack oxdna_hbond
+pair_coeff * * oxdna_excv  2.0 0.7 0.675 2.0 0.515 0.5 2.0 0.33 0.32
+pair_coeff * * oxdna_stack 1.61048 6.0 0.4 0.9 0.32 0.6 1.3 0 0.8 0.9 0 0.95 0.9 0 0.95 2.0 0.65 2.0 0.65   
+pair_coeff 1 1 oxdna_hbond 0.0 8.0 0.4 0.75 0.34 0.7 1.5 0 0.7 0.46 3.141592653589793 0.7
+pair_coeff 1 2 oxdna_hbond 1.077 8.0 0.4 0.75 0.34 0.7 1.5 0 0.7 0.46 3.141592653589793 0.7
+pair_coeff 2 2 oxdna_hbond 0.0 8.0 0.4 0.75 0.34 0.7 1.5 0 0.7 0.46 3.141592653589793 0.7
+
+# NVE ensemble
+fix 1 all   nve/asphere
+#fix 2 all   langevin   0.1 0.1 0.3 457145 angmom 3.3333 
+
+timestep 1e-5 
+
+#comm_style tiled
+#fix 3 all balance 10000 1.1 rcb
+
+dump 1 all xyz ${freq} traj.${number}.xyz
+
+compute quat all property/atom quatw quati quatj quatk
+dump quat all custom ${freq} quat.${number}.txt id c_quat[1] c_quat[2] c_quat[3] c_quat[4]
+dump_modify quat sort id
+dump_modify quat format "%d  %13.6le  %13.6le  %13.6le  %13.6le"
+
+thermo ${freq}
+thermo_style custom step ke pe etotal
+
+dump out all custom ${freq} out.${number}.txt id x y z vx vy vz fx fy fz tqx tqy tqz
+dump_modify out sort id
+dump_modify out format "%d   %13.6le  %13.6le  %13.6le %13.6le  %13.6le  %13.6le  %13.6le  %13.6le  %13.6le %13.6le  %13.6le  %13.6le %13.6le  %13.6le"
+
+run 1000000
+
+#write_restart config.${number}.*
