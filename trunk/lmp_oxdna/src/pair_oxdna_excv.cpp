@@ -173,6 +173,7 @@ void PairOxdnaExcv::compute(int eflag, int vflag)
       b = blist[ib];
       factor_lj = special_lj[sbmask(b)]; // = 0 for nearest neighbours
       b &= NEIGHMASK;
+
       btype = type[b];
 
       qb=bonus[b].quat;
@@ -446,7 +447,7 @@ void PairOxdnaExcv::coeff(int narg, char **arg)
 {
   int count;
 
-  if (narg != 11) error->all(FLERR,"Incorrect args for pair coefficients");
+  if (narg != 11) error->all(FLERR,"Incorrect args for pair coefficients in oxdna_excv");
   if (!allocated) allocate();
 
   int ilo,ihi,jlo,jhi;
@@ -457,6 +458,12 @@ void PairOxdnaExcv::coeff(int narg, char **arg)
 
   double epsilon_ss_one, sigma_ss_one;
   double cut_ss_ast_one, cut_ss_c_one, b_ss_one;
+
+  double epsilon_sb_one, sigma_sb_one;
+  double cut_sb_ast_one, cut_sb_c_one, b_sb_one;
+
+  double epsilon_bb_one, sigma_bb_one;
+  double cut_bb_ast_one, cut_bb_c_one, b_bb_one;
 
   // Excluded volume interaction
   // LJ parameters
@@ -486,12 +493,9 @@ void PairOxdnaExcv::coeff(int narg, char **arg)
     }
   }
 
-  if (count == 0) error->all(FLERR,"Incorrect args for pair coefficients");
+  if (count == 0) error->all(FLERR,"Incorrect args for pair coefficients in oxdna_excv");
 
   count = 0;
-  
-  double epsilon_sb_one, sigma_sb_one;
-  double cut_sb_ast_one, cut_sb_c_one, b_sb_one;
 
   // LJ parameters
   epsilon_sb_one = force->numeric(FLERR,arg[5]);
@@ -520,13 +524,10 @@ void PairOxdnaExcv::coeff(int narg, char **arg)
     }
   }
 
-  if (count == 0) error->all(FLERR,"Incorrect args for pair coefficients");
+  if (count == 0) error->all(FLERR,"Incorrect args for pair coefficients in oxdna_excv");
 
   count = 0;
   
-  double epsilon_bb_one, sigma_bb_one;
-  double cut_bb_ast_one, cut_bb_c_one, b_bb_one;
-
   // LJ parameters
   epsilon_bb_one = force->numeric(FLERR,arg[8]);
   sigma_bb_one = force->numeric(FLERR,arg[9]);
@@ -554,7 +555,7 @@ void PairOxdnaExcv::coeff(int narg, char **arg)
     }
   }
 
-  if (count == 0) error->all(FLERR,"Incorrect args for pair coefficients");
+  if (count == 0) error->all(FLERR,"Incorrect args for pair coefficients in oxdna_excv");
 
 }
 
@@ -597,6 +598,24 @@ double PairOxdnaExcv::init_one(int i, int j)
   if (offset_flag) {
     error->all(FLERR,"Offset not supported in oxDNA");
   } 
+
+  epsilon_ss[j][i] = epsilon_ss[i][j];
+  sigma_ss[j][i] = sigma_ss[i][j]; 
+  cut_ss_ast[j][i] = cut_ss_ast[i][j];
+  cut_ss_c[j][i] = cut_ss_c[i][j];
+  b_ss[j][i] = b_ss[i][j];
+
+  epsilon_sb[j][i] = epsilon_sb[i][j];
+  sigma_sb[j][i] = sigma_sb[i][j];
+  cut_sb_ast[j][i] = cut_sb_ast[i][j];
+  cut_sb_c[j][i] = cut_sb_c[i][j];
+  b_sb[j][i] = b_sb[i][j];
+
+  epsilon_bb[j][i] = epsilon_bb[i][j];
+  sigma_bb[j][i] = sigma_bb[i][j];
+  cut_bb_ast[j][i] = cut_bb_ast[i][j];
+  cut_bb_c[j][i] = cut_bb_c[i][j];
+  b_bb[j][i] = b_bb[i][j];
 
   // excluded volume auxiliary parameters
 

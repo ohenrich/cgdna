@@ -127,6 +127,7 @@ void PairOxdnaHbond::compute(int eflag, int vflag)
 
   double f1,f4t1,f4t4;
   double df1,df4t1,df4t4;
+  double tptofp;
 
   evdwl = 0.0;
   if (eflag || vflag) ev_setup(eflag,vflag);
@@ -142,6 +143,7 @@ void PairOxdnaHbond::compute(int eflag, int vflag)
   for (ia = 0; ia < anum; ia++) {
 
     a = alist[ia];
+    atype = type[a];
 
     qa=bonus[a].quat;
     MathExtra::q_to_exyz(qa,ax,ay,az);
@@ -149,8 +151,7 @@ void PairOxdnaHbond::compute(int eflag, int vflag)
     ra_chb[0] = d_chb*ax[0];
     ra_chb[1] = d_chb*ax[1];
     ra_chb[2] = d_chb*ax[2];
-
-    atype = type[a];
+  
     blist = firstneigh[a];
     bnum = numneigh[a];
 
@@ -171,8 +172,8 @@ void PairOxdnaHbond::compute(int eflag, int vflag)
 
       // vector h-bonding site b to a
       delr_hb[0] = x[a][0] + ra_chb[0] - x[b][0] - rb_chb[0];
-      delr_hb[1] = x[a][1] + ra_chb[1] - x[b][1] - rb_chb[1] ;
-      delr_hb[2] = x[a][2] + ra_chb[2] - x[b][2] - rb_chb[2] ;
+      delr_hb[1] = x[a][1] + ra_chb[1] - x[b][1] - rb_chb[1];
+      delr_hb[2] = x[a][2] + ra_chb[2] - x[b][2] - rb_chb[2];
 
       rsq_hb = delr_hb[0]*delr_hb[0] + delr_hb[1]*delr_hb[1] + delr_hb[2]*delr_hb[2];
       r_hb = sqrt(rsq_hb);
@@ -239,9 +240,9 @@ void PairOxdnaHbond::compute(int eflag, int vflag)
       finc  = -df1 * f4t1 * f4t4 * factor_lj;
       fpair += finc;
 
-      delf[0] += delr_hb[0]*finc;
-      delf[1] += delr_hb[1]*finc;
-      delf[2] += delr_hb[2]*finc;
+      delf[0] += delr_hb[0] * finc;
+      delf[1] += delr_hb[1] * finc;
+      delf[2] += delr_hb[2] * finc;
 
       // increment forces, torques
 
@@ -260,6 +261,7 @@ void PairOxdnaHbond::compute(int eflag, int vflag)
 	f[b][0] -= delf[0];
 	f[b][1] -= delf[1];
 	f[b][2] -= delf[2];
+
 
 	MathExtra::cross3(rb_chb,delf,deltb);
 
@@ -402,7 +404,7 @@ void PairOxdnaHbond::coeff(int narg, char **arg)
 {
   int count;
 
-  if (narg != 14) error->all(FLERR,"Incorrect args for pair coefficients");
+  if (narg != 14) error->all(FLERR,"Incorrect args for pair coefficients in oxdna_hbond");
   if (!allocated) allocate();
 
   int ilo,ihi,jlo,jhi;
@@ -410,11 +412,10 @@ void PairOxdnaHbond::coeff(int narg, char **arg)
   force->bounds(arg[1],atom->ntypes,jlo,jhi);
 
   // h-bonding interaction
-  count =0;
+  count = 0;
 
-  double epsilon_hb_one, a_hb_one, b_hb_lo_one, b_hb_hi_one;
-  double cut_hb_0_one, cut_hb_c_one, cut_hb_lo_one, cut_hb_hi_one;
-  double cut_hb_lc_one, cut_hb_hc_one, tmp, shift_hb_one;
+  double epsilon_hb_one, a_hb_one, cut_hb_0_one, cut_hb_c_one, cut_hb_lo_one, cut_hb_hi_one;
+  double b_hb_lo_one, b_hb_hi_one, cut_hb_lc_one, cut_hb_hc_one, tmp, shift_hb_one;
 
   double a_hb1_one, theta_hb1_0_one, dtheta_hb1_ast_one;
   double b_hb1_one, dtheta_hb1_c_one;
@@ -502,7 +503,7 @@ void PairOxdnaHbond::coeff(int narg, char **arg)
     }
   }
 
-  if (count == 0) error->all(FLERR,"Incorrect args for pair coefficients");
+  if (count == 0) error->all(FLERR,"Incorrect args for pair coefficients in oxdna_hbond");
 
 }
 
@@ -546,20 +547,32 @@ double PairOxdnaHbond::init_one(int i, int j)
     error->all(FLERR,"Offset not supported in oxDNA");
   } 
 
-  // h-bonding auxiliary and derived parameters
-
-  shift_hb[j][i] = shift_hb[i][j];
+  epsilon_hb[j][i] = epsilon_hb[i][j];
+  a_hb[j][i] = a_hb[i][j];
+  cut_hb_0[j][i] = cut_hb_0[i][j];
+  cut_hb_c[j][i] = cut_hb_c[i][j];
+  cut_hb_lo[j][i] = cut_hb_lo[i][j];
+  cut_hb_hi[j][i] = cut_hb_hi[i][j];
   b_hb_lo[j][i] = b_hb_lo[i][j];
   b_hb_hi[j][i] = b_hb_hi[i][j];
+  cut_hb_lc[j][i] = cut_hb_lc[i][j];
+  cut_hb_hc[j][i] = cut_hb_hc[i][j];
+  shift_hb[j][i] = shift_hb[i][j];
 
-  cutsq_hb_hc[i][j] = cut_hb_hc[i][j]*cut_hb_hc[i][j];
-  cutsq_hb_hc[j][i] = cutsq_hb_hc[i][j];
-
+  a_hb1[j][i] = a_hb1[i][j];
+  theta_hb1_0[j][i] = theta_hb1_0[i][j];
+  dtheta_hb1_ast[j][i] = dtheta_hb1_ast[i][j];
   b_hb1[j][i] = b_hb1[i][j];
   dtheta_hb1_c[j][i] = dtheta_hb1_c[i][j];
 
+  a_hb4[j][i] = a_hb4[i][j];
+  theta_hb4_0[j][i] = theta_hb4_0[i][j];
+  dtheta_hb4_ast[j][i] = dtheta_hb4_ast[i][j];
   b_hb4[j][i] = b_hb4[i][j];
   dtheta_hb4_c[j][i] = dtheta_hb4_c[i][j];
+
+  cutsq_hb_hc[i][j] = cut_hb_hc[i][j]*cut_hb_hc[i][j];
+  cutsq_hb_hc[j][i] = cutsq_hb_hc[i][j];
 
   // set the master list distance cutoff
   return cut_hb_hc[i][j];

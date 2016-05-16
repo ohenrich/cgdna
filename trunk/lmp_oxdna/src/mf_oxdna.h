@@ -21,6 +21,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "error.h"
+#include "math_extra.h"
 
 namespace MFOxdna {
 
@@ -31,6 +32,7 @@ namespace MFOxdna {
   inline double DF4(double, double, double, double, double, double);
   inline double F5(double, double, double, double, double);
   inline double DF5(double, double, double, double, double);
+  inline double is_3pto5p(const double *, const double *);
 
 }
 
@@ -108,7 +110,6 @@ inline double MFOxdna::F3(double rsq, double cutsq_ast, double cut_c,
     fpair = 2*eps*b*(cut_c*rinv - 1);
     evdwl = eps*b*(cut_c-r)*(cut_c-r);
   }
-
   return evdwl;
 }
 
@@ -197,7 +198,15 @@ inline double MFOxdna::DF5(double x, double a, double x_ast,
   else {
     return 0.0;
   }
-
-return 0;
+  return 0;
 }
+
+/* ----------------------------------------------------------------------
+   test for directionality by projecting base normal n onto delr,
+   returns 1 if nucleotide a to nucleotide b is 3' to 5', otherwise -1 
+------------------------------------------------------------------------- */
+inline double MFOxdna::is_3pto5p(const double * delr, const double * n)
+{
+  return copysign(1.0,MathExtra::dot3(delr,n));
+} 
 #endif

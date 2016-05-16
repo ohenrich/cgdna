@@ -202,7 +202,7 @@ void BondOxdnaFene::allocate()
 
 void BondOxdnaFene::coeff(int narg, char **arg)
 {
-  if (narg != 4) error->all(FLERR,"Incorrect args for bond coefficients oxdna_fene");
+  if (narg != 4) error->all(FLERR,"Incorrect args for bond coefficients in oxdna_fene");
   if (!allocated) allocate();
 
   int ilo,ihi;
@@ -222,7 +222,7 @@ void BondOxdnaFene::coeff(int narg, char **arg)
     count++;
   }
 
-  if (count == 0) error->all(FLERR,"Incorrect args for bond coefficients oxdna_fene");
+  if (count == 0) error->all(FLERR,"Incorrect args for bond coefficients in oxdna_fene");
 
 }
 
@@ -239,8 +239,8 @@ void BondOxdnaFene::init_style()
   force->special_lj[2] = 1.0;
   force->special_lj[3] = 1.0;
   force->special_coul[1] = 1.0;
-  force->special_coul[2] = 0.0;
-  force->special_coul[3] = 0.0;
+  force->special_coul[2] = 1.0;
+  force->special_coul[3] = 1.0;
 
   fprintf(screen,"Finding 1-2 1-3 1-4 neighbors ...\n"
 		 " Special bond factors lj:   %-10g %-10g %-10g\n"
@@ -249,7 +249,7 @@ void BondOxdnaFene::init_style()
 		 force->special_coul[1],force->special_coul[2],force->special_coul[3]);
 
   if (force->special_lj[1] != 0.0 || force->special_lj[2] != 1.0 || force->special_lj[3] != 1.0 ||  
-      force->special_coul[1] != 1.0 || force->special_coul[2] != 0.0 || force->special_coul[3] != 0.0)  
+      force->special_coul[1] != 1.0 || force->special_coul[2] != 1.0 || force->special_coul[3] != 1.0)  
   {
     if (comm->me == 0)
       error->warning(FLERR,"Use special bonds lj = 0,1,1 and coul = 1,1,1 with bond style oxdna_fene");
