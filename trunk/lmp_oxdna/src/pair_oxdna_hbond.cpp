@@ -74,13 +74,35 @@ PairOxdnaHbond::~PairOxdnaHbond()
     memory->destroy(b_hb1);
     memory->destroy(dtheta_hb1_c);
 
+    memory->destroy(a_hb2);
+    memory->destroy(theta_hb2_0);
+    memory->destroy(dtheta_hb2_ast);
+    memory->destroy(b_hb2);
+    memory->destroy(dtheta_hb2_c);
+
+    memory->destroy(a_hb3);
+    memory->destroy(theta_hb3_0);
+    memory->destroy(dtheta_hb3_ast);
+    memory->destroy(b_hb3);
+    memory->destroy(dtheta_hb3_c);
+
     memory->destroy(a_hb4);
     memory->destroy(theta_hb4_0);
     memory->destroy(dtheta_hb4_ast);
     memory->destroy(b_hb4);
     memory->destroy(dtheta_hb4_c);
 
+    memory->destroy(a_hb7);
+    memory->destroy(theta_hb7_0);
+    memory->destroy(dtheta_hb7_ast);
+    memory->destroy(b_hb7);
+    memory->destroy(dtheta_hb7_c);
 
+    memory->destroy(a_hb8);
+    memory->destroy(theta_hb8_0);
+    memory->destroy(dtheta_hb8_ast);
+    memory->destroy(b_hb8);
+    memory->destroy(dtheta_hb8_c);
 
   }
 }
@@ -97,7 +119,11 @@ void PairOxdnaHbond::compute(int eflag, int vflag)
   double evdwl,fpair,finc,tpair,factor_lj;
   double delr_hb[3],delr_hb_norm[3],rsq_hb,r_hb,rinv_hb;
   double theta1,t1dir[3],cost1;
+  double theta2,t2dir[3],cost2;
+  double theta3,t3dir[3],cost3;
   double theta4,t4dir[3],cost4;
+  double theta7,t7dir[3],cost7;
+  double theta8,t8dir[3],cost8;
 
   // distance COM-hbonding site
   double d_chb=0.56; 
@@ -125,9 +151,8 @@ void PairOxdnaHbond::compute(int eflag, int vflag)
 
   int a,b,ia,ib,anum,bnum,atype,btype;
 
-  double f1,f4t1,f4t4;
-  double df1,df4t1,df4t4;
-  double tptofp;
+  double f1,f4t1,f4t4,f4t2,f4t3,f4t7,f4t8;
+  double df1,df4t1,df4t4,df4t2,df4t3,df4t7,df4t8;
 
   evdwl = 0.0;
   if (eflag || vflag) ev_setup(eflag,vflag);
@@ -185,15 +210,35 @@ void PairOxdnaHbond::compute(int eflag, int vflag)
 
       // angles and corrections
 
-      cost1 = MathExtra::dot3(ax,bx);
+      cost1 = -1.0*MathExtra::dot3(ax,bx);
       if (cost1 >  1.0) cost1 =  1.0;
       if (cost1 < -1.0) cost1 = -1.0;
-      theta1 = acos(-1.0*cost1);
+      theta1 = acos(cost1);
+
+      cost2 = -1.0*MathExtra::dot3(ax,delr_hb_norm);
+      if (cost2 >  1.0) cost2 =  1.0;
+      if (cost2 < -1.0) cost2 = -1.0;
+      theta2 = acos(cost2);
+
+      cost3 = MathExtra::dot3(bx,delr_hb_norm);
+      if (cost3 >  1.0) cost3 =  1.0;
+      if (cost3 < -1.0) cost3 = -1.0;
+      theta3 = acos(cost3);
 
       cost4 = MathExtra::dot3(az,bz);
       if (cost4 >  1.0) cost4 =  1.0;
       if (cost4 < -1.0) cost4 = -1.0;
       theta4 = acos(cost4);
+
+      cost7 = -1.0*MathExtra::dot3(az,delr_hb_norm);
+      if (cost7 >  1.0) cost7 =  1.0;
+      if (cost7 < -1.0) cost7 = -1.0;
+      theta7 = acos(cost7);
+
+      cost8 = MathExtra::dot3(bz,delr_hb_norm);
+      if (cost8 >  1.0) cost8 =  1.0;
+      if (cost8 < -1.0) cost8 = -1.0;
+      theta8 = acos(cost8);
 
       f1 = F1(r_hb, epsilon_hb[atype][btype], a_hb[atype][btype], cut_hb_0[atype][btype],
 	    cut_hb_lc[atype][btype], cut_hb_hc[atype][btype], cut_hb_lo[atype][btype], cut_hb_hi[atype][btype],
@@ -202,8 +247,20 @@ void PairOxdnaHbond::compute(int eflag, int vflag)
       f4t1 = F4(theta1, a_hb1[atype][btype], theta_hb1_0[atype][btype], dtheta_hb1_ast[atype][btype],
 	    b_hb1[atype][btype], dtheta_hb1_c[atype][btype]);
 
+      f4t2 = F4(theta2, a_hb2[atype][btype], theta_hb2_0[atype][btype], dtheta_hb2_ast[atype][btype],
+	    b_hb2[atype][btype], dtheta_hb2_c[atype][btype]);
+
+      f4t3 = F4(theta3, a_hb3[atype][btype], theta_hb3_0[atype][btype], dtheta_hb3_ast[atype][btype],
+	    b_hb3[atype][btype], dtheta_hb3_c[atype][btype]);
+
       f4t4 = F4(theta4, a_hb4[atype][btype], theta_hb4_0[atype][btype], dtheta_hb4_ast[atype][btype],
 	    b_hb4[atype][btype], dtheta_hb4_c[atype][btype]);
+
+      f4t7 = F4(theta7, a_hb7[atype][btype], theta_hb7_0[atype][btype], dtheta_hb7_ast[atype][btype],
+	    b_hb7[atype][btype], dtheta_hb7_c[atype][btype]);
+
+      f4t8 = F4(theta8, a_hb8[atype][btype], theta_hb8_0[atype][btype], dtheta_hb8_ast[atype][btype],
+	    b_hb8[atype][btype], dtheta_hb8_c[atype][btype]);
 
       df1 = DF1(r_hb, epsilon_hb[atype][btype], a_hb[atype][btype], cut_hb_0[atype][btype],
 	    cut_hb_lc[atype][btype], cut_hb_hc[atype][btype], cut_hb_lo[atype][btype], cut_hb_hi[atype][btype],
@@ -212,10 +269,22 @@ void PairOxdnaHbond::compute(int eflag, int vflag)
       df4t1 = DF4(theta1, a_hb1[atype][btype], theta_hb1_0[atype][btype], dtheta_hb1_ast[atype][btype],
 	    b_hb1[atype][btype], dtheta_hb1_c[atype][btype]);
 
+      df4t2 = DF4(theta2, a_hb2[atype][btype], theta_hb2_0[atype][btype], dtheta_hb2_ast[atype][btype],
+	    b_hb2[atype][btype], dtheta_hb2_c[atype][btype]);
+
+      df4t3 = DF4(theta3, a_hb3[atype][btype], theta_hb3_0[atype][btype], dtheta_hb3_ast[atype][btype],
+	    b_hb3[atype][btype], dtheta_hb3_c[atype][btype]);
+
       df4t4 = DF4(theta4, a_hb4[atype][btype], theta_hb4_0[atype][btype], dtheta_hb4_ast[atype][btype],
 	    b_hb4[atype][btype], dtheta_hb4_c[atype][btype]);
 
-      evdwl = f1 * f4t1 * f4t4 * factor_lj;
+      df4t7 = DF4(theta7, a_hb7[atype][btype], theta_hb7_0[atype][btype], dtheta_hb7_ast[atype][btype],
+	    b_hb7[atype][btype], dtheta_hb7_c[atype][btype]);
+
+      df4t8 = DF4(theta8, a_hb8[atype][btype], theta_hb8_0[atype][btype], dtheta_hb8_ast[atype][btype],
+	    b_hb8[atype][btype], dtheta_hb8_c[atype][btype]);
+
+      evdwl = f1 * f4t1 * f4t2 * f4t3 * f4t4 * f4t7 * f4t8 * factor_lj;
 
       // early rejection criterium
       if (evdwl) {
@@ -237,12 +306,60 @@ void PairOxdnaHbond::compute(int eflag, int vflag)
       deltb[2] = 0.0;
 
       // radial force
-      finc  = -df1 * f4t1 * f4t4 * factor_lj;
+      finc  = -df1 * f4t1 * f4t2 * f4t3 * f4t4 * f4t7 * f4t8 * factor_lj;
       fpair += finc;
 
       delf[0] += delr_hb[0] * finc;
       delf[1] += delr_hb[1] * finc;
       delf[2] += delr_hb[2] * finc;
+
+      // theta2 force
+      if (theta2) {
+
+	finc  = -f1 * f4t1 * df4t2 * f4t3 * f4t4 * f4t7 * f4t8 * rinv_hb * factor_lj;
+	fpair += finc;
+
+	delf[0] += (delr_hb_norm[0]*cost2 + ax[0]) * finc;
+	delf[1] += (delr_hb_norm[1]*cost2 + ax[1]) * finc;
+	delf[2] += (delr_hb_norm[2]*cost2 + ax[2]) * finc;
+
+      }
+
+      // theta3 force
+      if (theta3) {
+
+	finc  = -f1 * f4t1 * f4t2 * df4t3 * f4t4 * f4t7 * f4t8 * rinv_hb * factor_lj;
+	fpair += finc;
+
+	delf[0] += (delr_hb_norm[0]*cost3 - bx[0]) * finc;
+	delf[1] += (delr_hb_norm[1]*cost3 - bx[1]) * finc;
+	delf[2] += (delr_hb_norm[2]*cost3 - bx[2]) * finc;
+
+      }
+
+      // theta7 force
+      if (theta7) {
+
+	finc  = -f1 * f4t1 * f4t2 * f4t3 * f4t4 * df4t7 * f4t8 * rinv_hb * factor_lj;
+	fpair += finc;
+
+	delf[0] += (delr_hb_norm[0]*cost7 + az[0]) * finc;
+	delf[1] += (delr_hb_norm[1]*cost7 + az[1]) * finc;
+	delf[2] += (delr_hb_norm[2]*cost7 + az[2]) * finc;
+
+      }
+
+      // theta8 force
+      if (theta8) {
+
+	finc  = -f1 * f4t1 * f4t2 * f4t3 * f4t4 * f4t7 * df4t8 * rinv_hb * factor_lj;
+	fpair += finc;
+
+	delf[0] += (delr_hb_norm[0]*cost8 - bz[0]) * finc;
+	delf[1] += (delr_hb_norm[1]*cost8 - bz[1]) * finc;
+	delf[2] += (delr_hb_norm[2]*cost8 - bz[2]) * finc;
+
+      }
 
       // increment forces, torques
 
@@ -283,36 +400,80 @@ void PairOxdnaHbond::compute(int eflag, int vflag)
       // theta1 torque
       if (theta1) {
 
-	tpair = -f1 * df4t1 * f4t4 * factor_lj;
+	tpair = -f1 * df4t1 * f4t2 * f4t3 * f4t4 * f4t7 * f4t8 * factor_lj;
 	MathExtra::cross3(ax,bx,t1dir);
 
 	delta[0] += t1dir[0]*tpair;
 	delta[1] += t1dir[1]*tpair;
 	delta[2] += t1dir[2]*tpair;
 
-	if (newton_pair || b < nlocal) {
-	  deltb[0] += t1dir[0]*tpair;
-	  deltb[1] += t1dir[1]*tpair;
-	  deltb[2] += t1dir[2]*tpair;
-	}
+	deltb[0] += t1dir[0]*tpair;
+	deltb[1] += t1dir[1]*tpair;
+	deltb[2] += t1dir[2]*tpair;
+
+      }
+
+      // theta2 torque
+      if (theta2) {
+
+	tpair = -f1 * f4t1 * df4t2 * f4t3 * f4t4 * f4t7 * f4t8 * factor_lj;
+	MathExtra::cross3(ax,delr_hb_norm,t2dir);
+
+	delta[0] += t2dir[0]*tpair;
+	delta[1] += t2dir[1]*tpair;
+	delta[2] += t2dir[2]*tpair;
+
+      }
+
+      // theta3 torque
+      if (theta3) {
+
+	tpair = -f1 * f4t1 * f4t2 * df4t3 * f4t4 * f4t7 * f4t8 * factor_lj;
+	MathExtra::cross3(bx,delr_hb_norm,t3dir);
+
+	deltb[0] += t3dir[0]*tpair;
+	deltb[1] += t3dir[1]*tpair;
+	deltb[2] += t3dir[2]*tpair;
 
       }
 
       // theta4 torque
       if (theta4) {
 
-	tpair = -f1 * f4t1 * df4t4 * factor_lj;
+	tpair = -f1 * f4t1 * f4t2 * f4t3 * df4t4 * f4t7 * f4t8 * factor_lj;
 	MathExtra::cross3(bz,az,t4dir);
 
 	delta[0] += t4dir[0]*tpair;
 	delta[1] += t4dir[1]*tpair;
 	delta[2] += t4dir[2]*tpair;
 
-	if (newton_pair || b < nlocal) {
-	  deltb[0] += t4dir[0]*tpair;
-	  deltb[1] += t4dir[1]*tpair;
-	  deltb[2] += t4dir[2]*tpair;
-	}
+	deltb[0] += t4dir[0]*tpair;
+	deltb[1] += t4dir[1]*tpair;
+	deltb[2] += t4dir[2]*tpair;
+
+      }
+
+      // theta7 torque
+      if (theta7) {
+
+	tpair = -f1 * f4t1 * f4t2 * f4t3 * f4t4 * df4t7 * f4t8 * factor_lj;
+	MathExtra::cross3(az,delr_hb_norm,t7dir);
+
+	delta[0] += t7dir[0]*tpair;
+	delta[1] += t7dir[1]*tpair;
+	delta[2] += t7dir[2]*tpair;
+
+      }
+
+      // theta8 torque
+      if (theta8) {
+
+	tpair = -f1 * f4t1 * f4t2 * f4t3 * f4t4 * f4t7 * df4t8 * factor_lj;
+	MathExtra::cross3(bz,delr_hb_norm,t8dir);
+
+	deltb[0] += t8dir[0]*tpair;
+	deltb[1] += t8dir[1]*tpair;
+	deltb[2] += t8dir[2]*tpair;
 
       }
 
@@ -378,11 +539,35 @@ void PairOxdnaHbond::allocate()
   memory->create(b_hb1,n+1,n+1,"pair:b_hb1");
   memory->create(dtheta_hb1_c,n+1,n+1,"pair:dtheta_hb1_c");
 
+  memory->create(a_hb2,n+1,n+1,"pair:a_hb2");
+  memory->create(theta_hb2_0,n+1,n+1,"pair:theta_hb2_0");
+  memory->create(dtheta_hb2_ast,n+1,n+1,"pair:dtheta_hb2_ast");
+  memory->create(b_hb2,n+1,n+1,"pair:b_hb2");
+  memory->create(dtheta_hb2_c,n+1,n+1,"pair:dtheta_hb2_c");
+
+  memory->create(a_hb3,n+1,n+1,"pair:a_hb3");
+  memory->create(theta_hb3_0,n+1,n+1,"pair:theta_hb3_0");
+  memory->create(dtheta_hb3_ast,n+1,n+1,"pair:dtheta_hb3_ast");
+  memory->create(b_hb3,n+1,n+1,"pair:b_hb3");
+  memory->create(dtheta_hb3_c,n+1,n+1,"pair:dtheta_hb3_c");
+
   memory->create(a_hb4,n+1,n+1,"pair:a_hb4");
   memory->create(theta_hb4_0,n+1,n+1,"pair:theta_hb4_0");
   memory->create(dtheta_hb4_ast,n+1,n+1,"pair:dtheta_hb4_ast");
   memory->create(b_hb4,n+1,n+1,"pair:b_hb4");
   memory->create(dtheta_hb4_c,n+1,n+1,"pair:dtheta_hb4_c");
+
+  memory->create(a_hb7,n+1,n+1,"pair:a_hb7");
+  memory->create(theta_hb7_0,n+1,n+1,"pair:theta_hb7_0");
+  memory->create(dtheta_hb7_ast,n+1,n+1,"pair:dtheta_hb7_ast");
+  memory->create(b_hb7,n+1,n+1,"pair:b_hb7");
+  memory->create(dtheta_hb7_c,n+1,n+1,"pair:dtheta_hb7_c");
+
+  memory->create(a_hb8,n+1,n+1,"pair:a_hb8");
+  memory->create(theta_hb8_0,n+1,n+1,"pair:theta_hb8_0");
+  memory->create(dtheta_hb8_ast,n+1,n+1,"pair:dtheta_hb8_ast");
+  memory->create(b_hb8,n+1,n+1,"pair:b_hb8");
+  memory->create(dtheta_hb8_c,n+1,n+1,"pair:dtheta_hb8_c");
 
 }
 
@@ -404,7 +589,7 @@ void PairOxdnaHbond::coeff(int narg, char **arg)
 {
   int count;
 
-  if (narg != 14) error->all(FLERR,"Incorrect args for pair coefficients in oxdna_hbond");
+  if (narg != 26) error->all(FLERR,"Incorrect args for pair coefficients in oxdna_hbond");
   if (!allocated) allocate();
 
   int ilo,ihi,jlo,jhi;
@@ -420,8 +605,20 @@ void PairOxdnaHbond::coeff(int narg, char **arg)
   double a_hb1_one, theta_hb1_0_one, dtheta_hb1_ast_one;
   double b_hb1_one, dtheta_hb1_c_one;
 
+  double a_hb2_one, theta_hb2_0_one, dtheta_hb2_ast_one;
+  double b_hb2_one, dtheta_hb2_c_one;
+
+  double a_hb3_one, theta_hb3_0_one, dtheta_hb3_ast_one;
+  double b_hb3_one, dtheta_hb3_c_one;
+
   double a_hb4_one, theta_hb4_0_one, dtheta_hb4_ast_one;
   double b_hb4_one, dtheta_hb4_c_one;
+
+  double a_hb7_one, theta_hb7_0_one, dtheta_hb7_ast_one;
+  double b_hb7_one, dtheta_hb7_c_one;
+
+  double a_hb8_one, theta_hb8_0_one, dtheta_hb8_ast_one;
+  double b_hb8_one, dtheta_hb8_c_one;
 
   epsilon_hb_one = force->numeric(FLERR,arg[2]);
   a_hb_one = force->numeric(FLERR,arg[3]);
@@ -434,9 +631,25 @@ void PairOxdnaHbond::coeff(int narg, char **arg)
   theta_hb1_0_one = force->numeric(FLERR,arg[9]);
   dtheta_hb1_ast_one = force->numeric(FLERR,arg[10]);
 
-  a_hb4_one = force->numeric(FLERR,arg[11]);
-  theta_hb4_0_one = force->numeric(FLERR,arg[12]);
-  dtheta_hb4_ast_one = force->numeric(FLERR,arg[13]);
+  a_hb2_one = force->numeric(FLERR,arg[11]);
+  theta_hb2_0_one = force->numeric(FLERR,arg[12]);
+  dtheta_hb2_ast_one = force->numeric(FLERR,arg[13]);
+
+  a_hb3_one = force->numeric(FLERR,arg[14]);
+  theta_hb3_0_one = force->numeric(FLERR,arg[15]);
+  dtheta_hb3_ast_one = force->numeric(FLERR,arg[16]);
+
+  a_hb4_one = force->numeric(FLERR,arg[17]);
+  theta_hb4_0_one = force->numeric(FLERR,arg[18]);
+  dtheta_hb4_ast_one = force->numeric(FLERR,arg[19]);
+
+  a_hb7_one = force->numeric(FLERR,arg[20]);
+  theta_hb7_0_one = force->numeric(FLERR,arg[21]);
+  dtheta_hb7_ast_one = force->numeric(FLERR,arg[22]);
+
+  a_hb8_one = force->numeric(FLERR,arg[23]);
+  theta_hb8_0_one = force->numeric(FLERR,arg[24]);
+  dtheta_hb8_ast_one = force->numeric(FLERR,arg[25]);
 
   b_hb_lo_one = 2*a_hb_one*exp(-a_hb_one*(cut_hb_lo_one-cut_hb_0_one))*
 	2*a_hb_one*exp(-a_hb_one*(cut_hb_lo_one-cut_hb_0_one))*
@@ -468,8 +681,20 @@ void PairOxdnaHbond::coeff(int narg, char **arg)
   b_hb1_one = a_hb1_one*a_hb1_one*dtheta_hb1_ast_one*dtheta_hb1_ast_one/(1-a_hb1_one*dtheta_hb1_ast_one*dtheta_hb1_ast_one);
   dtheta_hb1_c_one = 1/(a_hb1_one*dtheta_hb1_ast_one);
 
+  b_hb2_one = a_hb2_one*a_hb2_one*dtheta_hb2_ast_one*dtheta_hb2_ast_one/(1-a_hb2_one*dtheta_hb2_ast_one*dtheta_hb2_ast_one);
+  dtheta_hb2_c_one = 1/(a_hb2_one*dtheta_hb2_ast_one);
+
+  b_hb3_one = a_hb3_one*a_hb3_one*dtheta_hb3_ast_one*dtheta_hb3_ast_one/(1-a_hb3_one*dtheta_hb3_ast_one*dtheta_hb3_ast_one);
+  dtheta_hb3_c_one = 1/(a_hb3_one*dtheta_hb3_ast_one);
+
   b_hb4_one = a_hb4_one*a_hb4_one*dtheta_hb4_ast_one*dtheta_hb4_ast_one/(1-a_hb4_one*dtheta_hb4_ast_one*dtheta_hb4_ast_one);
   dtheta_hb4_c_one = 1/(a_hb4_one*dtheta_hb4_ast_one);
+
+  b_hb7_one = a_hb7_one*a_hb7_one*dtheta_hb7_ast_one*dtheta_hb7_ast_one/(1-a_hb7_one*dtheta_hb7_ast_one*dtheta_hb7_ast_one);
+  dtheta_hb7_c_one = 1/(a_hb7_one*dtheta_hb7_ast_one);
+
+  b_hb8_one = a_hb8_one*a_hb8_one*dtheta_hb8_ast_one*dtheta_hb8_ast_one/(1-a_hb8_one*dtheta_hb8_ast_one*dtheta_hb8_ast_one);
+  dtheta_hb8_c_one = 1/(a_hb8_one*dtheta_hb8_ast_one);
 
   for (int i = ilo; i <= ihi; i++) {
     for (int j = MAX(jlo,i); j <= jhi; j++) {
@@ -492,11 +717,35 @@ void PairOxdnaHbond::coeff(int narg, char **arg)
       b_hb1[i][j] = b_hb1_one;
       dtheta_hb1_c[i][j] = dtheta_hb1_c_one;
 
+      a_hb2[i][j] = a_hb2_one;
+      theta_hb2_0[i][j] = theta_hb2_0_one;
+      dtheta_hb2_ast[i][j] = dtheta_hb2_ast_one;
+      b_hb2[i][j] = b_hb2_one;
+      dtheta_hb2_c[i][j] = dtheta_hb2_c_one;
+
+      a_hb3[i][j] = a_hb3_one;
+      theta_hb3_0[i][j] = theta_hb3_0_one;
+      dtheta_hb3_ast[i][j] = dtheta_hb3_ast_one;
+      b_hb3[i][j] = b_hb3_one;
+      dtheta_hb3_c[i][j] = dtheta_hb3_c_one;
+
       a_hb4[i][j] = a_hb4_one;
       theta_hb4_0[i][j] = theta_hb4_0_one;
       dtheta_hb4_ast[i][j] = dtheta_hb4_ast_one;
       b_hb4[i][j] = b_hb4_one;
       dtheta_hb4_c[i][j] = dtheta_hb4_c_one;
+
+      a_hb7[i][j] = a_hb7_one;
+      theta_hb7_0[i][j] = theta_hb7_0_one;
+      dtheta_hb7_ast[i][j] = dtheta_hb7_ast_one;
+      b_hb7[i][j] = b_hb7_one;
+      dtheta_hb7_c[i][j] = dtheta_hb7_c_one;
+
+      a_hb8[i][j] = a_hb8_one;
+      theta_hb8_0[i][j] = theta_hb8_0_one;
+      dtheta_hb8_ast[i][j] = dtheta_hb8_ast_one;
+      b_hb8[i][j] = b_hb8_one;
+      dtheta_hb8_c[i][j] = dtheta_hb8_c_one;
 
       setflag[i][j] = 1;
       count++;
@@ -565,11 +814,35 @@ double PairOxdnaHbond::init_one(int i, int j)
   b_hb1[j][i] = b_hb1[i][j];
   dtheta_hb1_c[j][i] = dtheta_hb1_c[i][j];
 
+  a_hb2[j][i] = a_hb2[i][j];
+  theta_hb2_0[j][i] = theta_hb2_0[i][j];
+  dtheta_hb2_ast[j][i] = dtheta_hb2_ast[i][j];
+  b_hb2[j][i] = b_hb2[i][j];
+  dtheta_hb2_c[j][i] = dtheta_hb2_c[i][j];
+
+  a_hb3[j][i] = a_hb3[i][j];
+  theta_hb3_0[j][i] = theta_hb3_0[i][j];
+  dtheta_hb3_ast[j][i] = dtheta_hb3_ast[i][j];
+  b_hb3[j][i] = b_hb3[i][j];
+  dtheta_hb3_c[j][i] = dtheta_hb3_c[i][j];
+
   a_hb4[j][i] = a_hb4[i][j];
   theta_hb4_0[j][i] = theta_hb4_0[i][j];
   dtheta_hb4_ast[j][i] = dtheta_hb4_ast[i][j];
   b_hb4[j][i] = b_hb4[i][j];
   dtheta_hb4_c[j][i] = dtheta_hb4_c[i][j];
+
+  a_hb7[j][i] = a_hb7[i][j];
+  theta_hb7_0[j][i] = theta_hb7_0[i][j];
+  dtheta_hb7_ast[j][i] = dtheta_hb7_ast[i][j];
+  b_hb7[j][i] = b_hb7[i][j];
+  dtheta_hb7_c[j][i] = dtheta_hb7_c[i][j];
+
+  a_hb8[j][i] = a_hb8[i][j];
+  theta_hb8_0[j][i] = theta_hb8_0[i][j];
+  dtheta_hb8_ast[j][i] = dtheta_hb8_ast[i][j];
+  b_hb8[j][i] = b_hb8[i][j];
+  dtheta_hb8_c[j][i] = dtheta_hb8_c[i][j];
 
   cutsq_hb_hc[i][j] = cut_hb_hc[i][j]*cut_hb_hc[i][j];
   cutsq_hb_hc[j][i] = cutsq_hb_hc[i][j];
@@ -611,11 +884,35 @@ void PairOxdnaHbond::write_restart(FILE *fp)
         fwrite(&b_hb1[i][j],sizeof(double),1,fp);
         fwrite(&dtheta_hb1_c[i][j],sizeof(double),1,fp);
 
+        fwrite(&a_hb2[i][j],sizeof(double),1,fp);
+        fwrite(&theta_hb2_0[i][j],sizeof(double),1,fp);
+        fwrite(&dtheta_hb2_ast[i][j],sizeof(double),1,fp);
+        fwrite(&b_hb2[i][j],sizeof(double),1,fp);
+        fwrite(&dtheta_hb2_c[i][j],sizeof(double),1,fp);
+
+        fwrite(&a_hb3[i][j],sizeof(double),1,fp);
+        fwrite(&theta_hb3_0[i][j],sizeof(double),1,fp);
+        fwrite(&dtheta_hb3_ast[i][j],sizeof(double),1,fp);
+        fwrite(&b_hb3[i][j],sizeof(double),1,fp);
+        fwrite(&dtheta_hb3_c[i][j],sizeof(double),1,fp);
+
         fwrite(&a_hb4[i][j],sizeof(double),1,fp);
         fwrite(&theta_hb4_0[i][j],sizeof(double),1,fp);
         fwrite(&dtheta_hb4_ast[i][j],sizeof(double),1,fp);
         fwrite(&b_hb4[i][j],sizeof(double),1,fp);
         fwrite(&dtheta_hb4_c[i][j],sizeof(double),1,fp);
+
+        fwrite(&a_hb7[i][j],sizeof(double),1,fp);
+        fwrite(&theta_hb7_0[i][j],sizeof(double),1,fp);
+        fwrite(&dtheta_hb7_ast[i][j],sizeof(double),1,fp);
+        fwrite(&b_hb7[i][j],sizeof(double),1,fp);
+        fwrite(&dtheta_hb7_c[i][j],sizeof(double),1,fp);
+
+        fwrite(&a_hb8[i][j],sizeof(double),1,fp);
+        fwrite(&theta_hb8_0[i][j],sizeof(double),1,fp);
+        fwrite(&dtheta_hb8_ast[i][j],sizeof(double),1,fp);
+        fwrite(&b_hb8[i][j],sizeof(double),1,fp);
+        fwrite(&dtheta_hb8_c[i][j],sizeof(double),1,fp);
 
     }
   }
@@ -657,11 +954,35 @@ void PairOxdnaHbond::read_restart(FILE *fp)
           fread(&b_hb1[i][j],sizeof(double),1,fp);
           fread(&dtheta_hb1_c[i][j],sizeof(double),1,fp);
 
+          fread(&a_hb2[i][j],sizeof(double),1,fp);
+          fread(&theta_hb2_0[i][j],sizeof(double),1,fp);
+          fread(&dtheta_hb2_ast[i][j],sizeof(double),1,fp);
+          fread(&b_hb2[i][j],sizeof(double),1,fp);
+          fread(&dtheta_hb2_c[i][j],sizeof(double),1,fp);
+
+          fread(&a_hb3[i][j],sizeof(double),1,fp);
+          fread(&theta_hb3_0[i][j],sizeof(double),1,fp);
+          fread(&dtheta_hb3_ast[i][j],sizeof(double),1,fp);
+          fread(&b_hb3[i][j],sizeof(double),1,fp);
+          fread(&dtheta_hb3_c[i][j],sizeof(double),1,fp);
+
           fread(&a_hb4[i][j],sizeof(double),1,fp);
           fread(&theta_hb4_0[i][j],sizeof(double),1,fp);
           fread(&dtheta_hb4_ast[i][j],sizeof(double),1,fp);
           fread(&b_hb4[i][j],sizeof(double),1,fp);
           fread(&dtheta_hb4_c[i][j],sizeof(double),1,fp);
+
+          fread(&a_hb7[i][j],sizeof(double),1,fp);
+          fread(&theta_hb7_0[i][j],sizeof(double),1,fp);
+          fread(&dtheta_hb7_ast[i][j],sizeof(double),1,fp);
+          fread(&b_hb7[i][j],sizeof(double),1,fp);
+          fread(&dtheta_hb7_c[i][j],sizeof(double),1,fp);
+
+          fread(&a_hb8[i][j],sizeof(double),1,fp);
+          fread(&theta_hb8_0[i][j],sizeof(double),1,fp);
+          fread(&dtheta_hb8_ast[i][j],sizeof(double),1,fp);
+          fread(&b_hb8[i][j],sizeof(double),1,fp);
+          fread(&dtheta_hb8_c[i][j],sizeof(double),1,fp);
 
         }
 
@@ -683,11 +1004,35 @@ void PairOxdnaHbond::read_restart(FILE *fp)
         MPI_Bcast(&b_hb1[i][j],1,MPI_DOUBLE,0,world);
         MPI_Bcast(&dtheta_hb1_c[i][j],1,MPI_DOUBLE,0,world);
 
+        MPI_Bcast(&a_hb2[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&theta_hb2_0[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&dtheta_hb2_ast[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&b_hb2[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&dtheta_hb2_c[i][j],1,MPI_DOUBLE,0,world);
+
+        MPI_Bcast(&a_hb3[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&theta_hb3_0[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&dtheta_hb3_ast[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&b_hb3[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&dtheta_hb3_c[i][j],1,MPI_DOUBLE,0,world);
+
         MPI_Bcast(&a_hb4[i][j],1,MPI_DOUBLE,0,world);
         MPI_Bcast(&theta_hb4_0[i][j],1,MPI_DOUBLE,0,world);
         MPI_Bcast(&dtheta_hb4_ast[i][j],1,MPI_DOUBLE,0,world);
         MPI_Bcast(&b_hb4[i][j],1,MPI_DOUBLE,0,world);
         MPI_Bcast(&dtheta_hb4_c[i][j],1,MPI_DOUBLE,0,world);
+
+        MPI_Bcast(&a_hb7[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&theta_hb7_0[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&dtheta_hb7_ast[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&b_hb7[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&dtheta_hb7_c[i][j],1,MPI_DOUBLE,0,world);
+
+        MPI_Bcast(&a_hb8[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&theta_hb8_0[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&dtheta_hb8_ast[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&b_hb8[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&dtheta_hb8_c[i][j],1,MPI_DOUBLE,0,world);
 
       }
     }
@@ -733,11 +1078,19 @@ void PairOxdnaHbond::write_data(FILE *fp)
 	 %g %g %g %g %g\
 	 %g %g %g %g %g\
 	 %g %g %g %g %g\
+	 %g %g %g %g %g\
+	 %g %g %g %g %g\
+	 %g %g %g %g %g\
+	 %g %g %g %g %g\
 	 \n",i,
 	epsilon_hb[i][i],a_hb[i][i],cut_hb_0[i][i],cut_hb_c[i][i],cut_hb_lo[i][i],cut_hb_hi[i][i],
 	cut_hb_lc[i][i],cut_hb_hc[i][i],b_hb_lo[i][i],b_hb_hi[i][i],shift_hb[i][i],
         a_hb1[i][i],theta_hb1_0[i][i],dtheta_hb1_ast[i][i],b_hb1[i][i],dtheta_hb1_c[i][i],
-        a_hb4[i][i],theta_hb4_0[i][i],dtheta_hb4_ast[i][i],b_hb4[i][i],dtheta_hb4_c[i][i]);
+        a_hb2[i][i],theta_hb2_0[i][i],dtheta_hb2_ast[i][i],b_hb2[i][i],dtheta_hb2_c[i][i],
+        a_hb3[i][i],theta_hb3_0[i][i],dtheta_hb3_ast[i][i],b_hb3[i][i],dtheta_hb3_c[i][i],
+        a_hb4[i][i],theta_hb4_0[i][i],dtheta_hb4_ast[i][i],b_hb4[i][i],dtheta_hb4_c[i][i],
+        a_hb7[i][i],theta_hb7_0[i][i],dtheta_hb7_ast[i][i],b_hb7[i][i],dtheta_hb7_c[i][i],
+        a_hb8[i][i],theta_hb8_0[i][i],dtheta_hb8_ast[i][i],b_hb8[i][i],dtheta_hb8_c[i][i]);
 
 }
 
@@ -754,11 +1107,19 @@ void PairOxdnaHbond::write_data_all(FILE *fp)
 	 %g %g %g %g %g\
 	 %g %g %g %g %g\
 	 %g %g %g %g %g\
+	 %g %g %g %g %g\
+	 %g %g %g %g %g\
+	 %g %g %g %g %g\
+	 %g %g %g %g %g\
 	 \n",i,j,
 	epsilon_hb[i][j],a_hb[i][j],cut_hb_0[i][j],cut_hb_c[i][j],cut_hb_lo[i][j],cut_hb_hi[i][j],
 	cut_hb_lc[i][j],cut_hb_hc[i][j],b_hb_lo[i][j],b_hb_hi[i][j],shift_hb[i][j],
         a_hb1[i][j],theta_hb1_0[i][j],dtheta_hb1_ast[i][j],b_hb1[i][j],dtheta_hb1_c[i][j],
-        a_hb4[i][j],theta_hb4_0[i][j],dtheta_hb4_ast[i][j],b_hb4[i][j],dtheta_hb4_c[i][j]);
+        a_hb2[i][j],theta_hb2_0[i][j],dtheta_hb2_ast[i][j],b_hb2[i][j],dtheta_hb2_c[i][j],
+        a_hb3[i][j],theta_hb3_0[i][j],dtheta_hb3_ast[i][j],b_hb3[i][j],dtheta_hb3_c[i][j],
+        a_hb4[i][j],theta_hb4_0[i][j],dtheta_hb4_ast[i][j],b_hb4[i][j],dtheta_hb4_c[i][j],
+        a_hb7[i][j],theta_hb7_0[i][j],dtheta_hb7_ast[i][j],b_hb7[i][j],dtheta_hb7_c[i][j],
+        a_hb8[i][j],theta_hb8_0[i][j],dtheta_hb8_ast[i][j],b_hb8[i][j],dtheta_hb8_c[i][j]);
 
 }
 
@@ -786,11 +1147,35 @@ void *PairOxdnaHbond::extract(const char *str, int &dim)
   if (strcmp(str,"b_hb1") == 0) return (void *) b_hb1;
   if (strcmp(str,"dtheta_hb1_c") == 0) return (void *) dtheta_hb1_c;
 
+  if (strcmp(str,"a_hb2") == 0) return (void *) a_hb2;
+  if (strcmp(str,"theta_hb2_0") == 0) return (void *) theta_hb2_0;
+  if (strcmp(str,"dtheta_hb2_ast") == 0) return (void *) dtheta_hb2_ast;
+  if (strcmp(str,"b_hb2") == 0) return (void *) b_hb2;
+  if (strcmp(str,"dtheta_hb2_c") == 0) return (void *) dtheta_hb2_c;
+
+  if (strcmp(str,"a_hb3") == 0) return (void *) a_hb3;
+  if (strcmp(str,"theta_hb3_0") == 0) return (void *) theta_hb3_0;
+  if (strcmp(str,"dtheta_hb3_ast") == 0) return (void *) dtheta_hb3_ast;
+  if (strcmp(str,"b_hb3") == 0) return (void *) b_hb3;
+  if (strcmp(str,"dtheta_hb3_c") == 0) return (void *) dtheta_hb3_c;
+
   if (strcmp(str,"a_hb4") == 0) return (void *) a_hb4;
   if (strcmp(str,"theta_hb4_0") == 0) return (void *) theta_hb4_0;
   if (strcmp(str,"dtheta_hb4_ast") == 0) return (void *) dtheta_hb4_ast;
   if (strcmp(str,"b_hb4") == 0) return (void *) b_hb4;
   if (strcmp(str,"dtheta_hb4_c") == 0) return (void *) dtheta_hb4_c;
+
+  if (strcmp(str,"a_hb7") == 0) return (void *) a_hb7;
+  if (strcmp(str,"theta_hb7_0") == 0) return (void *) theta_hb7_0;
+  if (strcmp(str,"dtheta_hb7_ast") == 0) return (void *) dtheta_hb7_ast;
+  if (strcmp(str,"b_hb7") == 0) return (void *) b_hb7;
+  if (strcmp(str,"dtheta_hb7_c") == 0) return (void *) dtheta_hb7_c;
+
+  if (strcmp(str,"a_hb8") == 0) return (void *) a_hb8;
+  if (strcmp(str,"theta_hb8_0") == 0) return (void *) theta_hb8_0;
+  if (strcmp(str,"dtheta_hb8_ast") == 0) return (void *) dtheta_hb8_ast;
+  if (strcmp(str,"b_hb8") == 0) return (void *) b_hb8;
+  if (strcmp(str,"dtheta_hb8_c") == 0) return (void *) dtheta_hb8_c;
 
   return NULL;
 }
