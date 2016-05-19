@@ -275,28 +275,28 @@ void PairOxdnaStack::compute(int eflag, int vflag)
     if (f4t4) {
 
     df4t4 = DF4(theta4, a_st4[atype][btype], theta_st4_0[atype][btype], dtheta_st4_ast[atype][btype], 
-	b_st4[atype][btype], dtheta_st4_c[atype][btype]);  
+	b_st4[atype][btype], dtheta_st4_c[atype][btype])/sin(theta4);  
 
     f4t5 = F4(theta5p, a_st5[atype][btype], theta_st5_0[atype][btype], dtheta_st5_ast[atype][btype], 
-	b_st5[atype][btype], dtheta_st5_c[atype][btype]);  
-
-    df4t5 = DF4(theta5p, a_st5[atype][btype], theta_st5_0[atype][btype], dtheta_st5_ast[atype][btype], 
 	b_st5[atype][btype], dtheta_st5_c[atype][btype]);  
 
     f4t6 = F4(theta6p, a_st6[atype][btype], theta_st6_0[atype][btype], dtheta_st6_ast[atype][btype], 
 	b_st6[atype][btype], dtheta_st6_c[atype][btype]);  
 
-    df4t6 = DF4(theta6p, a_st6[atype][btype], theta_st6_0[atype][btype], dtheta_st6_ast[atype][btype], 
-	b_st6[atype][btype], dtheta_st6_c[atype][btype]);  
-
     f5c1 = F5(-cosphi1, a_st1[atype][btype], -cosphi_st1_ast[atype][btype], b_st1[atype][btype], 
-	cosphi_st1_c[atype][btype]); 
-
-    df5c1 = DF5(-cosphi1, a_st1[atype][btype], -cosphi_st1_ast[atype][btype], b_st1[atype][btype], 
 	cosphi_st1_c[atype][btype]); 
 
     f5c2 = F5(-cosphi2, a_st2[atype][btype], -cosphi_st2_ast[atype][btype], b_st2[atype][btype], 
 	cosphi_st2_c[atype][btype]);
+
+    df4t5 = DF4(theta5p, a_st5[atype][btype], theta_st5_0[atype][btype], dtheta_st5_ast[atype][btype], 
+	b_st5[atype][btype], dtheta_st5_c[atype][btype])/sin(theta5p);  
+
+    df4t6 = DF4(theta6p, a_st6[atype][btype], theta_st6_0[atype][btype], dtheta_st6_ast[atype][btype], 
+	b_st6[atype][btype], dtheta_st6_c[atype][btype])/sin(theta6p);  
+
+    df5c1 = DF5(-cosphi1, a_st1[atype][btype], -cosphi_st1_ast[atype][btype], b_st1[atype][btype], 
+	cosphi_st1_c[atype][btype]); 
 
     df5c2 = DF5(-cosphi2, a_st2[atype][btype], -cosphi_st2_ast[atype][btype], b_st2[atype][btype], 
 	cosphi_st2_c[atype][btype]);

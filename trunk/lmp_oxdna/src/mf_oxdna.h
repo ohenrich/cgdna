@@ -27,6 +27,8 @@ namespace MFOxdna {
 
   inline double F1(double, double, double, double, double, double, double, double, double, double, double);
   inline double DF1(double, double, double, double, double, double, double, double, double, double);
+  inline double F2(double, double, double, double, double, double, double, double, double, double);
+  inline double DF2(double, double, double, double, double, double, double, double, double);
   inline double F3(double, double, double, double, double, double, double, double &);
   inline double F4(double, double, double, double, double, double);
   inline double DF4(double, double, double, double, double, double);
@@ -91,6 +93,51 @@ inline double MFOxdna::DF1(double r, double eps, double a, double cut_0,
 }
 
 /* ----------------------------------------------------------------------
+   f2 modulation factor 
+------------------------------------------------------------------------- */
+inline double MFOxdna::F2(double r, double k, double cut_0,
+	double cut_lc, double cut_hc, double cut_lo, double cut_hi, 
+	double b_lo, double b_hi, double cut_c) 
+{
+
+  if(r < cut_lc || r > cut_hc){
+    return 0;
+  }
+  else if(r < cut_lo){
+    return k * b_lo * (cut_lc - r)*(cut_lc-r);
+  }
+  else if(r < cut_hi){
+    return k * 0.5 * ((r - cut_0)*(r-cut_0) - (cut_0 - cut_c)*(cut_0 - cut_c));
+  }
+  else{
+    return k * b_hi * (cut_hc - r) * (cut_hc - r);
+  }
+
+}
+
+/* ----------------------------------------------------------------------
+   derivative of f2 modulation factor 
+------------------------------------------------------------------------- */
+inline double MFOxdna::DF2(double r, double k, double cut_0,
+	double cut_lc, double cut_hc, double cut_lo, double cut_hi, 
+	double b_lo, double b_hi) 
+{
+  if(r < cut_lc || r > cut_hc){
+    return 0;
+  }
+  else if(r < cut_lo){
+    return 2*k * b_lo * (r - cut_lc);
+  }
+  else if(r < cut_hi){
+    return k * (r - cut_0);
+  }
+  else{
+    return 2*k * b_hi * (r - cut_hc);
+  }
+
+}
+
+/* ----------------------------------------------------------------------
    f3 modulation factor, force and energy calculation
 ------------------------------------------------------------------------- */
 inline double MFOxdna::F3(double rsq, double cutsq_ast, double cut_c, 
@@ -137,7 +184,12 @@ inline double MFOxdna::F4(double theta, double a, double theta_0,
 }
 
 /* ----------------------------------------------------------------------
-   derivative of f4 modulation factor 
+   derivative of f4 modulation factor
+
+   NOTE: We handle the sin(theta) factor from the partial derivative 
+	 of d(cos(theta))/dtheta externally. The reason for this is
+	 because the sign of DF4 depends on the sign of theta in the 
+	 function call. It is also more efficient to store sin(theta).  
 ------------------------------------------------------------------------- */
 inline double MFOxdna::DF4(double theta, double a, double theta_0,
         double dtheta_ast, double b, double dtheta_c) 
@@ -148,13 +200,13 @@ inline double MFOxdna::DF4(double theta, double a, double theta_0,
     return 0.0;
   }
   else if (dtheta > dtheta_ast) {
-    return 2*b * (dtheta-dtheta_c) / sin(theta);
+    return 2*b* (dtheta-dtheta_c);
   }
   else if (dtheta > -dtheta_ast) {
-    return -2*a * dtheta / sin(theta);
+    return -2*a * dtheta;
   }
   else {
-    return 2*b * (dtheta+dtheta_c) / sin(theta);
+    return 2*b* (dtheta+dtheta_c);
   } 
 
 }

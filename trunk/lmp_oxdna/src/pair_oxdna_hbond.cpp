@@ -240,9 +240,14 @@ void PairOxdnaHbond::compute(int eflag, int vflag)
       if (cost8 < -1.0) cost8 = -1.0;
       theta8 = acos(cost8);
 
+
+
       f1 = F1(r_hb, epsilon_hb[atype][btype], a_hb[atype][btype], cut_hb_0[atype][btype],
 	    cut_hb_lc[atype][btype], cut_hb_hc[atype][btype], cut_hb_lo[atype][btype], cut_hb_hi[atype][btype],
 	    b_hb_lo[atype][btype], b_hb_hi[atype][btype], shift_hb[atype][btype]);
+
+      // early rejection criterium
+      if (f1) {
 
       f4t1 = F4(theta1, a_hb1[atype][btype], theta_hb1_0[atype][btype], dtheta_hb1_ast[atype][btype],
 	    b_hb1[atype][btype], dtheta_hb1_c[atype][btype]);
@@ -267,22 +272,22 @@ void PairOxdnaHbond::compute(int eflag, int vflag)
 	    b_hb_lo[atype][btype], b_hb_hi[atype][btype]);
 
       df4t1 = DF4(theta1, a_hb1[atype][btype], theta_hb1_0[atype][btype], dtheta_hb1_ast[atype][btype],
-	    b_hb1[atype][btype], dtheta_hb1_c[atype][btype]);
+	    b_hb1[atype][btype], dtheta_hb1_c[atype][btype])/sin(theta1);
 
       df4t2 = DF4(theta2, a_hb2[atype][btype], theta_hb2_0[atype][btype], dtheta_hb2_ast[atype][btype],
-	    b_hb2[atype][btype], dtheta_hb2_c[atype][btype]);
+	    b_hb2[atype][btype], dtheta_hb2_c[atype][btype])/sin(theta2);
 
       df4t3 = DF4(theta3, a_hb3[atype][btype], theta_hb3_0[atype][btype], dtheta_hb3_ast[atype][btype],
-	    b_hb3[atype][btype], dtheta_hb3_c[atype][btype]);
+	    b_hb3[atype][btype], dtheta_hb3_c[atype][btype])/sin(theta3);
 
       df4t4 = DF4(theta4, a_hb4[atype][btype], theta_hb4_0[atype][btype], dtheta_hb4_ast[atype][btype],
-	    b_hb4[atype][btype], dtheta_hb4_c[atype][btype]);
+	    b_hb4[atype][btype], dtheta_hb4_c[atype][btype])/sin(theta4);
 
       df4t7 = DF4(theta7, a_hb7[atype][btype], theta_hb7_0[atype][btype], dtheta_hb7_ast[atype][btype],
-	    b_hb7[atype][btype], dtheta_hb7_c[atype][btype]);
+	    b_hb7[atype][btype], dtheta_hb7_c[atype][btype])/sin(theta7);
 
       df4t8 = DF4(theta8, a_hb8[atype][btype], theta_hb8_0[atype][btype], dtheta_hb8_ast[atype][btype],
-	    b_hb8[atype][btype], dtheta_hb8_c[atype][btype]);
+	    b_hb8[atype][btype], dtheta_hb8_c[atype][btype])/sin(theta8);
 
       evdwl = f1 * f4t1 * f4t2 * f4t3 * f4t4 * f4t7 * f4t8 * factor_lj;
 
@@ -495,7 +500,7 @@ void PairOxdnaHbond::compute(int eflag, int vflag)
       if (evflag) ev_tally(a,b,nlocal,newton_pair,evdwl,0.0,fpair,delr_hb[0],delr_hb[1],delr_hb[2]); 
 
       }
-      // end early rejection criteria
+      }// end early rejection criteria
 
     }
 
