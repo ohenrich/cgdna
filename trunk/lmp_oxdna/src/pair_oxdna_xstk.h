@@ -16,21 +16,21 @@
 
 #ifdef PAIR_CLASS
 
-PairStyle(oxdna_stack,PairOxdnaStack)
+PairStyle(oxdna_xstk,PairOxdnaXstk)
 
 #else
 
-#ifndef LMP_PAIR_OXDNA_STACK_H
-#define LMP_PAIR_OXDNA_STACK_H
+#ifndef LMP_PAIR_OXDNA_XSTK_H
+#define LMP_PAIR_OXDNA_XSTK_H
 
 #include "pair.h"
 
 namespace LAMMPS_NS {
 
-class PairOxdnaStack : public Pair {
+class PairOxdnaXstk : public Pair {
  public:
-  PairOxdnaStack(class LAMMPS *);
-  virtual ~PairOxdnaStack();
+  PairOxdnaXstk(class LAMMPS *);
+  virtual ~PairOxdnaXstk();
   virtual void compute(int, int);
   void settings(int, char **);
   void coeff(int, char **);
@@ -46,19 +46,28 @@ class PairOxdnaStack : public Pair {
   void *extract(const char *, int &);
 
  protected:
-  // stacking interaction
-  double **epsilon_st, **a_st, **cut_st_0, **cut_st_c;
-  double **cut_st_lo, **cut_st_hi;
-  double **cut_st_lc, **cut_st_hc, **b_st_lo, **b_st_hi, **shift_st;
-  double **cutsq_st_hc;
-  double **a_st4, **theta_st4_0, **dtheta_st4_ast;
-  double **b_st4, **dtheta_st4_c;
-  double **a_st5, **theta_st5_0, **dtheta_st5_ast;
-  double **b_st5, **dtheta_st5_c;
-  double **a_st6, **theta_st6_0, **dtheta_st6_ast;
-  double **b_st6, **dtheta_st6_c;
-  double **a_st1, **cosphi_st1_ast, **b_st1, **cosphi_st1_c;
-  double **a_st2, **cosphi_st2_ast, **b_st2, **cosphi_st2_c;  
+  // cross-stacking interaction
+  double **k_xst, **cut_xst_0, **cut_xst_c, **cut_xst_lo, **cut_xst_hi;
+  double **cut_xst_lc, **cut_xst_hc, **b_xst_lo, **b_xst_hi;
+  double **cutsq_xst_hc;
+
+  double **a_xst1, **theta_xst1_0, **dtheta_xst1_ast;
+  double **b_xst1, **dtheta_xst1_c;
+
+  double **a_xst2, **theta_xst2_0, **dtheta_xst2_ast;
+  double **b_xst2, **dtheta_xst2_c;
+
+  double **a_xst3, **theta_xst3_0, **dtheta_xst3_ast;
+  double **b_xst3, **dtheta_xst3_c;
+
+  double **a_xst4, **theta_xst4_0, **dtheta_xst4_ast;
+  double **b_xst4, **dtheta_xst4_c;
+
+  double **a_xst7, **theta_xst7_0, **dtheta_xst7_ast;
+  double **b_xst7, **dtheta_xst7_c;
+
+  double **a_xst8, **theta_xst8_0, **dtheta_xst8_ast;
+  double **b_xst8, **dtheta_xst8_c;
 
   virtual void allocate();
 };

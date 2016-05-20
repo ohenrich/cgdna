@@ -18,7 +18,7 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
-#include "pair_oxdna_xstack.h"
+#include "pair_oxdna_xstk.h"
 #include "mf_oxdna.h"
 #include "atom.h"
 #include "molecule.h"
@@ -41,7 +41,7 @@ using namespace MFOxdna;
 
 /* ---------------------------------------------------------------------- */
 
-PairOxdnaXstack::PairOxdnaXstack(LAMMPS *lmp) : Pair(lmp)
+PairOxdnaXstk::PairOxdnaXstk(LAMMPS *lmp) : Pair(lmp)
 {
   single_enable = 0;
   writedata = 1;
@@ -49,7 +49,7 @@ PairOxdnaXstack::PairOxdnaXstack(LAMMPS *lmp) : Pair(lmp)
 
 /* ---------------------------------------------------------------------- */
 
-PairOxdnaXstack::~PairOxdnaXstack()
+PairOxdnaXstk::~PairOxdnaXstk()
 {
   if (allocated) {
 
@@ -112,7 +112,7 @@ PairOxdnaXstack::~PairOxdnaXstack()
    NOTE: The cross-stacking interaction takes place between hb sites
 ------------------------------------------------------------------------- */
 
-void PairOxdnaXstack::compute(int eflag, int vflag)
+void PairOxdnaXstk::compute(int eflag, int vflag)
 {
 
   double delf[3],delta[3],deltb[3]; // force, torque increment;
@@ -529,7 +529,7 @@ void PairOxdnaXstack::compute(int eflag, int vflag)
    allocate all arrays
 ------------------------------------------------------------------------- */
 
-void PairOxdnaXstack::allocate()
+void PairOxdnaXstk::allocate()
 {
   allocated = 1;
   int n = atom->ntypes;
@@ -594,7 +594,7 @@ void PairOxdnaXstack::allocate()
    global settings
 ------------------------------------------------------------------------- */
 
-void PairOxdnaXstack::settings(int narg, char **arg)
+void PairOxdnaXstk::settings(int narg, char **arg)
 {
   if (narg != 0) error->all(FLERR,"Illegal pair_style command");
 
@@ -604,11 +604,11 @@ void PairOxdnaXstack::settings(int narg, char **arg)
    set coeffs for one or more type pairs
 ------------------------------------------------------------------------- */
 
-void PairOxdnaXstack::coeff(int narg, char **arg)
+void PairOxdnaXstk::coeff(int narg, char **arg)
 {
   int count;
 
-  if (narg != 25) error->all(FLERR,"Incorrect args for pair coefficients in oxdna_xstack");
+  if (narg != 25) error->all(FLERR,"Incorrect args for pair coefficients in oxdna_xstk");
   if (!allocated) allocate();
 
   int ilo,ihi,jlo,jhi;
@@ -755,7 +755,7 @@ void PairOxdnaXstack::coeff(int narg, char **arg)
     }
   }
 
-  if (count == 0) error->all(FLERR,"Incorrect args for pair coefficients in oxdna_xstack");
+  if (count == 0) error->all(FLERR,"Incorrect args for pair coefficients in oxdna_xstk");
 
 }
 
@@ -763,7 +763,7 @@ void PairOxdnaXstack::coeff(int narg, char **arg)
    init specific to this pair style
 ------------------------------------------------------------------------- */
 
-void PairOxdnaXstack::init_style()
+void PairOxdnaXstk::init_style()
 {
   int irequest;
 
@@ -777,7 +777,7 @@ void PairOxdnaXstack::init_style()
    neighbor callback to inform pair style of neighbor list to use regular
 ------------------------------------------------------------------------- */
 
-void PairOxdnaXstack::init_list(int id, NeighList *ptr)
+void PairOxdnaXstk::init_list(int id, NeighList *ptr)
 {
   if (id == 0) list = ptr;
   if (id  > 0) error->all(FLERR,"Respa not supported");
@@ -789,7 +789,7 @@ void PairOxdnaXstack::init_list(int id, NeighList *ptr)
    init for one type pair i,j and corresponding j,i
 ------------------------------------------------------------------------- */
 
-double PairOxdnaXstack::init_one(int i, int j)
+double PairOxdnaXstk::init_one(int i, int j)
 {
 
   if (setflag[i][j] == 0) {
@@ -857,7 +857,7 @@ double PairOxdnaXstack::init_one(int i, int j)
    proc 0 writes to restart file
 ------------------------------------------------------------------------- */
 
-void PairOxdnaXstack::write_restart(FILE *fp)
+void PairOxdnaXstk::write_restart(FILE *fp)
 {
   write_restart_settings(fp);
 
@@ -921,7 +921,7 @@ void PairOxdnaXstack::write_restart(FILE *fp)
    proc 0 reads from restart file, bcasts
 ------------------------------------------------------------------------- */
 
-void PairOxdnaXstack::read_restart(FILE *fp)
+void PairOxdnaXstk::read_restart(FILE *fp)
 {
   read_restart_settings(fp);
   allocate();
@@ -1037,7 +1037,7 @@ void PairOxdnaXstack::read_restart(FILE *fp)
    proc 0 writes to restart file
 ------------------------------------------------------------------------- */
 
-void PairOxdnaXstack::write_restart_settings(FILE *fp)
+void PairOxdnaXstk::write_restart_settings(FILE *fp)
 {
   fwrite(&offset_flag,sizeof(int),1,fp);
   fwrite(&mix_flag,sizeof(int),1,fp);
@@ -1048,7 +1048,7 @@ void PairOxdnaXstack::write_restart_settings(FILE *fp)
    proc 0 reads from restart file, bcasts
 ------------------------------------------------------------------------- */
 
-void PairOxdnaXstack::read_restart_settings(FILE *fp)
+void PairOxdnaXstk::read_restart_settings(FILE *fp)
 {
   int me = comm->me;
   if (me == 0) {
@@ -1065,7 +1065,7 @@ void PairOxdnaXstack::read_restart_settings(FILE *fp)
    proc 0 writes to data file
 ------------------------------------------------------------------------- */
 
-void PairOxdnaXstack::write_data(FILE *fp)
+void PairOxdnaXstk::write_data(FILE *fp)
 {
   for (int i = 1; i <= atom->ntypes; i++)
     fprintf(fp,"%d\
@@ -1093,7 +1093,7 @@ void PairOxdnaXstack::write_data(FILE *fp)
    proc 0 writes all pairs to data file
 ------------------------------------------------------------------------- */
 
-void PairOxdnaXstack::write_data_all(FILE *fp)
+void PairOxdnaXstk::write_data_all(FILE *fp)
 {
   for (int i = 1; i <= atom->ntypes; i++)
     for (int j = i; j <= atom->ntypes; j++)
@@ -1120,7 +1120,7 @@ void PairOxdnaXstack::write_data_all(FILE *fp)
 
 /* ---------------------------------------------------------------------- */
 
-void *PairOxdnaXstack::extract(const char *str, int &dim)
+void *PairOxdnaXstk::extract(const char *str, int &dim)
 {
   dim = 2;
   
