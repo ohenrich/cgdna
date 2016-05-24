@@ -264,9 +264,6 @@ void PairOxdnaStk::compute(int eflag, int vflag)
     // early rejection criterium
     if (f1) {
 
-    df1 = DF1(r_st, epsilon_st[atype][btype], a_st[atype][btype], cut_st_0[atype][btype], 
-	cut_st_lc[atype][btype], cut_st_hc[atype][btype], cut_st_lo[atype][btype], cut_st_hi[atype][btype], 
-	b_st_lo[atype][btype], b_st_hi[atype][btype]);
 
     f4t4 = F4(theta4, a_st4[atype][btype], theta_st4_0[atype][btype], dtheta_st4_ast[atype][btype], 
 	b_st4[atype][btype], dtheta_st4_c[atype][btype]);  
@@ -274,8 +271,6 @@ void PairOxdnaStk::compute(int eflag, int vflag)
     // early rejection criterium
     if (f4t4) {
 
-    df4t4 = DF4(theta4, a_st4[atype][btype], theta_st4_0[atype][btype], dtheta_st4_ast[atype][btype], 
-	b_st4[atype][btype], dtheta_st4_c[atype][btype])/sin(theta4);  
 
     f4t5 = F4(theta5p, a_st5[atype][btype], theta_st5_0[atype][btype], dtheta_st5_ast[atype][btype], 
 	b_st5[atype][btype], dtheta_st5_c[atype][btype]);  
@@ -289,6 +284,19 @@ void PairOxdnaStk::compute(int eflag, int vflag)
     f5c2 = F5(-cosphi2, a_st2[atype][btype], -cosphi_st2_ast[atype][btype], b_st2[atype][btype], 
 	cosphi_st2_c[atype][btype]);
 
+
+    evdwl = f1 * f4t4 * f4t5 * f4t6 * f5c1 * f5c2;
+
+    // early rejection criterium
+    if (evdwl) {
+
+    df1 = DF1(r_st, epsilon_st[atype][btype], a_st[atype][btype], cut_st_0[atype][btype], 
+	cut_st_lc[atype][btype], cut_st_hc[atype][btype], cut_st_lo[atype][btype], cut_st_hi[atype][btype], 
+	b_st_lo[atype][btype], b_st_hi[atype][btype]);
+
+    df4t4 = DF4(theta4, a_st4[atype][btype], theta_st4_0[atype][btype], dtheta_st4_ast[atype][btype], 
+	b_st4[atype][btype], dtheta_st4_c[atype][btype])/sin(theta4);  
+
     df4t5 = DF4(theta5p, a_st5[atype][btype], theta_st5_0[atype][btype], dtheta_st5_ast[atype][btype], 
 	b_st5[atype][btype], dtheta_st5_c[atype][btype])/sin(theta5p);  
 
@@ -300,11 +308,6 @@ void PairOxdnaStk::compute(int eflag, int vflag)
 
     df5c2 = DF5(-cosphi2, a_st2[atype][btype], -cosphi_st2_ast[atype][btype], b_st2[atype][btype], 
 	cosphi_st2_c[atype][btype]);
-
-    evdwl = f1 * f4t4 * f4t5 * f4t6 * f5c1 * f5c2;
-
-    // early rejection criterium
-    if (evdwl) {
 
     // increment energy
     if (evflag) ev_tally(a,b,nlocal,newton_bond,evdwl,0.0,0.0,0.0,0.0,0.0);

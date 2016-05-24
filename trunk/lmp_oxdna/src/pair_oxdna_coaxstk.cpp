@@ -270,90 +270,79 @@ void PairOxdnaCoaxstk::compute(int eflag, int vflag)
 	     b_cxst1[atype][btype], dtheta_cxst1_c[atype][btype]) +
 	     F4(theta1p, a_cxst1[atype][btype], theta_cxst1_0[atype][btype], dtheta_cxst1_ast[atype][btype],
 	     b_cxst1[atype][btype], dtheta_cxst1_c[atype][btype]);
-//f4t1=1;
+
       // early rejection criterium
       if (f4t1) {
 
       f2 = F2(r_st, k_cxst[atype][btype], cut_cxst_0[atype][btype],
 	   cut_cxst_lc[atype][btype], cut_cxst_hc[atype][btype], cut_cxst_lo[atype][btype], cut_cxst_hi[atype][btype],
 	   b_cxst_lo[atype][btype], b_cxst_hi[atype][btype], cut_cxst_c[atype][btype]);
-//f2=1;
+
+      // early rejection criterium
 
       f4t4 = F4(theta4, a_cxst4[atype][btype], theta_cxst4_0[atype][btype], dtheta_cxst4_ast[atype][btype],
 	     b_cxst4[atype][btype], dtheta_cxst4_c[atype][btype]);
-//f4t4=1;
 
       f4t5 = F4(theta5, a_cxst5[atype][btype], theta_cxst5_0[atype][btype], dtheta_cxst5_ast[atype][btype],
 	     b_cxst5[atype][btype], dtheta_cxst5_c[atype][btype]) +
 	     F4(theta5p, a_cxst5[atype][btype], theta_cxst5_0[atype][btype], dtheta_cxst5_ast[atype][btype],
 	     b_cxst5[atype][btype], dtheta_cxst5_c[atype][btype]);
-//f4t5=1;
 
       f4t6 = F4(theta6, a_cxst6[atype][btype], theta_cxst6_0[atype][btype], dtheta_cxst6_ast[atype][btype],
 	     b_cxst6[atype][btype], dtheta_cxst6_c[atype][btype]) + 
 	     F4(theta6p, a_cxst6[atype][btype], theta_cxst6_0[atype][btype], dtheta_cxst6_ast[atype][btype],
 	     b_cxst6[atype][btype], dtheta_cxst6_c[atype][btype]);
-//f4t6=1;
 
-      f5c3 = F5(-cosphi3, a_cxst3p[atype][btype], -cosphi_cxst3p_ast[atype][btype], b_cxst3p[atype][btype],
+      f5c3 = F5(cosphi3, a_cxst3p[atype][btype], cosphi_cxst3p_ast[atype][btype], b_cxst3p[atype][btype],
 	     cosphi_cxst3p_c[atype][btype]);
 f5c3=1;
 
-      f5c4 = F5(-cosphi4, a_cxst4p[atype][btype], -cosphi_cxst4p_ast[atype][btype], b_cxst4p[atype][btype],
+      f5c4 = F5(cosphi4, a_cxst4p[atype][btype], cosphi_cxst4p_ast[atype][btype], b_cxst4p[atype][btype],
 	     cosphi_cxst4p_c[atype][btype]);
 f5c4=1;
+
+      evdwl = f2 * f4t1 * f4t4 * f4t5 * f4t6 * f5c3 * f5c4 * factor_lj;
+
+      // early rejection criterium
+      if (evdwl) {
 
       df2 = DF2(r_st, k_cxst[atype][btype], cut_cxst_0[atype][btype],
 	    cut_cxst_lc[atype][btype], cut_cxst_hc[atype][btype], cut_cxst_lo[atype][btype], cut_cxst_hi[atype][btype],
 	    b_cxst_lo[atype][btype], b_cxst_hi[atype][btype]);
 
-//df2=0;
-
       rsint = 1.0/sin(theta1);
       df4t1 = DF4(theta1, a_cxst1[atype][btype], theta_cxst1_0[atype][btype], dtheta_cxst1_ast[atype][btype],
 	      b_cxst1[atype][btype], dtheta_cxst1_c[atype][btype])*rsint - 
-	      DF4(theta1, a_cxst1[atype][btype], theta_cxst1_0[atype][btype], dtheta_cxst1_ast[atype][btype],
+	      DF4(theta1p, a_cxst1[atype][btype], theta_cxst1_0[atype][btype], dtheta_cxst1_ast[atype][btype],
 	      b_cxst1[atype][btype], dtheta_cxst1_c[atype][btype])*rsint; 
-
-//df4t1=0;
 
       df4t4 = DF4(theta4, a_cxst4[atype][btype], theta_cxst4_0[atype][btype], dtheta_cxst4_ast[atype][btype],
 	      b_cxst4[atype][btype], dtheta_cxst4_c[atype][btype])/sin(theta4); 
-//df4t4=0;
 
       rsint = 1.0/sin(theta5);
       df4t5 = DF4(theta5, a_cxst5[atype][btype], theta_cxst5_0[atype][btype], dtheta_cxst5_ast[atype][btype],
 	      b_cxst5[atype][btype], dtheta_cxst5_c[atype][btype])*rsint -
 	      DF4(theta5p, a_cxst5[atype][btype], theta_cxst5_0[atype][btype], dtheta_cxst5_ast[atype][btype],
               b_cxst5[atype][btype], dtheta_cxst5_c[atype][btype])*rsint;
-//df4t5=0;
 
       rsint = 1.0/sin(theta6);
       df4t6 = DF4(theta6, a_cxst6[atype][btype], theta_cxst6_0[atype][btype], dtheta_cxst6_ast[atype][btype],
 	      b_cxst6[atype][btype], dtheta_cxst6_c[atype][btype])*rsint -
 	      DF4(theta6p, a_cxst6[atype][btype], theta_cxst6_0[atype][btype], dtheta_cxst6_ast[atype][btype],
               b_cxst6[atype][btype], dtheta_cxst6_c[atype][btype])*rsint;
-//df4t6=0;
 
-      df5c3 = DF5(-cosphi3, a_cxst3p[atype][btype], -cosphi_cxst3p_ast[atype][btype], b_cxst3p[atype][btype],
+      df5c3 = DF5(cosphi3, a_cxst3p[atype][btype], cosphi_cxst3p_ast[atype][btype], b_cxst3p[atype][btype],
 	      cosphi_cxst3p_c[atype][btype]);
 
 df5c3=0;
 
-      df5c4 = DF5(-cosphi4, a_cxst4p[atype][btype], -cosphi_cxst4p_ast[atype][btype], b_cxst4p[atype][btype],
+      df5c4 = DF5(cosphi4, a_cxst4p[atype][btype], cosphi_cxst4p_ast[atype][btype], b_cxst4p[atype][btype],
 	      cosphi_cxst4p_c[atype][btype]);
 
 df5c4=0;
 
-      evdwl = f2 * f4t1 * f4t4 * f4t5 * f4t6 * f5c3 * f5c4 * factor_lj;
-
-
-if (evdwl) printf("Coaxial terms: %f %f %f %f %f %f %f %f %f %f\n", f2, f4t4, f4t1, f4t5, f4t6, df2, df4t4, df4t1, df4t5, df4t6);
-
-      // early rejection criterium
-      if (evdwl) {
-
-      // force, torque and virial contribution for forces between h-bonding sites
+ 
+     // force, torque and virial contribution for forces between h-bonding sites
 
       fpair = 0.0;
 
@@ -401,6 +390,7 @@ if (evdwl) printf("Coaxial terms: %f %f %f %f %f %f %f %f %f %f\n", f2, f4t4, f4
 
       }
 
+      // cosphi3 & cosphi4 force
 
       // increment forces, torques
 
@@ -494,6 +484,28 @@ if (evdwl) printf("Coaxial terms: %f %f %f %f %f %f %f %f %f %f\n", f2, f4t4, f4
 
       }
 
+      // cosphi3 & cosphi4 torque
+      if (cosphi3) {
+
+	tpair   = -f2 * f4t1 * f4t4 * f4t5 * f4t6 * df5c3 * f5c4 * factor_lj;
+	MathExtra::cross3(delr_st_norm,ay,cosphi3dir);
+
+	delta[0] += 0;
+	delta[1] += 0;
+	delta[2] += 0;
+
+      }
+
+      if (cosphi4) {
+
+	tpair   = -f2 * f4t1 * f4t4 * f4t5 * f4t6 * f5c3 * df5c4 * factor_lj;
+	MathExtra::cross3(delr_st_norm,by,cosphi4dir);
+
+	deltb[0] -= 0;
+	deltb[1] -= 0;
+	deltb[2] -= 0;
+
+      }
 
       // increment torques
 

@@ -274,6 +274,13 @@ void PairOxdnaXstk::compute(int eflag, int vflag)
 	     F4(theta8p, a_xst8[atype][btype], theta_xst8_0[atype][btype], dtheta_xst8_ast[atype][btype],
 	     b_xst8[atype][btype], dtheta_xst8_c[atype][btype]);
 
+
+      evdwl = f2 * f4t1 * f4t2 * f4t3 * f4t4 * f4t7 * f4t8 * factor_lj;
+
+
+      // early rejection criterium
+      if (evdwl) {
+
       df2 = DF2(r_hb, k_xst[atype][btype], cut_xst_0[atype][btype],
 	    cut_xst_lc[atype][btype], cut_xst_hc[atype][btype], cut_xst_lo[atype][btype], cut_xst_hi[atype][btype],
 	    b_xst_lo[atype][btype], b_xst_hi[atype][btype]);
@@ -304,12 +311,6 @@ void PairOxdnaXstk::compute(int eflag, int vflag)
 	      b_xst8[atype][btype], dtheta_xst8_c[atype][btype])*rsint -
 	      DF4(theta8p, a_xst8[atype][btype], theta_xst8_0[atype][btype], dtheta_xst8_ast[atype][btype],
               b_xst8[atype][btype], dtheta_xst8_c[atype][btype])*rsint;
-
-      evdwl = f2 * f4t1 * f4t2 * f4t3 * f4t4 * f4t7 * f4t8 * factor_lj;
-
-
-      // early rejection criterium
-      if (evdwl) {
 
       // force, torque and virial contribution for forces between h-bonding sites
 

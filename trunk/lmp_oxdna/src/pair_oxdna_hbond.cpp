@@ -241,7 +241,6 @@ void PairOxdnaHbond::compute(int eflag, int vflag)
       theta8 = acos(cost8);
 
 
-
       f1 = F1(r_hb, epsilon_hb[atype][btype], a_hb[atype][btype], cut_hb_0[atype][btype],
 	    cut_hb_lc[atype][btype], cut_hb_hc[atype][btype], cut_hb_lo[atype][btype], cut_hb_hi[atype][btype],
 	    b_hb_lo[atype][btype], b_hb_hi[atype][btype], shift_hb[atype][btype]);
@@ -267,6 +266,12 @@ void PairOxdnaHbond::compute(int eflag, int vflag)
       f4t8 = F4(theta8, a_hb8[atype][btype], theta_hb8_0[atype][btype], dtheta_hb8_ast[atype][btype],
 	    b_hb8[atype][btype], dtheta_hb8_c[atype][btype]);
 
+
+      evdwl = f1 * f4t1 * f4t2 * f4t3 * f4t4 * f4t7 * f4t8 * factor_lj;
+
+      // early rejection criterium
+      if (evdwl) {
+
       df1 = DF1(r_hb, epsilon_hb[atype][btype], a_hb[atype][btype], cut_hb_0[atype][btype],
 	    cut_hb_lc[atype][btype], cut_hb_hc[atype][btype], cut_hb_lo[atype][btype], cut_hb_hi[atype][btype],
 	    b_hb_lo[atype][btype], b_hb_hi[atype][btype]);
@@ -288,11 +293,6 @@ void PairOxdnaHbond::compute(int eflag, int vflag)
 
       df4t8 = DF4(theta8, a_hb8[atype][btype], theta_hb8_0[atype][btype], dtheta_hb8_ast[atype][btype],
 	    b_hb8[atype][btype], dtheta_hb8_c[atype][btype])/sin(theta8);
-
-      evdwl = f1 * f4t1 * f4t2 * f4t3 * f4t4 * f4t7 * f4t8 * factor_lj;
-
-      // early rejection criterium
-      if (evdwl) {
 
       // force, torque and virial contribution for forces between h-bonding sites
 
