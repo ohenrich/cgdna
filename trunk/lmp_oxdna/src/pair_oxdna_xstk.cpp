@@ -384,7 +384,7 @@ void PairOxdnaXstk::compute(int eflag, int vflag)
 
       }
 
-      // increment forces, torques
+      // increment forces and torques
 
       f[a][0] += delf[0];
       f[a][1] += delf[1];
@@ -411,14 +411,17 @@ void PairOxdnaXstk::compute(int eflag, int vflag)
 
       }
 
+      // increment energy and virial
+      if (evflag) ev_tally(a,b,nlocal,newton_pair,evdwl,0.0,fpair,delr_hb[0],delr_hb[1],delr_hb[2]); 
+
+      // pure torques not expressible as r x f 
+
       delta[0] = 0.0;
       delta[1] = 0.0;
       delta[2] = 0.0;
       deltb[0] = 0.0;
       deltb[1] = 0.0;
       deltb[2] = 0.0;
-
-      // pure torques not expressible as r x f 
 
       // theta1 torque
       if (theta1) {
@@ -514,8 +517,6 @@ void PairOxdnaXstk::compute(int eflag, int vflag)
 
       }
 
-      // increment energy and virial
-      if (evflag) ev_tally(a,b,nlocal,newton_pair,evdwl,0.0,fpair,delr_hb[0],delr_hb[1],delr_hb[2]); 
 
       }
       }// end early rejection criteria 

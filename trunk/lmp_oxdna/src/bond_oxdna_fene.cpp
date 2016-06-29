@@ -174,6 +174,7 @@ void BondOxdnaFene::compute(int eflag, int vflag)
 
     }
 
+    // increment energy and virial
     if (evflag) ev_tally(a,b,nlocal,newton_bond,ebond,fbond,delr[0],delr[1],delr[2]);
 
   }

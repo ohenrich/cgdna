@@ -222,6 +222,7 @@ void PairOxdnaExcv::compute(int eflag, int vflag)
 	fpair *= factor_lj;
 	evdwl *= factor_lj;
 
+	// increment energy and virial
 	if (evflag) ev_tally(a,b,nlocal,newton_pair,
 		evdwl,0.0,fpair,delr_ss[0],delr_ss[1],delr_ss[2]);
 
@@ -262,6 +263,7 @@ void PairOxdnaExcv::compute(int eflag, int vflag)
 	evdwl = F3(rsq_sb,cutsq_sb_ast[atype][btype],cut_sb_c[atype][btype],lj1_sb[atype][btype],
 			lj2_sb[atype][btype],epsilon_sb[atype][btype],b_sb[atype][btype],fpair);
 
+	// increment energy and virial
 	if (evflag) ev_tally(a,b,nlocal,newton_pair,
 		evdwl,0.0,fpair,delr_sb[0],delr_sb[1],delr_sb[2]);
 
@@ -301,6 +303,7 @@ void PairOxdnaExcv::compute(int eflag, int vflag)
 	evdwl = F3(rsq_bs,cutsq_sb_ast[atype][btype],cut_sb_c[atype][btype],lj1_sb[atype][btype],
 			lj2_sb[atype][btype],epsilon_sb[atype][btype],b_sb[atype][btype],fpair);
 
+	// increment energy and virial
 	if (evflag) ev_tally(a,b,nlocal,newton_pair,
 		evdwl,0.0,fpair,delr_bs[0],delr_bs[1],delr_bs[2]);
 
@@ -340,6 +343,7 @@ void PairOxdnaExcv::compute(int eflag, int vflag)
 	evdwl = F3(rsq_bb,cutsq_bb_ast[atype][btype],cut_bb_c[atype][btype],lj1_bb[atype][btype],
 			lj2_bb[atype][btype],epsilon_bb[atype][btype],b_bb[atype][btype],fpair);
 
+	// increment energy and virial
 	if (evflag) ev_tally(a,b,nlocal,newton_pair,
 		evdwl,0.0,fpair,delr_bb[0],delr_bb[1],delr_bb[2]);
 

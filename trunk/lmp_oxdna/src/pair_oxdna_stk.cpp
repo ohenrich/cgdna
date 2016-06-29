@@ -290,6 +290,9 @@ void PairOxdnaStk::compute(int eflag, int vflag)
     // early rejection criterium
     if (evdwl) {
 
+    // increment energy
+    if (evflag) ev_tally(a,b,nlocal,newton_bond,evdwl,0.0,0.0,0.0,0.0,0.0);
+
     df1 = DF1(r_st, epsilon_st[atype][btype], a_st[atype][btype], cut_st_0[atype][btype], 
 	cut_st_lc[atype][btype], cut_st_hc[atype][btype], cut_st_lo[atype][btype], cut_st_hi[atype][btype], 
 	b_st_lo[atype][btype], b_st_hi[atype][btype]);
@@ -309,8 +312,6 @@ void PairOxdnaStk::compute(int eflag, int vflag)
     df5c2 = DF5(-cosphi2, a_st2[atype][btype], -cosphi_st2_ast[atype][btype], b_st2[atype][btype], 
 	cosphi_st2_c[atype][btype]);
 
-    // increment energy
-    if (evflag) ev_tally(a,b,nlocal,newton_bond,evdwl,0.0,0.0,0.0,0.0,0.0);
 
     // force, torque and virial contribution for forces between stacking sites
 
@@ -417,7 +418,7 @@ void PairOxdnaStk::compute(int eflag, int vflag)
     // cosphi1 force
     if (cosphi1) {
 
-      finc   = -f1 * f4t4 * f4t5 * f4t6 * df5c1 * f5c2 * rinv_ss;// * tptofp;
+      finc   = -f1 * f4t4 * f4t5 * f4t6 * df5c1 * f5c2 * rinv_ss;
       fpair += finc;
 
       delf[0] += (delr_ss_norm[0]*cosphi1 - ay[0]) * finc;
@@ -429,7 +430,7 @@ void PairOxdnaStk::compute(int eflag, int vflag)
     // cosphi2 force
     if (cosphi2) {
 
-      finc   = -f1 * f4t4 * f4t5 * f4t6 * f5c1 * df5c2 * rinv_ss;// * tptofp;
+      finc   = -f1 * f4t4 * f4t5 * f4t6 * f5c1 * df5c2 * rinv_ss;
       fpair += finc;
 
       delf[0] += (delr_ss_norm[0]*cosphi2 - by[0]) * finc;
@@ -476,14 +477,15 @@ void PairOxdnaStk::compute(int eflag, int vflag)
 
     if (evflag) ev_tally(a,b,nlocal,newton_bond,0.0,0.0,fpair,delr_ss[0],delr_ss[1],delr_ss[2]);
 
+
+    // pure torques not expressible as r x f 
+
     delta[0] = 0.0;
     delta[1] = 0.0;
     delta[2] = 0.0;
     deltb[0] = 0.0;
     deltb[1] = 0.0;
     deltb[2] = 0.0;
-
-    // pure torques not expressible as r x f 
 
     // theta4 torque
     if (theta4) {

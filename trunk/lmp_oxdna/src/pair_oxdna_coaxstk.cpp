@@ -110,16 +110,22 @@ PairOxdnaCoaxstk::~PairOxdnaCoaxstk()
 void PairOxdnaCoaxstk::compute(int eflag, int vflag)
 {
 
-  double delf[3],delta[3],deltb[3]; // force, torque increment;
+  double delf[3],delt[3],delta[3],deltb[3]; // force, torque increment;
   double evdwl,fpair,finc,tpair,factor_lj;
+  double v1tmp[3],v2tmp[3],v3tmp[3];
   double delr_ss[3],delr_ss_norm[3],rsq_ss,r_ss,rinv_ss;
   double delr_st[3],delr_st_norm[3],rsq_st,r_st,rinv_st;
-  double delr_st_ss_norm[3];
   double theta1,theta1p,t1dir[3],cost1;
   double theta4,t4dir[3],cost4;
   double theta5,theta5p,t5dir[3],cost5;
   double theta6,theta6p,t6dir[3],cost6;
-  double cosphi3,cosphi4,cosphi3dir[3],cosphi4dir[3];
+  double cosphi3;
+
+  double gamma,gammacub,rinv_ss_cub,fac;
+  double aybx,azbx,rax,ray,raz,rbx;
+  double dcdr,dcdrbx;
+  double dcdaxbx,dcdaybx,dcdazbx;
+  double dcdrax,dcdray,dcdraz;
 
   // distances COM-backbone site, COM-stacking site
   double d_cs=-0.24, d_cst=0.5;
@@ -148,8 +154,8 @@ void PairOxdnaCoaxstk::compute(int eflag, int vflag)
 
   int a,b,ia,ib,anum,bnum,atype,btype;
 
-  double f2,f4t1,f4t4,f4t5,f4t6,f5c3,f5c4;
-  double df2,df4t1,df4t4,df4t5,df4t6,df5c3,df5c4,rsint;
+  double f2,f4t1,f4t4,f4t5,f4t6,f5c3;
+  double df2,df4t1,df4t4,df4t5,df4t6,df5c3,rsint;
 
   evdwl = 0.0;
   if (eflag || vflag) ev_setup(eflag,vflag);
@@ -175,6 +181,11 @@ void PairOxdnaCoaxstk::compute(int eflag, int vflag)
     ra_cst[1] = d_cst*ax[1];
     ra_cst[2] = d_cst*ax[2];
   
+    // vector COM a - backbone site a
+    ra_cs[0] = d_cs*ax[0];
+    ra_cs[1] = d_cs*ax[1];
+    ra_cs[2] = d_cs*ax[2];
+
     blist = firstneigh[a];
     bnum = numneigh[a];
 
@@ -206,11 +217,6 @@ void PairOxdnaCoaxstk::compute(int eflag, int vflag)
       delr_st_norm[0] = delr_st[0] * rinv_st;
       delr_st_norm[1] = delr_st[1] * rinv_st;
       delr_st_norm[2] = delr_st[2] * rinv_st;
-
-      // vector COM a - backbone site a
-      ra_cs[0] = d_cs*ax[0];
-      ra_cs[1] = d_cs*ax[1];
-      ra_cs[2] = d_cs*ax[2];
 
       // vector COM b - backbone site b
       rb_cs[0] = d_cs*bx[0];
@@ -255,21 +261,18 @@ void PairOxdnaCoaxstk::compute(int eflag, int vflag)
       theta6 = acos(cost6);
       theta6p = MY_PI - theta6;
 
-      MathExtra::cross3(delr_st_norm,delr_ss_norm,delr_st_ss_norm);
-
-      cosphi3 = MathExtra::dot3(delr_st_ss_norm,ax);
+      MathExtra::cross3(delr_ss_norm,ax,v1tmp);
+      cosphi3 = MathExtra::dot3(delr_st_norm,v1tmp);
       if (cosphi3 >  1.0) cosphi3 =  1.0;
       if (cosphi3 < -1.0) cosphi3 = -1.0;
-
-      cosphi4 = MathExtra::dot3(delr_st_ss_norm,bx);
-      if (cosphi4 >  1.0) cosphi4 =  1.0;
-      if (cosphi4 < -1.0) cosphi4 = -1.0;
 
 
       f4t1 = F4(theta1, a_cxst1[atype][btype], theta_cxst1_0[atype][btype], dtheta_cxst1_ast[atype][btype],
 	     b_cxst1[atype][btype], dtheta_cxst1_c[atype][btype]) +
 	     F4(theta1p, a_cxst1[atype][btype], theta_cxst1_0[atype][btype], dtheta_cxst1_ast[atype][btype],
 	     b_cxst1[atype][btype], dtheta_cxst1_c[atype][btype]);
+
+
 
       // early rejection criterium
       if (f4t1) {
@@ -295,13 +298,8 @@ void PairOxdnaCoaxstk::compute(int eflag, int vflag)
 
       f5c3 = F5(cosphi3, a_cxst3p[atype][btype], cosphi_cxst3p_ast[atype][btype], b_cxst3p[atype][btype],
 	     cosphi_cxst3p_c[atype][btype]);
-f5c3=1;
 
-      f5c4 = F5(cosphi4, a_cxst4p[atype][btype], cosphi_cxst4p_ast[atype][btype], b_cxst4p[atype][btype],
-	     cosphi_cxst4p_c[atype][btype]);
-f5c4=1;
-
-      evdwl = f2 * f4t1 * f4t4 * f4t5 * f4t6 * f5c3 * f5c4 * factor_lj;
+      evdwl = f2 * f4t1 * f4t4 * f4t5 * f4t6 * f5c3 * f5c3 * factor_lj;
 
       // early rejection criterium
       if (evdwl) {
@@ -334,15 +332,8 @@ f5c4=1;
       df5c3 = DF5(cosphi3, a_cxst3p[atype][btype], cosphi_cxst3p_ast[atype][btype], b_cxst3p[atype][btype],
 	      cosphi_cxst3p_c[atype][btype]);
 
-df5c3=0;
-
-      df5c4 = DF5(cosphi4, a_cxst4p[atype][btype], cosphi_cxst4p_ast[atype][btype], b_cxst4p[atype][btype],
-	      cosphi_cxst4p_c[atype][btype]);
-
-df5c4=0;
-
  
-     // force, torque and virial contribution for forces between h-bonding sites
+     // force, torque and virial contribution for forces between stacking sites
 
       fpair = 0.0;
 
@@ -359,7 +350,7 @@ df5c4=0;
       deltb[2] = 0.0;
 
       // radial force
-      finc  = -df2 * f4t1 * f4t4 * f4t5 * f4t6 * f5c3 * f5c4 * rinv_st * factor_lj;
+      finc  = -df2 * f4t1 * f4t4 * f4t5 * f4t6 * f5c3 * f5c3 * rinv_st * factor_lj;
       fpair += finc;
 
       delf[0] += delr_st[0] * finc;
@@ -369,7 +360,7 @@ df5c4=0;
       // theta5 force
       if (theta5 && theta5p) {
 
-	finc   = -f2 * f4t1 * f4t4 * df4t5 * f4t6 * f5c3 * f5c4 * rinv_st * factor_lj;
+	finc   = -f2 * f4t1 * f4t4 * df4t5 * f4t6 * f5c3 * f5c3 * rinv_st * factor_lj;
 	fpair += finc;
 
 	delf[0] += (delr_st_norm[0]*cost5 - az[0]) * finc;
@@ -381,7 +372,7 @@ df5c4=0;
       // theta6 force
       if (theta6 && theta6p) {
 
-	finc   = -f2 * f4t1* f4t4 * f4t5 * df4t6 * f5c3 * f5c4 * rinv_st * factor_lj;
+	finc   = -f2 * f4t1* f4t4 * f4t5 * df4t6 * f5c3 * f5c3 * rinv_st * factor_lj;
 	fpair += finc;
 
 	delf[0] += (delr_st_norm[0]*cost6 - bz[0]) * finc;
@@ -390,9 +381,52 @@ df5c4=0;
 
       }
 
-      // cosphi3 & cosphi4 force
 
-      // increment forces, torques
+      // cosphi3 and cosphi4 (=cosphi3) force and virial
+      if (cosphi3) {
+
+	finc   = -f2 * f4t1* f4t4 * f4t5 * f4t6 * 2.0 * f5c3 * df5c3 * factor_lj;
+	fpair += finc;
+
+	gamma = d_cs - d_cst;
+	gammacub = gamma * gamma * gamma;
+	rinv_ss_cub = rinv_ss * rinv_ss * rinv_ss;
+	aybx = MathExtra::dot3(ay,bx);
+	azbx = MathExtra::dot3(az,bx);
+	rax = MathExtra::dot3(delr_st_norm,ax);
+	ray = MathExtra::dot3(delr_st_norm,ay);
+	raz = MathExtra::dot3(delr_st_norm,az);
+	rbx = MathExtra::dot3(delr_st_norm,bx);
+
+	fac = (raz * aybx - ray * azbx);
+
+	dcdr    = -gamma * fac * (gamma * (rax - rbx) + r_st) * rinv_ss_cub;
+	dcdaxbx =  gammacub * fac * rinv_ss_cub;
+	dcdaybx =  gamma * raz * rinv_ss;
+	dcdazbx = -gamma * ray * rinv_ss;
+	dcdrax  = -gamma*gamma * fac * r_st * rinv_ss_cub;
+	dcdray  = -gamma * azbx * rinv_ss;
+	dcdraz  =  gamma * aybx * rinv_ss;
+        dcdrbx  =  gamma*gamma * fac * r_st * rinv_ss_cub;
+
+        delf[0] += (delr_st_norm[0] * dcdr + ((ax[0] - delr_st_norm[0] * rax) * dcdrax +
+                                              (ay[0] - delr_st_norm[0] * ray) * dcdray +
+                                              (az[0] - delr_st_norm[0] * raz) * dcdraz +
+                                              (bx[0] - delr_st_norm[0] * rbx) * dcdrbx) * rinv_st) * finc * factor_lj;
+      
+	delf[1] += (delr_st_norm[1] * dcdr + ((ax[1] - delr_st_norm[1] * rax) * dcdrax +
+                                              (ay[1] - delr_st_norm[1] * ray) * dcdray +
+                                              (az[1] - delr_st_norm[1] * raz) * dcdraz +
+                                              (bx[1] - delr_st_norm[1] * rbx) * dcdrbx) * rinv_st) * finc * factor_lj;
+
+        delf[2] += (delr_st_norm[2] * dcdr + ((ax[2] - delr_st_norm[2] * rax) * dcdrax +
+                                              (ay[2] - delr_st_norm[2] * ray) * dcdray +
+                                              (az[2] - delr_st_norm[2] * raz) * dcdraz +
+                                              (bx[2] - delr_st_norm[2] * rbx) * dcdrbx) * rinv_st) * finc * factor_lj;
+
+      }
+
+      // increment forces and torques
 
       f[a][0] += delf[0];
       f[a][1] += delf[1];
@@ -410,7 +444,6 @@ df5c4=0;
 	f[b][1] -= delf[1];
 	f[b][2] -= delf[2];
 
-
 	MathExtra::cross3(rb_cst,delf,deltb);
 
 	torque[b][0] -= deltb[0];
@@ -419,6 +452,11 @@ df5c4=0;
 
       }
 
+      // increment energy and virial
+      if (evflag) ev_tally(a,b,nlocal,newton_pair,evdwl,0.0,fpair,delr_st[0],delr_st[1],delr_st[2]);
+ 
+      // pure torques not expressible as r x f 
+
       delta[0] = 0.0;
       delta[1] = 0.0;
       delta[2] = 0.0;
@@ -426,12 +464,10 @@ df5c4=0;
       deltb[1] = 0.0;
       deltb[2] = 0.0;
 
-      // pure torques not expressible as r x f 
-
       // theta1 torque
       if (theta1 && theta1p) {
 
-	tpair = -f2 * df4t1 * f4t4 * f4t5 * f4t6 * f5c3 * f5c4 * factor_lj;
+	tpair = -f2 * df4t1 * f4t4 * f4t5 * f4t6 * f5c3 * f5c3 * factor_lj;
 	MathExtra::cross3(ax,bx,t1dir);
 
 	delta[0] += t1dir[0]*tpair;
@@ -447,7 +483,7 @@ df5c4=0;
       // theta4 torque
       if (theta4) {
 
-	tpair = -f2 * f4t1 * df4t4 * f4t5 * f4t6 * f5c3 * f5c4 * factor_lj;
+	tpair = -f2 * f4t1 * df4t4 * f4t5 * f4t6 * f5c3 * f5c3 * factor_lj;
 	MathExtra::cross3(bz,az,t4dir);
 
 	delta[0] += t4dir[0]*tpair;
@@ -463,7 +499,7 @@ df5c4=0;
       // theta5 torque
       if (theta5 && theta5p) {
 
-	tpair = -f2 * f4t1 * f4t4 * df4t5 * f4t6 * f5c3 * f5c4 * factor_lj;
+	tpair = -f2 * f4t1 * f4t4 * df4t5 * f4t6 * f5c3 * f5c3 * factor_lj;
 	MathExtra::cross3(delr_st_norm,az,t5dir);
 
 	delta[0] += t5dir[0] * tpair;
@@ -475,7 +511,7 @@ df5c4=0;
       // theta6 torque
       if (theta6 && theta6p) {
 
-	tpair = -f2 * f4t1 * f4t4 * f4t5 * df4t6 * f5c3 * f5c4 * factor_lj;
+	tpair = -f2 * f4t1 * f4t4 * f4t5 * df4t6 * f5c3 * f5c3 * factor_lj;
 	MathExtra::cross3(delr_st_norm,bz,t6dir);
 
 	deltb[0] -= t6dir[0] * tpair;
@@ -484,26 +520,60 @@ df5c4=0;
 
       }
 
-      // cosphi3 & cosphi4 torque
+      // Full cosphi3 and cosphi4 (=cosphi3) contribution to the torque
       if (cosphi3) {
 
-	tpair   = -f2 * f4t1 * f4t4 * f4t5 * f4t6 * df5c3 * f5c4 * factor_lj;
-	MathExtra::cross3(delr_st_norm,ay,cosphi3dir);
+	gamma = d_cs - d_cst;
+	gammacub = gamma * gamma * gamma;
+	rinv_ss_cub = rinv_ss * rinv_ss * rinv_ss;
+	aybx = MathExtra::dot3(ay,bx);
+	azbx = MathExtra::dot3(az,bx);
+	rax = MathExtra::dot3(delr_st_norm,ax);
+	ray = MathExtra::dot3(delr_st_norm,ay);
+	raz = MathExtra::dot3(delr_st_norm,az);
+	rbx = MathExtra::dot3(delr_st_norm,bx);
 
-	delta[0] += 0;
-	delta[1] += 0;
-	delta[2] += 0;
+	fac = (raz * aybx - ray * azbx);
 
-      }
+	dcdr    = -gamma * fac * (gamma * (rax - rbx) + r_st) * rinv_ss_cub;
+	dcdaxbx =  gammacub * fac * rinv_ss_cub;
+	dcdaybx =  gamma * raz * rinv_ss;
+	dcdazbx = -gamma * ray * rinv_ss;
+	dcdrax  = -gamma*gamma * fac * r_st * rinv_ss_cub;
+	dcdray  = -gamma * azbx * rinv_ss;
+	dcdraz  =  gamma * aybx * rinv_ss;
+        dcdrbx  =  gamma*gamma * fac * r_st * rinv_ss_cub;
 
-      if (cosphi4) {
+	tpair   = -f2 * f4t1 * f4t4 * f4t5 * f4t6 * 2.0 * f5c3 * df5c3 * factor_lj;
 
-	tpair   = -f2 * f4t1 * f4t4 * f4t5 * f4t6 * f5c3 * df5c4 * factor_lj;
-	MathExtra::cross3(delr_st_norm,by,cosphi4dir);
+	MathExtra::cross3(ax,bx,v1tmp);
+	MathExtra::cross3(ay,bx,v2tmp);
+	MathExtra::cross3(az,bx,v3tmp);
 
-	deltb[0] -= 0;
-	deltb[1] -= 0;
-	deltb[2] -= 0;
+	delt[0] = (v1tmp[0] * dcdaxbx + v2tmp[0] * dcdaybx + v3tmp[0] * dcdazbx) * tpair;
+	delt[1] = (v1tmp[1] * dcdaxbx + v2tmp[1] * dcdaybx + v3tmp[1] * dcdazbx) * tpair;
+	delt[2] = (v1tmp[2] * dcdaxbx + v2tmp[2] * dcdaybx + v3tmp[2] * dcdazbx) * tpair;
+
+	delta[0] += delt[0];
+	delta[1] += delt[1];
+	delta[2] += delt[2];
+	deltb[0] += delt[0];
+	deltb[1] += delt[1];
+	deltb[2] += delt[2];
+
+        MathExtra::cross3(ax,delr_st_norm,v1tmp);
+        MathExtra::cross3(ay,delr_st_norm,v2tmp);
+        MathExtra::cross3(az,delr_st_norm,v3tmp);
+
+	delta[0] += (v1tmp[0] * dcdrax + v2tmp[0] * dcdray + v3tmp[0] * dcdraz) * tpair;
+	delta[1] += (v1tmp[1] * dcdrax + v2tmp[1] * dcdray + v3tmp[1] * dcdraz) * tpair;
+	delta[2] += (v1tmp[2] * dcdrax + v2tmp[2] * dcdray + v3tmp[2] * dcdraz) * tpair;
+
+        MathExtra::cross3(bx,delr_st_norm,v1tmp);
+
+	deltb[0] -= v1tmp[0] * dcdrbx * tpair;
+	deltb[1] -= v1tmp[1] * dcdrbx * tpair;
+	deltb[2] -= v1tmp[2] * dcdrbx * tpair;
 
       }
 
@@ -521,11 +591,9 @@ df5c4=0;
 
       }
 
-      // increment energy and virial
-      if (evflag) ev_tally(a,b,nlocal,newton_pair,evdwl,0.0,fpair,delr_st[0],delr_st[1],delr_st[2]); 
-
       }
       }// end early rejection criteria 
+
 
     }
   }
