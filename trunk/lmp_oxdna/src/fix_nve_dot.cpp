@@ -18,7 +18,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
-#include "fix_nve_dota.h"
+#include "fix_nve_dot.h"
 #include "math_extra.h"
 #include "atom.h"
 #include "atom_vec_ellipsoid.h"
@@ -35,12 +35,12 @@ using namespace MathExtra;
 
 /* ---------------------------------------------------------------------- */
 
-FixNVEDota::FixNVEDota(LAMMPS *lmp, int narg, char **arg) :
+FixNVEDot::FixNVEDot(LAMMPS *lmp, int narg, char **arg) :
   FixNVE(lmp, narg, arg) {}
 
 /* ---------------------------------------------------------------------- */
 
-void FixNVEDota::init()
+void FixNVEDot::init()
 {
   avec = (AtomVecEllipsoid *) atom->style_match("ellipsoid");
   if (!avec)
@@ -63,7 +63,7 @@ void FixNVEDota::init()
 
 /* ---------------------------------------------------------------------- */
 
-void FixNVEDota::initial_integrate(int vflag)
+void FixNVEDot::initial_integrate(int vflag)
 {
   double *shape,*quat;
   double fquat[4],conjqm[4],inertia[3];
@@ -129,25 +129,7 @@ void FixNVEDota::initial_integrate(int vflag)
       no_squish_rotate(2,conjqm,quat,inertia,dthlf);
       no_squish_rotate(3,conjqm,quat,inertia,dthlf);
 
-/* Noise
-
-// ran = Gaussian(sigma=1, mean=0)
-
-// v[i][0] = v[i][0] * exp(-gamma * update->dt) + sqrt(kBT/rmass[i] * (1-exp(-2*gamma*update->dt))) * ran0 
-// v[i][1] = v[i][1] * exp(-gamma * update->dt) + sqrt(kBT/rmass[i] * (1-exp(-2*gamma*update->dt))) * ran1 
-// v[i][2] = v[i][2] * exp(-gamma * update->dt) + sqrt(kBT/rmass[i] * (1-exp(-2*gamma*update->dt))) * ran2 
-§
-// M = 4 / (1/I_1 + 1/I_2 + 1/I_3) 
-
-// Phi_1 = Pi^T S_1 q
-// Phi_2 = Pi^T S_2 q
-// Phi_3 = Pi^T S_3 q
-
-// Pi += S_1 q * (exp(-Gamma * M * update->dt / (4 * I_1)) * Phi_1 + sqrt(4 * kBT * I_1 * (1 - exp(-Gamma * M * update->dt / (2 * I_1))))) * ran3
-// Pi += S_2 q * (exp(-Gamma * M * update->dt / (4 * I_2)) * Phi_2 + sqrt(4 * kBT * I_2 * (1 - exp(-Gamma * M * update->dt / (2 * I_2))))) * ran4
-// Pi += S_3 q * (exp(-Gamma * M * update->dt / (4 * I_3)) * Phi_3 + sqrt(4 * kBT * I_3 * (1 - exp(-Gamma * M * update->dt / (2 * I_3))))) * ran5
-
-end Noise */
+      qnormalize(quat);
 
       // convert quaternion 4-momentum in body frame back to angular momentum in space frame
       vec4_to_vec3(quat,conjqm,angmom[i]);
@@ -161,7 +143,7 @@ end Noise */
 
 /* ---------------------------------------------------------------------- */
 
-void FixNVEDota::final_integrate()
+void FixNVEDot::final_integrate()
 {
 
   double *shape,*quat;

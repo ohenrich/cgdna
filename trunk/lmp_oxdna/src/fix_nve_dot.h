@@ -13,20 +13,20 @@
 
 #ifdef FIX_CLASS
 
-FixStyle(nve/dota,FixNVEDota)
+FixStyle(nve/dot,FixNVEDot)
 
 #else
 
-#ifndef LMP_FIX_NVE_DOTA_H
-#define LMP_FIX_NVE_DOTA_H
+#ifndef LMP_FIX_NVE_DOT_H
+#define LMP_FIX_NVE_DOT_H
 
 #include "fix_nve.h"
 
 namespace LAMMPS_NS {
 
-class FixNVEDota : public FixNVE {
+class FixNVEDot : public FixNVE {
  public:
-  FixNVEDota(class LAMMPS *, int, char **);
+  FixNVEDot(class LAMMPS *, int, char **);
   void init();
   void initial_integrate(int);
   void final_integrate();
