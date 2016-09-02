@@ -44,7 +44,7 @@ void FixNVEDot::init()
 {
   avec = (AtomVecEllipsoid *) atom->style_match("ellipsoid");
   if (!avec)
-    error->all(FLERR,"Compute nve/dota requires atom style ellipsoid");
+    error->all(FLERR,"Compute nve/dot requires atom style ellipsoid");
 
   // check that all particles are finite-size ellipsoids
   // no point particles allowed, spherical is OK
@@ -56,7 +56,7 @@ void FixNVEDot::init()
   for (int i = 0; i < nlocal; i++)
     if (mask[i] & groupbit)
       if (ellipsoid[i] < 0)
-        error->one(FLERR,"Fix nve/dota requires extended particles");
+        error->one(FLERR,"Fix nve/dot requires extended particles");
 
   FixNVE::init();
 }

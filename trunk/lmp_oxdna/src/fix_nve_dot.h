@@ -57,11 +57,11 @@ class FixNVEDot : public FixNVE {
 
 /* ERROR/WARNING messages:
 
-E: Compute nve/dota requires atom style ellipsoid
+E: Compute nve/dot requires atom style ellipsoid
 
 Self-explanatory.
 
-E: Fix nve/dota requires extended particles
+E: Fix nve/dot requires extended particles
 
 This fix can only be used for particles with a shape setting.
 
