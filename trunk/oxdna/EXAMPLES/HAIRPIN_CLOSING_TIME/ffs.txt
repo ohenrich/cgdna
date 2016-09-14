@@ -1,4 +1,0 @@
-condition1 =  {
- all_bonds == 8
-
-}
