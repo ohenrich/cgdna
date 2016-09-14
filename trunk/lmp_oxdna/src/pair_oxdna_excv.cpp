@@ -21,7 +21,6 @@
 #include "pair_oxdna_excv.h"
 #include "mf_oxdna.h"
 #include "atom.h"
-#include "molecule.h"
 #include "comm.h"
 #include "force.h"
 #include "neighbor.h"
@@ -118,8 +117,6 @@ void PairOxdnaExcv::compute(int eflag, int vflag)
   double **f = atom->f;
   double **torque = atom->torque;
   int *type = atom->type;
-  int *molecule = atom->molecule;
-  int *ellipsoid = atom->ellipsoid;
 
   int nlocal = atom->nlocal;
   int newton_pair = force->newton_pair;

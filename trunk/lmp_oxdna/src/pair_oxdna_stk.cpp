@@ -21,7 +21,6 @@
 #include "pair_oxdna_stk.h"
 #include "mf_oxdna.h"
 #include "atom.h"
-#include "molecule.h"
 #include "comm.h"
 #include "force.h"
 #include "neighbor.h"
@@ -130,8 +129,6 @@ void PairOxdnaStk::compute(int eflag, int vflag)
   double **f = atom->f;
   double **torque = atom->torque;
   int *type = atom->type;
-  int *molecule = atom->molecule;
-  int *ellipsoid = atom->ellipsoid;
 
   int nlocal = atom->nlocal;
   int newton_bond = force->newton_bond;

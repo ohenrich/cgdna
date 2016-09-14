@@ -74,7 +74,6 @@ void BondOxdnaFene::compute(int eflag, int vflag)
   double **f = atom->f;
   double **torque = atom->torque;
 
-  int *ellipsoid = atom->ellipsoid;
   AtomVecEllipsoid *avec = (AtomVecEllipsoid *) atom->style_match("ellipsoid");
   AtomVecEllipsoid::Bonus *bonus = avec->bonus;
 
