@@ -34,7 +34,6 @@ class FixNVEDotcLangevin : public FixNVE {
 
  private:
   double dt,dthlf,dthlfm,dtqrt;
-  class AtomVecEllipsoid *avec;
   // conversion from 3-vector in space frame to 4-vector in body frame
   inline void vec3_to_vec4(const double * q, const double * v3, double * v4)
   {
@@ -52,6 +51,7 @@ class FixNVEDotcLangevin : public FixNVE {
   }
  protected:
   int seed;
+  class AtomVecEllipsoid *avec;
   double t_start,t_stop,t_period,tsqrt;
   double gamma,Gamma,ascale;
   double M,gfactor1,gfactor2;

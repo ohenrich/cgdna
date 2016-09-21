@@ -50,8 +50,15 @@ FixNVEDotcLangevin::FixNVEDotcLangevin(LAMMPS *lmp, int narg, char **arg) :
 
   if (strcmp(arg[7],"angmom") == 0) {
     if (9 > narg) error->all(FLERR,"Illegal fix nve/dotc/langevin command");
-    if (strcmp(arg[8],"no") == 0) ascale = 0.0;
-    else ascale = force->numeric(FLERR,arg[8]);
+    if (strcmp(arg[8],"no") == 0) {
+      ascale = 0.0;
+      Gamma = 0.0;
+    }
+    else {
+      ascale = force->numeric(FLERR,arg[8]);
+      Gamma = gamma * ascale;
+    }
+    
   }
 
   // initialize Marsaglia RNG with processor-unique seed
@@ -79,20 +86,16 @@ void FixNVEDotcLangevin::init()
   int *mask = atom->mask;
   int nlocal = atom->nlocal;
 
-  // check that all particles are finite-size ellipsoids
-  // no point particles allowed, spherical is OK
+  avec = (AtomVecEllipsoid *) atom->style_match("ellipsoid");
 
-  if (ascale) {
-    avec = (AtomVecEllipsoid *) atom->style_match("ellipsoid");
+  if (!avec)
+    error->all(FLERR,"Fix nve/dotc/langevin requires atom style ellipsoid");
 
-    if (!avec)
-      error->all(FLERR,"Fix nve/dotc/langevin requires atom style ellipsoid");
-
-    for (int i = 0; i < nlocal; i++)
-      if (mask[i] & groupbit)
-	if (ellipsoid[i] < 0)
-	  error->one(FLERR,"Fix nve/dotc/langevin requires extended particles");
-  }
+  for (int i = 0; i < nlocal; i++)
+    if (mask[i] & groupbit)
+      if (ellipsoid[i] < 0)
+	error->one(FLERR,"Fix nve/dotc/langevin requires extended particles");
+  
 
   // set prefactor
   gfactor1 = exp(-gamma*update->dt);
@@ -110,7 +113,7 @@ void FixNVEDotcLangevin::initial_integrate(int vflag)
 {
   double *shape,*quat;
   double fquat[4],conjqm[4],inertia[3];
-  double Phi[3];
+  double slq_conjqm[3];
 
   AtomVecEllipsoid::Bonus *bonus = avec->bonus;
   int *ellipsoid = atom->ellipsoid;
@@ -168,18 +171,17 @@ void FixNVEDotcLangevin::initial_integrate(int vflag)
       inertia[1] = INERTIA*rmass[i] * (shape[0]*shape[0]+shape[2]*shape[2]);
       inertia[2] = INERTIA*rmass[i] * (shape[0]*shape[0]+shape[1]*shape[1]);
 
-      M = 4.0*inertia[0]*inertia[1]*inertia[2];
-      M /= inertia[1]*inertia[2] + inertia[0]*inertia[2] + inertia[0]*inertia[1];
+      M = inertia[0]*inertia[1]*inertia[2];
+      M /= inertia[1]*inertia[2]+inertia[0]*inertia[2]+inertia[0]*inertia[1];
 
       // set prefactors
-      // factors 12 and 48 reflect the variance of uniform distribution:
+      // factors 12 and 48 reflect the variance of the uniform distribution:
       // var = 1/12*(b-a)^2
+      gfactor2 = sqrt(12.0*(1.0-gfactor1*gfactor1)/rmass[i])*tsqrt;
 
-      gfactor2 = sqrt(12.0*rmass[i]*(1.0-gfactor1*gfactor1))*tsqrt;
-
-      gfactor3[0] = exp(-0.25*Gamma*M*dt/inertia[0]); 
-      gfactor3[1] = exp(-0.25*Gamma*M*dt/inertia[1]); 
-      gfactor3[2] = exp(-0.25*Gamma*M*dt/inertia[2]); 
+      gfactor3[0] = exp(-Gamma*M*dt/inertia[0]); 
+      gfactor3[1] = exp(-Gamma*M*dt/inertia[1]); 
+      gfactor3[2] = exp(-Gamma*M*dt/inertia[2]); 
 
       gfactor4[0] = sqrt(48.0*inertia[0]*(1.0-gfactor3[0]*gfactor3[0]))*tsqrt;
       gfactor4[1] = sqrt(48.0*inertia[1]*(1.0-gfactor3[1]*gfactor3[1]))*tsqrt;
@@ -192,26 +194,29 @@ void FixNVEDotcLangevin::initial_integrate(int vflag)
       no_squish_rotate(2,conjqm,quat,inertia,dtqrt);
       no_squish_rotate(3,conjqm,quat,inertia,dtqrt);
 
-      qnormalize(quat);
-
       // apply stochastic force to velocities
       v[i][0] = v[i][0] * gfactor1 + gfactor2 * (random->uniform()-0.5);
       v[i][1] = v[i][1] * gfactor1 + gfactor2 * (random->uniform()-0.5);
       v[i][2] = v[i][2] * gfactor1 + gfactor2 * (random->uniform()-0.5); 
-      
+
+      // update position by 1/2 step
+      x[i][0] += dthlf * v[i][0];
+      x[i][1] += dthlf * v[i][1];
+      x[i][2] += dthlf * v[i][2];
+
       // apply stochastic force to quaternion 4-momentum
-      Phi[0] = -quat[1]*conjqm[0] + quat[0]*conjqm[1] + quat[3]*conjqm[2] - quat[2]*conjqm[3];
-      Phi[1] = -quat[2]*conjqm[0] - quat[3]*conjqm[1] + quat[0]*conjqm[2] + quat[1]*conjqm[3];
-      Phi[2] = -quat[3]*conjqm[0] + quat[2]*conjqm[1] - quat[1]*conjqm[2] + quat[0]*conjqm[3];
+      slq_conjqm[0] = -quat[1]*conjqm[0] + quat[0]*conjqm[1] + quat[3]*conjqm[2] - quat[2]*conjqm[3];
+      slq_conjqm[1] = -quat[2]*conjqm[0] - quat[3]*conjqm[1] + quat[0]*conjqm[2] + quat[1]*conjqm[3];
+      slq_conjqm[2] = -quat[3]*conjqm[0] + quat[2]*conjqm[1] - quat[1]*conjqm[2] + quat[0]*conjqm[3];
 
-      gfactor5[0] = gfactor3[0] * Phi[0] + gfactor4[0] * (random->uniform()-0.5); 
-      gfactor5[1] = gfactor3[1] * Phi[1] + gfactor4[1] * (random->uniform()-0.5); 
-      gfactor5[2] = gfactor3[2] * Phi[2] + gfactor4[2] * (random->uniform()-0.5); 
+      gfactor5[0] = gfactor3[0] * slq_conjqm[0] + gfactor4[0] * (random->uniform()-0.5); 
+      gfactor5[1] = gfactor3[1] * slq_conjqm[1] + gfactor4[1] * (random->uniform()-0.5); 
+      gfactor5[2] = gfactor3[2] * slq_conjqm[2] + gfactor4[2] * (random->uniform()-0.5); 
 
-      conjqm[0] += -quat[1] * gfactor5[0] - quat[2] * gfactor5[1] - quat[3] * gfactor5[2];
-      conjqm[1] +=  quat[0] * gfactor5[0] - quat[3] * gfactor5[1] + quat[2] * gfactor5[2];
-      conjqm[2] +=  quat[3] * gfactor5[0] + quat[0] * gfactor5[1] - quat[1] * gfactor5[2];
-      conjqm[3] += -quat[2] * gfactor5[0] + quat[1] * gfactor5[1] + quat[0] * gfactor5[2];
+      conjqm[0] = -quat[1] * gfactor5[0] - quat[2] * gfactor5[1] - quat[3] * gfactor5[2];
+      conjqm[1] =  quat[0] * gfactor5[0] - quat[3] * gfactor5[1] + quat[2] * gfactor5[2];
+      conjqm[2] =  quat[3] * gfactor5[0] + quat[0] * gfactor5[1] - quat[1] * gfactor5[2];
+      conjqm[3] = -quat[2] * gfactor5[0] + quat[1] * gfactor5[1] + quat[0] * gfactor5[2];
 
       // rotate quaternion and quaternion 4-momentum by 1/2 step
       no_squish_rotate(3,conjqm,quat,inertia,dtqrt);
@@ -219,7 +224,6 @@ void FixNVEDotcLangevin::initial_integrate(int vflag)
       no_squish_rotate(1,conjqm,quat,inertia,dthlf);
       no_squish_rotate(2,conjqm,quat,inertia,dtqrt);
       no_squish_rotate(3,conjqm,quat,inertia,dtqrt);
-
       qnormalize(quat);
 
       // convert quaternion 4-momentum in body frame back to angular momentum in space frame
@@ -244,7 +248,6 @@ void FixNVEDotcLangevin::final_integrate()
 
   AtomVecEllipsoid::Bonus *bonus = avec->bonus;
   int *ellipsoid = atom->ellipsoid;
-  double **x = atom->x;
   double **v = atom->v;
   double **f = atom->f;
   double **angmom = atom->angmom;
@@ -265,11 +268,6 @@ void FixNVEDotcLangevin::final_integrate()
       dthlfm = dthlf / rmass[i];
       quat = bonus[ellipsoid[i]].quat;
       shape = bonus[ellipsoid[i]].shape;
-
-      // update position by 1/2 step
-      x[i][0] += dthlf * v[i][0];
-      x[i][1] += dthlf * v[i][1];
-      x[i][2] += dthlf * v[i][2];
 
       // update momentum by 1/2 step
       v[i][0] += dthlfm * f[i][0];
