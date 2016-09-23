@@ -2,6 +2,15 @@
 
 import math,numpy as np,sys,os
 
+# system size
+lxmin = -20.0
+lxmax = +20.0
+lymin = -20.0
+lymax = +20.0
+lzmin = -20.0
+lzmax = +20.0
+
+# rise in z-direction
 r0 = 0.7
 
 # definition of single untwisted strand
@@ -20,7 +29,7 @@ def single():
 
   strandstart=len(nucleotide)+1
 
-  for letter in strand[1]:
+  for letter in strand[2]:
     temp=[]
 
     temp.append(nt2num[letter])
@@ -99,7 +108,102 @@ def single_helix():
 
   return
 
+# definition of twisted duplex  
+def duplex():
+
+  strand = inp[1].split(':')
+
+  com_start=strand[0].split(',')
+  twist=float(strand[1])
+
+  compstrand=[]
+  comptopo=[]
+
+  posx1 = float(com_start[0])
+  posy1 = float(com_start[1])
+  posz1 = float(com_start[2])
+
+  risex=0
+  risey=0
+  risez=math.sqrt(r0**2-4.0*math.sin(0.5*twist)**2) 
+
+  dcomh=0.76
+  axisx=dcomh + posx1
+  axisy=posy1
+
+  posx2 = axisx + dcomh  
+  posy2 = posy1
+  posz2 = posz1
+
+  strandstart=len(nucleotide)+1
+  quat1=[1,0,0,0]
+  quat2=[0,0,-1,0]
+
+  qrot0=math.cos(0.5*twist)
+  qrot1=0
+  qrot2=0
+  qrot3=math.sin(0.5*twist)
+
+  for letter in strand[2]:
+    temp1=[]
+    temp2=[]
+
+    temp1.append(nt2num[letter])
+    temp2.append(compnt2num[letter])
+
+    temp1.append([posx1,posy1,posz1])
+    temp2.append([posx2,posy2,posz2])
+
+    vel=[0,0,0,0,0,0]
+    temp1.append(vel)
+    temp2.append(vel)
+
+    temp1.append(shape)
+    temp2.append(shape)
+
+    temp1.append(quat1)
+    temp2.append(quat2)
+
+    quat1_0 = quat1[0]*qrot0 - quat1[1]*qrot1 - quat1[2]*qrot2 - quat1[3]*qrot3 
+    quat1_1 = quat1[0]*qrot1 + quat1[1]*qrot0 + quat1[2]*qrot3 - quat1[3]*qrot2 
+    quat1_2 = quat1[0]*qrot2 + quat1[2]*qrot0 + quat1[3]*qrot1 - quat1[1]*qrot3 
+    quat1_3 = quat1[0]*qrot3 + quat1[3]*qrot0 + quat1[1]*qrot2 + quat1[2]*qrot1 
+
+    quat1 = [quat1_0,quat1_1,quat1_2,quat1_3]
+
+    posx1=axisx - dcomh*(quat1[0]**2+quat1[1]**2-quat1[2]**2-quat1[3]**2)
+    posy1=axisy - dcomh*(2*(quat1[1]*quat1[2]+quat1[0]*quat1[3]))
+    posz1=posz1+risez
+
+    quat2_0 = quat2[0]*qrot0 - quat2[1]*qrot1 - quat2[2]*qrot2 + quat2[3]*qrot3 
+    quat2_1 = quat2[0]*qrot1 + quat2[1]*qrot0 - quat2[2]*qrot3 - quat2[3]*qrot2 
+    quat2_2 = quat2[0]*qrot2 + quat2[2]*qrot0 + quat2[3]*qrot1 + quat2[1]*qrot3 
+    quat2_3 =-quat2[0]*qrot3 + quat2[3]*qrot0 + quat2[1]*qrot2 + quat2[2]*qrot1 
+
+    quat2 = [quat2_0,quat2_1,quat2_2,quat2_3]
+
+    posx2=axisx + dcomh*(quat1[0]**2+quat1[1]**2-quat1[2]**2-quat1[3]**2)
+    posy2=axisy + dcomh*(2*(quat1[1]*quat1[2]+quat1[0]*quat1[3]))
+    posz2=posz1
+
+    if (len(nucleotide)+1 > strandstart):
+      topology.append([1,len(nucleotide),len(nucleotide)+1])
+      comptopo.append([1,len(nucleotide)+len(strand[2]),len(nucleotide)+len(strand[2])+1])
+
+    nucleotide.append(temp1)
+    compstrand.append(temp2)
+
+  for ib in range(len(compstrand)):
+    nucleotide.append(compstrand[len(compstrand)-1-ib])
+
+  for ib in range(len(comptopo)):
+    topology.append(comptopo[ib])
+
+  return
+
+# main part
 nt2num = {'A':1, 'C':2, 'G':3, 'T':4}
+compnt2num = {'T':1, 'G':2, 'C':3, 'A':4}
 shape = [1.1739845031423408,1.1739845031423408,1.1739845031423408]
 
 nucleotide=[]
@@ -115,10 +219,13 @@ for line in seqfile:
     single()
   if inp[0] == 'single_helix':
     single_helix()
+  if inp[0] == 'duplex':
+    duplex()
 
 # output atom data in LAMMPS format
 out = open(sys.argv[2],'w')
 
+out.write('# LAMMPS data file\n')
 out.write('%d atoms\n' % len(nucleotide))
 out.write('%d ellipsoids\n' % len(nucleotide))
 out.write('%d bonds\n' % len(topology))
@@ -126,9 +233,10 @@ out.write('\n')
 out.write('4 atom types\n')
 out.write('1 bond types\n')
 out.write('\n')
-out.write('-20.0 20.0 xlo xhi\n')
-out.write('-20.0 20.0 ylo yhi\n')
-out.write('-20.0 20.0 zlo zhi\n')
+out.write('# System size\n')
+out.write('%f %f xlo xhi\n' % (lxmin,lxmax))
+out.write('%f %f ylo yhi\n' % (lymin,lymax))
+out.write('%f %f zlo zhi\n' % (lzmin,lzmax))
 out.write('\n')
 out.write('Masses\n')
 out.write('\n')
@@ -138,28 +246,32 @@ out.write('3 3.1575\n')
 out.write('4 3.1575\n')
 
 out.write('\n')
+out.write('# Atom-ID, type, position, molecule-ID, ellipsoid flag, density\n')
 out.write('Atoms\n')
 out.write('\n')
 for ib in range(len(nucleotide)):
-  out.write(str(ib+1) + " " + str(nucleotide[ib][0]) + " " + str(nucleotide[ib][1][0]) + " " + str(nucleotide[ib][1][1]) + " " + str(nucleotide[ib][1][2]) + " 1 1 1\n")
+  out.write("%d %d %22.16le %22.16le %22.16le 1 1 1\n" % (ib+1,nucleotide[ib][0],nucleotide[ib][1][0],nucleotide[ib][1][1],nucleotide[ib][1][2]))
 
 out.write('\n')
+out.write('# Atom-ID, translational, rotational velocity\n')
 out.write('Velocities\n')
 out.write('\n')
 for ib in range(len(nucleotide)):
-  out.write(str(ib+1) + " " + str(nucleotide[ib][2][0]) + " " + str(nucleotide[ib][2][1]) + " " + str(nucleotide[ib][2][2]) +  " " + str(nucleotide[ib][2][3]) + " " + str(nucleotide[ib][2][4]) + " " + str(nucleotide[ib][2][5]) + "\n")
+  out.write("%d %22.16le %22.16le %22.16le %22.16le %22.16le %22.16le\n" % (ib+1,nucleotide[ib][2][0],nucleotide[ib][2][1],nucleotide[ib][2][2],nucleotide[ib][2][3],nucleotide[ib][2][4],nucleotide[ib][2][5]))
 
 out.write('\n')
+out.write('# Atom-ID, shape, quaternion\n')
 out.write('Ellipsoids\n')
 out.write('\n')
 for ib in range(len(nucleotide)):
-  out.write(str(ib+1) + " " + str(nucleotide[ib][3][0]) + " " + str(nucleotide[ib][3][1]) + " " + str(nucleotide[ib][3][2]) + " " + str(nucleotide[ib][4][0]) + " " + str(nucleotide[ib][4][1]) + " " + str(nucleotide[ib][4][2]) + " " + str(nucleotide[ib][4][3])  + "\n")
+  out.write("%d %22.16le %22.16le %22.16le %22.16le %22.16le %22.16le %22.16le\n" % (ib+1,nucleotide[ib][3][0],nucleotide[ib][3][1],nucleotide[ib][3][2],nucleotide[ib][4][0],nucleotide[ib][4][1],nucleotide[ib][4][2],nucleotide[ib][4][3]))
 
 out.write('\n')
+out.write('# Bond topology\n')
 out.write('Bonds\n')
 out.write('\n')
 for ib in range(len(topology)):
-  out.write(str(ib+1) + " " + str(topology[ib][0]) + " " + str(topology[ib][1]) + " " + str(topology[ib][2])+ "\n")
+  out.write("%d %d %d %d\n" % (ib+1,topology[ib][0],topology[ib][1],topology[ib][2]))
 
 out.close() 
 
