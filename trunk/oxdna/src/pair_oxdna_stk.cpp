@@ -180,7 +180,7 @@ void PairOxdnaStk::compute(int eflag, int vflag)
     tptofp = MFOxdna::is_3pto5p(delr_st,bz);
 
     // if b to a is 5' to 3' we need to swap roles of a and b
-     if (tptofp == -1) {
+    if (tptofp == -1) {
 
       std::swap(a,b);
       std::swap(ax,bx);
@@ -228,17 +228,36 @@ void PairOxdnaStk::compute(int eflag, int vflag)
     delr_ss_norm[1] = delr_ss[1] * rinv_ss;
     delr_ss_norm[2] = delr_ss[2] * rinv_ss;
 
-    // angles and corrections
+    f1 = F1(r_st, epsilon_st[atype][btype], a_st[atype][btype], cut_st_0[atype][btype], 
+	cut_st_lc[atype][btype], cut_st_hc[atype][btype], cut_st_lo[atype][btype], cut_st_hi[atype][btype], 
+	b_st_lo[atype][btype], b_st_hi[atype][btype], shift_st[atype][btype]);
 
+    // early rejection criterium
+    if (f1) {
+
+    // theta4 angle and correction
     cost4 = MathExtra::dot3(az,bz);
     if (cost4 >  1.0) cost4 =  1.0;
     if (cost4 < -1.0) cost4 = -1.0;
     theta4 = acos(cost4);
 
+    f4t4 = F4(theta4, a_st4[atype][btype], theta_st4_0[atype][btype], dtheta_st4_ast[atype][btype], 
+	b_st4[atype][btype], dtheta_st4_c[atype][btype]);  
+
+    // early rejection criterium
+    if (f4t4) {
+
+    // theta5 angle and correction
     cost5p  = MathExtra::dot3(delr_st_norm,az);
     if (cost5p >  1.0) cost5p =  1.0;
     if (cost5p < -1.0) cost5p = -1.0;
     theta5p = acos(cost5p);
+
+    f4t5 = F4(theta5p, a_st5[atype][btype], theta_st5_0[atype][btype], dtheta_st5_ast[atype][btype], 
+	b_st5[atype][btype], dtheta_st5_c[atype][btype]);  
+
+    // early rejection criterium
+    if (f4t5) {
 
     cost6p = MathExtra::dot3(delr_st_norm,bz);
     if (cost6p >  1.0) cost6p =  1.0;
@@ -252,25 +271,6 @@ void PairOxdnaStk::compute(int eflag, int vflag)
     cosphi2 = MathExtra::dot3(delr_ss_norm,by);
     if (cosphi2 >  1.0) cosphi2 =  1.0;
     if (cosphi2 < -1.0) cosphi2 = -1.0;
-
-
-    f1 = F1(r_st, epsilon_st[atype][btype], a_st[atype][btype], cut_st_0[atype][btype], 
-	cut_st_lc[atype][btype], cut_st_hc[atype][btype], cut_st_lo[atype][btype], cut_st_hi[atype][btype], 
-	b_st_lo[atype][btype], b_st_hi[atype][btype], shift_st[atype][btype]);
-
-    // early rejection criterium
-    if (f1) {
-
-
-    f4t4 = F4(theta4, a_st4[atype][btype], theta_st4_0[atype][btype], dtheta_st4_ast[atype][btype], 
-	b_st4[atype][btype], dtheta_st4_c[atype][btype]);  
-
-    // early rejection criterium
-    if (f4t4) {
-
-
-    f4t5 = F4(theta5p, a_st5[atype][btype], theta_st5_0[atype][btype], dtheta_st5_ast[atype][btype], 
-	b_st5[atype][btype], dtheta_st5_c[atype][btype]);  
 
     f4t6 = F4(theta6p, a_st6[atype][btype], theta_st6_0[atype][btype], dtheta_st6_ast[atype][btype], 
 	b_st6[atype][btype], dtheta_st6_c[atype][btype]);  
@@ -565,6 +565,7 @@ void PairOxdnaStk::compute(int eflag, int vflag)
     }
 
     } 
+    }
     }
     }
     // end early rejection criteria

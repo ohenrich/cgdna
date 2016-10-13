@@ -233,18 +233,30 @@ void PairOxdnaCoaxstk::compute(int eflag, int vflag)
       delr_ss_norm[1] = delr_ss[1] * rinv_ss;
       delr_ss_norm[2] = delr_ss[2] * rinv_ss;
 
-      // angles and corrections
-
       cost1 = -1.0*MathExtra::dot3(ax,bx);
       if (cost1 >  1.0) cost1 =  1.0;
       if (cost1 < -1.0) cost1 = -1.0;
       theta1 = acos(cost1);
       theta1p = 2 * MY_PI - theta1;
 
+      f4t1 = F4(theta1, a_cxst1[atype][btype], theta_cxst1_0[atype][btype], dtheta_cxst1_ast[atype][btype],
+	     b_cxst1[atype][btype], dtheta_cxst1_c[atype][btype]) +
+	     F4(theta1p, a_cxst1[atype][btype], theta_cxst1_0[atype][btype], dtheta_cxst1_ast[atype][btype],
+	     b_cxst1[atype][btype], dtheta_cxst1_c[atype][btype]);
+
+      // early rejection criterium
+      if (f4t1) {
+
       cost4 = MathExtra::dot3(az,bz);
       if (cost4 >  1.0) cost4 =  1.0;
       if (cost4 < -1.0) cost4 = -1.0;
       theta4 = acos(cost4);
+
+      f4t4 = F4(theta4, a_cxst4[atype][btype], theta_cxst4_0[atype][btype], dtheta_cxst4_ast[atype][btype],
+	     b_cxst4[atype][btype], dtheta_cxst4_c[atype][btype]);
+
+      // early rejection criterium
+      if (f4t4) {
 
       cost5 = MathExtra::dot3(delr_st_norm,az);
       if (cost5 >  1.0) cost5 =  1.0;
@@ -252,46 +264,34 @@ void PairOxdnaCoaxstk::compute(int eflag, int vflag)
       theta5 = acos(cost5);
       theta5p = MY_PI - theta5;
 
+      f4t5 = F4(theta5, a_cxst5[atype][btype], theta_cxst5_0[atype][btype], dtheta_cxst5_ast[atype][btype],
+	     b_cxst5[atype][btype], dtheta_cxst5_c[atype][btype]) +
+	     F4(theta5p, a_cxst5[atype][btype], theta_cxst5_0[atype][btype], dtheta_cxst5_ast[atype][btype],
+	     b_cxst5[atype][btype], dtheta_cxst5_c[atype][btype]);
+
+      // early rejection criterium
+      if (f4t5) {
+
       cost6 = MathExtra::dot3(delr_st_norm,bz);
       if (cost6 >  1.0) cost6 =  1.0;
       if (cost6 < -1.0) cost6 = -1.0;
       theta6 = acos(cost6);
       theta6p = MY_PI - theta6;
 
+      f4t6 = F4(theta6, a_cxst6[atype][btype], theta_cxst6_0[atype][btype], dtheta_cxst6_ast[atype][btype],
+	     b_cxst6[atype][btype], dtheta_cxst6_c[atype][btype]) + 
+	     F4(theta6p, a_cxst6[atype][btype], theta_cxst6_0[atype][btype], dtheta_cxst6_ast[atype][btype],
+	     b_cxst6[atype][btype], dtheta_cxst6_c[atype][btype]);
+
       MathExtra::cross3(delr_ss_norm,ax,v1tmp);
       cosphi3 = MathExtra::dot3(delr_st_norm,v1tmp);
       if (cosphi3 >  1.0) cosphi3 =  1.0;
       if (cosphi3 < -1.0) cosphi3 = -1.0;
 
-
-      f4t1 = F4(theta1, a_cxst1[atype][btype], theta_cxst1_0[atype][btype], dtheta_cxst1_ast[atype][btype],
-	     b_cxst1[atype][btype], dtheta_cxst1_c[atype][btype]) +
-	     F4(theta1p, a_cxst1[atype][btype], theta_cxst1_0[atype][btype], dtheta_cxst1_ast[atype][btype],
-	     b_cxst1[atype][btype], dtheta_cxst1_c[atype][btype]);
-
-
-
-      // early rejection criterium
-      if (f4t1) {
-
       f2 = F2(r_st, k_cxst[atype][btype], cut_cxst_0[atype][btype],
 	   cut_cxst_lc[atype][btype], cut_cxst_hc[atype][btype], cut_cxst_lo[atype][btype], cut_cxst_hi[atype][btype],
 	   b_cxst_lo[atype][btype], b_cxst_hi[atype][btype], cut_cxst_c[atype][btype]);
 
-      // early rejection criterium
-
-      f4t4 = F4(theta4, a_cxst4[atype][btype], theta_cxst4_0[atype][btype], dtheta_cxst4_ast[atype][btype],
-	     b_cxst4[atype][btype], dtheta_cxst4_c[atype][btype]);
-
-      f4t5 = F4(theta5, a_cxst5[atype][btype], theta_cxst5_0[atype][btype], dtheta_cxst5_ast[atype][btype],
-	     b_cxst5[atype][btype], dtheta_cxst5_c[atype][btype]) +
-	     F4(theta5p, a_cxst5[atype][btype], theta_cxst5_0[atype][btype], dtheta_cxst5_ast[atype][btype],
-	     b_cxst5[atype][btype], dtheta_cxst5_c[atype][btype]);
-
-      f4t6 = F4(theta6, a_cxst6[atype][btype], theta_cxst6_0[atype][btype], dtheta_cxst6_ast[atype][btype],
-	     b_cxst6[atype][btype], dtheta_cxst6_c[atype][btype]) + 
-	     F4(theta6p, a_cxst6[atype][btype], theta_cxst6_0[atype][btype], dtheta_cxst6_ast[atype][btype],
-	     b_cxst6[atype][btype], dtheta_cxst6_c[atype][btype]);
 
       f5c3 = F5(cosphi3, a_cxst3p[atype][btype], cosphi_cxst3p_ast[atype][btype], b_cxst3p[atype][btype],
 	     cosphi_cxst3p_c[atype][btype]);
@@ -588,6 +588,8 @@ void PairOxdnaCoaxstk::compute(int eflag, int vflag)
 
       }
 
+      }
+      }
       }
       }// end early rejection criteria 
 

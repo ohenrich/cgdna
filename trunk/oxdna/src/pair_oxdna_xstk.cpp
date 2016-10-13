@@ -205,41 +205,6 @@ void PairOxdnaXstk::compute(int eflag, int vflag)
       delr_hb_norm[1] = delr_hb[1] * rinv_hb;
       delr_hb_norm[2] = delr_hb[2] * rinv_hb;
 
-      // angles and corrections
-
-      cost1 = -1.0*MathExtra::dot3(ax,bx);
-      if (cost1 >  1.0) cost1 =  1.0;
-      if (cost1 < -1.0) cost1 = -1.0;
-      theta1 = acos(cost1);
-
-      cost2 = -1.0*MathExtra::dot3(ax,delr_hb_norm);
-      if (cost2 >  1.0) cost2 =  1.0;
-      if (cost2 < -1.0) cost2 = -1.0;
-      theta2 = acos(cost2);
-
-      cost3 = MathExtra::dot3(bx,delr_hb_norm);
-      if (cost3 >  1.0) cost3 =  1.0;
-      if (cost3 < -1.0) cost3 = -1.0;
-      theta3 = acos(cost3);
-
-      cost4 = MathExtra::dot3(az,bz);
-      if (cost4 >  1.0) cost4 =  1.0;
-      if (cost4 < -1.0) cost4 = -1.0;
-      theta4 = acos(cost4);
-      theta4p = MY_PI - theta4;
-
-      cost7 = -1.0*MathExtra::dot3(az,delr_hb_norm);
-      if (cost7 >  1.0) cost7 =  1.0;
-      if (cost7 < -1.0) cost7 = -1.0;
-      theta7 = acos(cost7);
-      theta7p = MY_PI - theta7;
-
-      cost8 = MathExtra::dot3(bz,delr_hb_norm);
-      if (cost8 >  1.0) cost8 =  1.0;
-      if (cost8 < -1.0) cost8 = -1.0;
-      theta8 = acos(cost8);
-      theta8p = MY_PI -theta8;
-
       f2 = F2(r_hb, k_xst[atype][btype], cut_xst_0[atype][btype],
 	   cut_xst_lc[atype][btype], cut_xst_hc[atype][btype], cut_xst_lo[atype][btype], cut_xst_hi[atype][btype],
 	   b_xst_lo[atype][btype], b_xst_hi[atype][btype], cut_xst_c[atype][btype]);
@@ -247,24 +212,72 @@ void PairOxdnaXstk::compute(int eflag, int vflag)
       // early rejection criterium
       if (f2) {
 
+      cost1 = -1.0*MathExtra::dot3(ax,bx);
+      if (cost1 >  1.0) cost1 =  1.0;
+      if (cost1 < -1.0) cost1 = -1.0;
+      theta1 = acos(cost1);
+
       f4t1 = F4(theta1, a_xst1[atype][btype], theta_xst1_0[atype][btype], dtheta_xst1_ast[atype][btype],
 	     b_xst1[atype][btype], dtheta_xst1_c[atype][btype]);
+
+      // early rejection criterium
+      if (f4t1) {
+
+      cost2 = -1.0*MathExtra::dot3(ax,delr_hb_norm);
+      if (cost2 >  1.0) cost2 =  1.0;
+      if (cost2 < -1.0) cost2 = -1.0;
+      theta2 = acos(cost2);
 
       f4t2 = F4(theta2, a_xst2[atype][btype], theta_xst2_0[atype][btype], dtheta_xst2_ast[atype][btype],
 	     b_xst2[atype][btype], dtheta_xst2_c[atype][btype]);
 
+      // early rejection criterium
+      if (f4t2) {
+
+      cost3 = MathExtra::dot3(bx,delr_hb_norm);
+      if (cost3 >  1.0) cost3 =  1.0;
+      if (cost3 < -1.0) cost3 = -1.0;
+      theta3 = acos(cost3);
+
       f4t3 = F4(theta3, a_xst3[atype][btype], theta_xst3_0[atype][btype], dtheta_xst3_ast[atype][btype],
 	     b_xst3[atype][btype], dtheta_xst3_c[atype][btype]);
+
+      // early rejection criterium
+      if (f4t3) {
+
+      cost4 = MathExtra::dot3(az,bz);
+      if (cost4 >  1.0) cost4 =  1.0;
+      if (cost4 < -1.0) cost4 = -1.0;
+      theta4 = acos(cost4);
+      theta4p = MY_PI - theta4;
 
       f4t4 = F4(theta4, a_xst4[atype][btype], theta_xst4_0[atype][btype], dtheta_xst4_ast[atype][btype],
 	     b_xst4[atype][btype], dtheta_xst4_c[atype][btype]) +
 	     F4(theta4p, a_xst4[atype][btype], theta_xst4_0[atype][btype], dtheta_xst4_ast[atype][btype],
 	     b_xst4[atype][btype], dtheta_xst4_c[atype][btype]);
 
+      // early rejection criterium
+      if (f4t4) {
+
+      cost7 = -1.0*MathExtra::dot3(az,delr_hb_norm);
+      if (cost7 >  1.0) cost7 =  1.0;
+      if (cost7 < -1.0) cost7 = -1.0;
+      theta7 = acos(cost7);
+      theta7p = MY_PI - theta7;
+
       f4t7 = F4(theta7, a_xst7[atype][btype], theta_xst7_0[atype][btype], dtheta_xst7_ast[atype][btype],
 	     b_xst7[atype][btype], dtheta_xst7_c[atype][btype]) +
 	     F4(theta7p, a_xst7[atype][btype], theta_xst7_0[atype][btype], dtheta_xst7_ast[atype][btype],
 	     b_xst7[atype][btype], dtheta_xst7_c[atype][btype]);
+
+      // early rejection criterium
+      if (f4t7) {
+
+      cost8 = MathExtra::dot3(bz,delr_hb_norm);
+      if (cost8 >  1.0) cost8 =  1.0;
+      if (cost8 < -1.0) cost8 = -1.0;
+      theta8 = acos(cost8);
+      theta8p = MY_PI -theta8;
 
       f4t8 = F4(theta8, a_xst8[atype][btype], theta_xst8_0[atype][btype], dtheta_xst8_ast[atype][btype],
 	     b_xst8[atype][btype], dtheta_xst8_c[atype][btype]) + 
@@ -515,6 +528,11 @@ void PairOxdnaXstk::compute(int eflag, int vflag)
       }
 
 
+      }
+      }
+      }
+      }
+      }
       }
       }// end early rejection criteria 
 
