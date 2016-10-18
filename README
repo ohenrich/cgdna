@@ -1,0 +1,13 @@
+This repository contains code for coarse-grained models of DNA that are based 
+on the LAMMPS code. 
+
+The oxDNA source code is located in /trunk/oxdna/src. Please copy all files into 
+your LAMMPS /src directory and compile as normal. A template input file is 
+contained in /trunk/oxdna/util together with initialisation data for a small
+DNA duplex.
+
+Further details can be found in a technical report in /trunk/oxdna/doc.
+
+We apologize for the brevity of these instructions. We are currently in the
+process of releasing the oxDNA implementation as a LAMMPS USER-package, which
+will include a full documentation of the oxDNA model and its parametrization.
