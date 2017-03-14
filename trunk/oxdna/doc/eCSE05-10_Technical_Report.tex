@@ -352,25 +352,24 @@ the LAMMPS input file. \texttt{sequence.txt} is an ASCII input file that contain
 keywords and the sequence on one ssDNA strand. Several options are available:
 
 \smallskip
-\texttt{single 0,0,0:0.6:AAAAA} 
+\texttt{single 0,0,0:AAAAA} 
 \smallskip
 
 \noindent creates a single straight DNA strand (with five adenine nucleotides in the above example). 
 The first nucleotide is
 positioned at $(x,y,z)=(0,0,0)$. The four remaining nucleotides are then added in positive
-z-direction with a rise of $r_0=0.7$. The number $0.6$ between the position of the first nucleotide 
-and the sequence is the twist, which is ignored as the strand is straight and not twisted.  
+z-direction with a rise of $r_0=0.7$. 
 
 \smallskip
-\texttt{single\_helix 0,0,0:0.6:AAAAA}
+\texttt{single\_helix 0,0,0:AAAAA}
 \smallskip
 
 \noindent produces a helically twisted single strand similar to the above one, but with a twist angle of $0.6$
-between consecutive nucleotides. This twist angle should not be altered as it leads to a reasonably 
+radian between consecutive nucleotides. This twist angle is set in the script and should not be altered as it leads to a reasonably 
 stable configuration that can be further equilibrated.
 
 \smallskip
- \texttt{duplex 0,0,0:0.6:AAAAA}
+ \texttt{duplex 0,0,0:AAAAA}
 \smallskip
 
 \noindent creates a DNA duplex. This is done by forming a helically twisted single strand with the sequence stated
@@ -378,7 +377,7 @@ in \texttt{sequence.txt}, which is then complemented by the corresponding bases 
 strand to form complete base pairs, in the above case \texttt{TTTTT}.
  
 \smallskip
-\texttt{duplex\_array 10,10:-20:0.6:AAAAA}
+\texttt{duplex\_array 10,10:-20:AAAAA}
 \smallskip
 
 \noindent produces an array of duplexes oriented along the z-direction. 
