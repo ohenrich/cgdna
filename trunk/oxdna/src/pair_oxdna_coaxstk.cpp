@@ -127,7 +127,7 @@ void PairOxdnaCoaxstk::compute(int eflag, int vflag)
   double dcdrax,dcdray,dcdraz;
 
   // distances COM-backbone site, COM-stacking site
-  double d_cs=-0.24, d_cst=0.5;
+  double d_cs=-0.4, d_cst=+0.34;
   // vectors COM-backbone site, COM-stacking site in lab frame
   double ra_cs[3],ra_cst[3];
   double rb_cs[3],rb_cst[3];
