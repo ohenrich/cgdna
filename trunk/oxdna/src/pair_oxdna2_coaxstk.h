@@ -54,8 +54,6 @@ class PairOxdna2Coaxstk : public Pair {
   double **a_cxst1, **theta_cxst1_0, **dtheta_cxst1_ast;
   double **b_cxst1, **dtheta_cxst1_c;
 
-  double **AA_cxst1, **BB_cxst1;
-
   double **a_cxst4, **theta_cxst4_0, **dtheta_cxst4_ast;
   double **b_cxst4, **dtheta_cxst4_c;
 
@@ -65,8 +63,7 @@ class PairOxdna2Coaxstk : public Pair {
   double **a_cxst6, **theta_cxst6_0, **dtheta_cxst6_ast;
   double **b_cxst6, **dtheta_cxst6_c;
 
-//  double **a_cxst3p, **cosphi_cxst3p_ast, **b_cxst3p, **cosphi_cxst3p_c;
-//  double **a_cxst4p, **cosphi_cxst4p_ast, **b_cxst4p, **cosphi_cxst4p_c;
+  double **AA_cxst1, **BB_cxst1;
 
   virtual void allocate();
 };
