@@ -16,7 +16,7 @@
 
 #ifdef PAIR_CLASS
 
-PairStyle(oxdna2_coaxstk,PairOxdna2Coaxstk)
+PairStyle(oxdna2/coaxstk,PairOxdna2Coaxstk)
 
 #else
 

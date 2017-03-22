@@ -16,7 +16,7 @@
 
 #ifdef PAIR_CLASS
 
-PairStyle(oxdna_excv,PairOxdnaExcv)
+PairStyle(oxdna/excv,PairOxdnaExcv)
 
 #else
 

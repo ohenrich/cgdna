@@ -16,7 +16,7 @@
 
 #ifdef BOND_CLASS
 
-BondStyle(oxdna_fene,BondOxdnaFene)
+BondStyle(oxdna/fene,BondOxdnaFene)
 
 #else
 
