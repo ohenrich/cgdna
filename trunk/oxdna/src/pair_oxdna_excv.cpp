@@ -664,7 +664,7 @@ double PairOxdnaExcv::init_one(int i, int j)
   cutsq_bb_c[j][i]  = cutsq_bb_c[i][j];
 
   // set the master list distance cutoff
-  return cut_ss_ast[i][j];
+  return cut_ss_c[i][j];
 
 }
 
