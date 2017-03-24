@@ -169,7 +169,7 @@ void PairOxdna2Dh::compute(int eflag, int vflag)
 	if (r <= cut_dh_ast[atype][btype]) {
 
 	  fpair = qeff_dh_pf[atype][btype] * exp(-kappa_dh[atype][btype] * r) * 
-		  (kappa_dh[atype][btype] - rinv) * rinv*rinv;
+		  (kappa_dh[atype][btype] + rinv) * rinv * rinv;
 
 	  if (eflag) {
 	    evdwl = qeff_dh_pf[atype][btype] * exp(-kappa_dh[atype][btype]*r) * rinv;
@@ -193,8 +193,6 @@ void PairOxdna2Dh::compute(int eflag, int vflag)
 	delf[0] = delr[0] * fpair;
 	delf[1] = delr[1] * fpair;
 	delf[2] = delr[2] * fpair;
-
-
 
 	// apply force and torque to each of 2 atoms
 
@@ -279,7 +277,7 @@ void PairOxdna2Dh::coeff(int narg, char **arg)
 {
   int count;
 
-  if (narg != 4) error->all(FLERR,"Incorrect args for pair coefficients in oxdna/dh");
+  if (narg != 5) error->all(FLERR,"Incorrect args for pair coefficients in oxdna/dh");
   if (!allocated) allocate();
 
   int ilo,ihi,jlo,jhi;
@@ -288,10 +286,11 @@ void PairOxdna2Dh::coeff(int narg, char **arg)
 
   count = 0;
 
-  double rhos_dh_one, qeff_dh_one;
+  double T, rhos_dh_one, qeff_dh_one;
 
-  rhos_dh_one = force->numeric(FLERR,arg[2]);
-  qeff_dh_one  = force->numeric(FLERR,arg[3]);
+  T = force->numeric(FLERR,arg[2]);
+  rhos_dh_one = force->numeric(FLERR,arg[3]);
+  qeff_dh_one  = force->numeric(FLERR,arg[4]);
 
   double lambda_dh_one, kappa_dh_one, qeff_dh_pf_one;
   double b_dh_one, cut_dh_ast_one, cut_dh_c_one;
@@ -300,20 +299,23 @@ void PairOxdna2Dh::coeff(int narg, char **arg)
 
   /*
   NOTE: 
-    The numerical factor is 
+    The numerical factor is the Debye length in s.u. 
+    lambda(T = 300 K = 0.1) = 
     sqrt(eps_0 * eps_r * k_B * T/(2 * N_A * e^2 * 1000 mol/m^3))
+	  * 1/oxDNA_energy_unit
     (see B. Snodin et al., J. Chem. Phys. 142, 234901 (2015).)
 
   We use 
     eps_0 = vacuum permittivity = 8.854187817e-12 F/m
     eps_r = relative permittivity of water = 80
     k_B = Boltzmann constant = 1.3806485279e-23 J/K
+    T = absolute temperature = 300 K
     N_A = Avogadro constant = 6.02214085774e23 / mol
     e = elementary charge = 1.6021766208e-19 C
     oxDNA_length_unit = 8.518e-10 m 
   */
 
-  lambda_dh_one = 0.3616455075438555*sqrt(rhos_dh_one);
+  lambda_dh_one = 0.3616455075438555*sqrt(T/0.1/rhos_dh_one);
   kappa_dh_one = 1.0/lambda_dh_one;
  
   // prefactor in DH interaction containing qeff^2
@@ -321,7 +323,8 @@ void PairOxdna2Dh::coeff(int narg, char **arg)
   /*
     NOTE: 
       The numerical factor is 
-      qeff_dh_pf = e^2/(4*pi*eps_0*eps_r)*1/(oxDNA_energy_unit*oxDNA_length_unit)
+      qeff_dh_pf = e^2/(4 * pi * eps_0 * eps_r)
+		    * 1/(oxDNA_energy_unit * oxDNA_length_unit)
       (see B. Snodin et al., J. Chem. Phys. 142, 234901 (2015).)
 
     In addition to the above units we use
