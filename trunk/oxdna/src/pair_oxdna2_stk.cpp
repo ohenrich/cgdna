@@ -37,7 +37,7 @@ PairOxdna2Stk::~PairOxdna2Stk()
 }
 
 /* ----------------------------------------------------------------------
-   return temperature dependent oxDNA stacking strength
+   return temperature dependent oxDNA2 stacking strength
 ------------------------------------------------------------------------- */
 
 double PairOxdna2Stk::stacking_strength(double T)
