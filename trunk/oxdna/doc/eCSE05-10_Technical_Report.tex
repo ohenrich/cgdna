@@ -209,7 +209,7 @@ bond\_coeff * 2.0 0.25 0.7525\\
 pair\_style hybrid/overlay oxdna/excv oxdna/stk oxdna/hbond \&\\
 \hspace*{0.75cm}oxdna/xstk oxdna/coaxstk\\
 pair\_coeff * * oxdna/excv   2.0 0.7 0.675 2.0 0.515 0.5 2.0 0.33 0.32\\
-pair\_coeff * * oxdna/stk    1.61048 6.0 0.4 0.9 0.32 0.6 1.3 0 0.8 \&\\
+pair\_coeff * * oxdna/stk    0.1 6.0 0.4 0.9 0.32 0.6 1.3 0 0.8 \&\\
 \hspace*{0.75cm}0.9 0 0.95 0.9 0 0.95 2.0 0.65 2.0 0.65\\
 pair\_coeff * * oxdna/hbond  0.0 8.0 0.4 0.75 0.34 0.7 1.5 0 0.7\&\\
 \hspace*{0.75cm}1.5 0 0.7 1.5 0 0.7 0.46 3.141592653589793 0.7 4.0 \&\\
@@ -341,10 +341,10 @@ $\vdots$
 in \newline \texttt{/cgdna/trunk/oxdna/util}. The syntax is
 
 \smallskip
-\texttt{python generate\_input.py sequence.txt data\_file\_name}. 
+\texttt{python generate\_simple.py sequence.txt data\_file\_name}. 
 \smallskip
 
-\noindent The system size has to be specified directly in \texttt{generate\_input.py}. 
+\noindent The system size has to be specified directly in \texttt{generate\_simple.py}. 
 The rise (separation of consecutive nucleotides) in z-direction is currently set to 
 $r_0=0.7$ and should not be changed.
 The output is directly written into a data file \texttt{data\_file\_name} and its name has to be stated in 
@@ -352,7 +352,7 @@ the LAMMPS input file. \texttt{sequence.txt} is an ASCII input file that contain
 keywords and the sequence on one ssDNA strand. Several options are available:
 
 \smallskip
-\texttt{single 0,0,0:AAAAA} 
+\texttt{single 0,0,0:ACGTA} 
 \smallskip
 
 \noindent creates a single straight DNA strand (with five adenine nucleotides in the above example). 
@@ -361,7 +361,7 @@ positioned at $(x,y,z)=(0,0,0)$. The four remaining nucleotides are then added i
 z-direction with a rise of $r_0=0.7$. 
 
 \smallskip
-\texttt{single\_helix 0,0,0:AAAAA}
+\texttt{single\_helix 0,0,0:ACGTA}
 \smallskip
 
 \noindent produces a helically twisted single strand similar to the above one, but with a twist angle of $0.6$
@@ -369,15 +369,15 @@ radian between consecutive nucleotides. This twist angle is set in the script an
 stable configuration that can be further equilibrated.
 
 \smallskip
- \texttt{duplex 0,0,0:AAAAA}
+ \texttt{duplex 0,0,0:ACGTA}
 \smallskip
 
 \noindent creates a DNA duplex. This is done by forming a helically twisted single strand with the sequence stated
 in \texttt{sequence.txt}, which is then complemented by the corresponding bases on a second, helically twisted 
-strand to form complete base pairs, in the above case \texttt{TTTTT}.
+strand to form complete base pairs, in the above case \texttt{TGCAT}.
  
 \smallskip
-\texttt{duplex\_array 10,10:-20:AAAAA}
+\texttt{duplex\_array 10,10:-20:ACGTA}
 \smallskip
 
 \noindent produces an array of duplexes oriented along the z-direction. 
