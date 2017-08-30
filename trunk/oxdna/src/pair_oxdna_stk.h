@@ -1,4 +1,4 @@
-/* ----------------------------------------------------------------------
+/* -*- c++ -*- ----------------------------------------------------------
    LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
    http://lammps.sandia.gov, Sandia National Laboratories
    Steve Plimpton, sjplimp@sandia.gov
@@ -9,9 +9,6 @@
    the GNU General Public License.
 
    See the README file in the top-level LAMMPS directory.
-------------------------------------------------------------------------- */
-/* ----------------------------------------------------------------------
-   Contributing author: Oliver Henrich (University of Strathclyde, Glasgow)
 ------------------------------------------------------------------------- */
 
 #ifdef PAIR_CLASS
@@ -60,6 +57,8 @@ class PairOxdnaStk : public Pair {
   double **b_st6, **dtheta_st6_c;
   double **a_st1, **cosphi_st1_ast, **b_st1, **cosphi_st1_c;
   double **a_st2, **cosphi_st2_ast, **b_st2, **cosphi_st2_c;
+
+  int seqspecflag;
 
   virtual void allocate();
 };

@@ -38,6 +38,10 @@ using namespace LAMMPS_NS;
 using namespace MathConst;
 using namespace MFOxdna;
 
+// sequence-specific stacking strength A:0 C:1 G:2 T:3
+static const double eta[4][4] =
+{{1.042,1.009,0.97,0.996},{1.019,0.978,1.027,0.97},{0.982,1.059,0.978,1.009},{0.947,0.982,1.019,1.042}};
+
 /* ---------------------------------------------------------------------- */
 
 PairOxdnaStk::PairOxdnaStk(LAMMPS *lmp) : Pair(lmp)
@@ -194,6 +198,7 @@ void PairOxdnaStk::compute(int eflag, int vflag)
 
     }
 
+    // a now in 5' direction, b in 3' direction
     atype = type[a];
     btype = type[b];
 
@@ -665,7 +670,7 @@ void PairOxdnaStk::coeff(int narg, char **arg)
 {
   int count;
 
-  if (narg != 21) error->all(FLERR,"Incorrect args for pair coefficients in oxdna/stk");
+  if (narg < 21 || narg > 22) error->all(FLERR,"Incorrect args for pair coefficients in oxdna/stk");
   if (!allocated) allocate();
 
   int ilo,ihi,jlo,jhi;
@@ -691,6 +696,8 @@ void PairOxdnaStk::coeff(int narg, char **arg)
   double a_st1_one, cosphi_st1_ast_one, b_st1_one, cosphi_st1_c_one;
   double a_st2_one, cosphi_st2_ast_one, b_st2_one, cosphi_st2_c_one;
 
+  int seqspecflag_one;
+
   T = force->numeric(FLERR,arg[2]);
   epsilon_st_one = stacking_strength(T);
 
@@ -713,6 +720,10 @@ void PairOxdnaStk::coeff(int narg, char **arg)
   cosphi_st1_ast_one = force->numeric(FLERR,arg[18]);
   a_st2_one = force->numeric(FLERR,arg[19]);
   cosphi_st2_ast_one = force->numeric(FLERR,arg[20]);
+
+  seqspecflag_one = 0;
+  if (narg == 22) seqspecflag_one = force->numeric(FLERR,arg[21]);
+  seqspecflag = seqspecflag_one;
 
   b_st_lo_one = 2*a_st_one*exp(-a_st_one*(cut_st_lo_one-cut_st_0_one))*
         2*a_st_one*exp(-a_st_one*(cut_st_lo_one-cut_st_0_one))*
@@ -761,6 +772,7 @@ void PairOxdnaStk::coeff(int narg, char **arg)
     for (int j = MAX(jlo,i); j <= jhi; j++) {
 
       epsilon_st[i][j] = epsilon_st_one;
+      if (seqspecflag) epsilon_st[i][j] *= eta[i-1][j-1];
       a_st[i][j] = a_st_one;
       cut_st_0[i][j] = cut_st_0_one;
       cut_st_c[i][j] = cut_st_c_one;
@@ -771,6 +783,7 @@ void PairOxdnaStk::coeff(int narg, char **arg)
       b_st_lo[i][j] = b_st_lo_one;
       b_st_hi[i][j] = b_st_hi_one;
       shift_st[i][j] = shift_st_one;
+      if (seqspecflag) shift_st[i][j] *= eta[i-1][j-1];
 
       a_st4[i][j] = a_st4_one;
       theta_st4_0[i][j] = theta_st4_0_one;
@@ -849,7 +862,12 @@ double PairOxdnaStk::init_one(int i, int j)
     error->all(FLERR,"Offset not supported in oxDNA");
   }
 
-  epsilon_st[j][i] = epsilon_st[i][j];
+  if (seqspecflag) {
+    epsilon_st[j][i] = epsilon_st[i][j]  / eta[i-1][j-1] * eta[j-1][i-1];
+  }
+  else {
+    epsilon_st[j][i] = epsilon_st[i][j];
+  }
   a_st[j][i] = a_st[i][j];
   b_st_lo[j][i] = b_st_lo[i][j];
   b_st_hi[j][i] = b_st_hi[i][j];
@@ -859,7 +877,12 @@ double PairOxdnaStk::init_one(int i, int j)
   cut_st_hi[j][i] = cut_st_hi[i][j];
   cut_st_lc[j][i] = cut_st_lc[i][j];
   cut_st_hc[j][i] = cut_st_hc[i][j];
-  shift_st[j][i] = shift_st[i][j];
+  if (seqspecflag) {
+    shift_st[j][i] = shift_st[i][j] / eta[i-1][j-1] * eta[j-1][i-1];
+  }
+  else {
+    shift_st[j][i] = shift_st[i][j];
+  }
 
   a_st4[j][i] = a_st4[i][j];
   theta_st4_0[j][i] = theta_st4_0[i][j];
