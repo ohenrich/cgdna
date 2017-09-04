@@ -38,9 +38,13 @@ using namespace LAMMPS_NS;
 using namespace MathConst;
 using namespace MFOxdna;
 
-// sequence-specific h-bonding strength A:0 C:1 G:2 T:3
+// sequence-specific base-pairing strength
+// A:0 C:1 G:2 T:3, 5'- (i,j) -3'
 static const double alpha[4][4] = 
-{{1.0,1.0,1.0,0.8292},{1.0,1.0,1.1541,1.0},{1.0,1.1541,1.0,1.0},{0.8292,1.0,1.0,1.0}};
+{{1.00000,1.00000,1.00000,0.82915},
+ {1.00000,1.00000,1.15413,1.00000},
+ {1.00000,1.15413,1.00000,1.00000},
+ {0.82915,1.00000,1.00000,1.00000}};
 
 /* ---------------------------------------------------------------------- */
 
@@ -611,7 +615,7 @@ void PairOxdnaHbond::coeff(int narg, char **arg)
 {
   int count;
 
-  if (narg < 26 || narg > 27) error->all(FLERR,"Incorrect args for pair coefficients in oxdna/hbond");
+  if (narg != 27) error->all(FLERR,"Incorrect args for pair coefficients in oxdna/hbond");
   if (!allocated) allocate();
 
   int ilo,ihi,jlo,jhi;
@@ -642,42 +646,45 @@ void PairOxdnaHbond::coeff(int narg, char **arg)
   double a_hb8_one, theta_hb8_0_one, dtheta_hb8_ast_one;
   double b_hb8_one, dtheta_hb8_c_one;
 
-  int seqspecflag_one; 
+  int seqdepflag_one; 
 
-  epsilon_hb_one = force->numeric(FLERR,arg[2]);
-  a_hb_one = force->numeric(FLERR,arg[3]);
-  cut_hb_0_one = force->numeric(FLERR,arg[4]);
-  cut_hb_c_one = force->numeric(FLERR,arg[5]);
-  cut_hb_lo_one = force->numeric(FLERR,arg[6]);
-  cut_hb_hi_one = force->numeric(FLERR,arg[7]);
+  if (strcmp(arg[2], "seqav") != 0 && strcmp(arg[2], "seqdep") != 0) {
+    error->all(FLERR,"Incorrect setting, select seqav or seqdep in oxdna/hbond");
+  }
+  if (strcmp(arg[2],"seqav")  == 0) seqdepflag_one = 0;
+  if (strcmp(arg[2],"seqdep") == 0) seqdepflag_one = 1;
+  seqdepflag = seqdepflag_one;
 
-  a_hb1_one = force->numeric(FLERR,arg[8]);
-  theta_hb1_0_one = force->numeric(FLERR,arg[9]);
-  dtheta_hb1_ast_one = force->numeric(FLERR,arg[10]);
+  epsilon_hb_one = force->numeric(FLERR,arg[3]);
+  a_hb_one = force->numeric(FLERR,arg[4]);
+  cut_hb_0_one = force->numeric(FLERR,arg[5]);
+  cut_hb_c_one = force->numeric(FLERR,arg[6]);
+  cut_hb_lo_one = force->numeric(FLERR,arg[7]);
+  cut_hb_hi_one = force->numeric(FLERR,arg[8]);
 
-  a_hb2_one = force->numeric(FLERR,arg[11]);
-  theta_hb2_0_one = force->numeric(FLERR,arg[12]);
-  dtheta_hb2_ast_one = force->numeric(FLERR,arg[13]);
+  a_hb1_one = force->numeric(FLERR,arg[9]);
+  theta_hb1_0_one = force->numeric(FLERR,arg[10]);
+  dtheta_hb1_ast_one = force->numeric(FLERR,arg[11]);
 
-  a_hb3_one = force->numeric(FLERR,arg[14]);
-  theta_hb3_0_one = force->numeric(FLERR,arg[15]);
-  dtheta_hb3_ast_one = force->numeric(FLERR,arg[16]);
+  a_hb2_one = force->numeric(FLERR,arg[12]);
+  theta_hb2_0_one = force->numeric(FLERR,arg[13]);
+  dtheta_hb2_ast_one = force->numeric(FLERR,arg[14]);
 
-  a_hb4_one = force->numeric(FLERR,arg[17]);
-  theta_hb4_0_one = force->numeric(FLERR,arg[18]);
-  dtheta_hb4_ast_one = force->numeric(FLERR,arg[19]);
+  a_hb3_one = force->numeric(FLERR,arg[15]);
+  theta_hb3_0_one = force->numeric(FLERR,arg[16]);
+  dtheta_hb3_ast_one = force->numeric(FLERR,arg[17]);
 
-  a_hb7_one = force->numeric(FLERR,arg[20]);
-  theta_hb7_0_one = force->numeric(FLERR,arg[21]);
-  dtheta_hb7_ast_one = force->numeric(FLERR,arg[22]);
+  a_hb4_one = force->numeric(FLERR,arg[18]);
+  theta_hb4_0_one = force->numeric(FLERR,arg[19]);
+  dtheta_hb4_ast_one = force->numeric(FLERR,arg[20]);
 
-  a_hb8_one = force->numeric(FLERR,arg[23]);
-  theta_hb8_0_one = force->numeric(FLERR,arg[24]);
-  dtheta_hb8_ast_one = force->numeric(FLERR,arg[25]);
+  a_hb7_one = force->numeric(FLERR,arg[21]);
+  theta_hb7_0_one = force->numeric(FLERR,arg[22]);
+  dtheta_hb7_ast_one = force->numeric(FLERR,arg[23]);
 
-  seqspecflag_one = 0;
-  if (narg == 27) seqspecflag_one = force->numeric(FLERR,arg[26]);
-  seqspecflag = seqspecflag_one;
+  a_hb8_one = force->numeric(FLERR,arg[24]);
+  theta_hb8_0_one = force->numeric(FLERR,arg[25]);
+  dtheta_hb8_ast_one = force->numeric(FLERR,arg[26]);
 
   b_hb_lo_one = 2*a_hb_one*exp(-a_hb_one*(cut_hb_lo_one-cut_hb_0_one))*
         2*a_hb_one*exp(-a_hb_one*(cut_hb_lo_one-cut_hb_0_one))*
@@ -728,7 +735,7 @@ void PairOxdnaHbond::coeff(int narg, char **arg)
     for (int j = MAX(jlo,i); j <= jhi; j++) {
 
       epsilon_hb[i][j] = epsilon_hb_one;
-      if (seqspecflag) epsilon_hb[i][j] *= alpha[i-1][j-1];
+      if (seqdepflag) epsilon_hb[i][j] *= alpha[i-1][j-1];
       a_hb[i][j] = a_hb_one;
       cut_hb_0[i][j] = cut_hb_0_one;
       cut_hb_c[i][j] = cut_hb_c_one;
@@ -739,7 +746,7 @@ void PairOxdnaHbond::coeff(int narg, char **arg)
       b_hb_lo[i][j] = b_hb_lo_one;
       b_hb_hi[i][j] = b_hb_hi_one;
       shift_hb[i][j] = shift_hb_one;
-      if (seqspecflag) shift_hb[i][j] *= alpha[i-1][j-1];
+      if (seqdepflag) shift_hb[i][j] *= alpha[i-1][j-1];
 
       a_hb1[i][j] = a_hb1_one;
       theta_hb1_0[i][j] = theta_hb1_0_one;
@@ -826,7 +833,7 @@ double PairOxdnaHbond::init_one(int i, int j)
     error->all(FLERR,"Offset not supported in oxDNA");
   }
 
-  if (seqspecflag) {
+  if (seqdepflag) {
     epsilon_hb[j][i] = epsilon_hb[i][j] / alpha[i-1][j-1] * alpha[j-1][i-1];
   }
   else {
@@ -841,13 +848,13 @@ double PairOxdnaHbond::init_one(int i, int j)
   b_hb_hi[j][i] = b_hb_hi[i][j];
   cut_hb_lc[j][i] = cut_hb_lc[i][j];
   cut_hb_hc[j][i] = cut_hb_hc[i][j];
-
-  if (seqspecflag) {
+  if (seqdepflag) {
     shift_hb[j][i] = shift_hb[i][j] / alpha[i-1][j-1] * alpha[j-1][i-1];
   }
   else {
     shift_hb[j][i] = shift_hb[i][j];
   }
+
   a_hb1[j][i] = a_hb1[i][j];
   theta_hb1_0[j][i] = theta_hb1_0[i][j];
   dtheta_hb1_ast[j][i] = dtheta_hb1_ast[i][j];
