@@ -700,14 +700,11 @@ void PairOxdnaStk::coeff(int narg, char **arg)
   double a_st1_one, cosphi_st1_ast_one, b_st1_one, cosphi_st1_c_one;
   double a_st2_one, cosphi_st2_ast_one, b_st2_one, cosphi_st2_c_one;
 
-  int seqdepflag_one;
-
   if (strcmp(arg[2], "seqav") != 0 && strcmp(arg[2], "seqdep") != 0) {
     error->all(FLERR,"Incorrect setting, select seqav or seqdep in oxdna/stk");
   }
-  if (strcmp(arg[2],"seqav")  == 0) seqdepflag_one = 0;
-  if (strcmp(arg[2],"seqdep") == 0) seqdepflag_one = 1;
-  seqdepflag = seqdepflag_one;
+  if (strcmp(arg[2],"seqav")  == 0) seqdepflag = 0;
+  if (strcmp(arg[2],"seqdep") == 0) seqdepflag = 1;
 
   T = force->numeric(FLERR,arg[3]);
   epsilon_st_one = stacking_strength(T);

@@ -646,14 +646,11 @@ void PairOxdnaHbond::coeff(int narg, char **arg)
   double a_hb8_one, theta_hb8_0_one, dtheta_hb8_ast_one;
   double b_hb8_one, dtheta_hb8_c_one;
 
-  int seqdepflag_one; 
-
   if (strcmp(arg[2], "seqav") != 0 && strcmp(arg[2], "seqdep") != 0) {
     error->all(FLERR,"Incorrect setting, select seqav or seqdep in oxdna/hbond");
   }
-  if (strcmp(arg[2],"seqav")  == 0) seqdepflag_one = 0;
-  if (strcmp(arg[2],"seqdep") == 0) seqdepflag_one = 1;
-  seqdepflag = seqdepflag_one;
+  if (strcmp(arg[2],"seqav")  == 0) seqdepflag = 0;
+  if (strcmp(arg[2],"seqdep") == 0) seqdepflag = 1;
 
   epsilon_hb_one = force->numeric(FLERR,arg[3]);
   a_hb_one = force->numeric(FLERR,arg[4]);
