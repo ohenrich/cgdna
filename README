@@ -1,13 +1,23 @@
-This repository contains code for coarse-grained models of DNA that are based 
-on the LAMMPS code. 
+This repository contains code of several coarse-grained models of DNA that are 
+based on the LAMMPS code.
 
-The oxDNA source code is located in /trunk/oxdna/src. Please copy all files into 
-your LAMMPS /src directory and compile as normal. A template input file is 
-contained in /trunk/oxdna/util together with initialisation data for a small
-DNA duplex.
+The LAMMPS implementation of the oxDNA model is located in /trunk/oxdna/src. 
+Please cite [1] and the relevant oxDNA articles in any publication that uses 
+this package.
+ 
+To compile please copy all files into your LAMMPS /src directory and compile as
+usual. A template input file is contained in /trunk/oxdna/util together with 
+initialisation data for a small DNA duplex.
 
-Further details can be found in a technical report in /trunk/oxdna/doc.
+More information and further details can be found in [1] or the preprint [2], 
+which is also in /trunk/oxdna/doc.
 
-We apologize for the brevity of these instructions. We are currently in the
-process of releasing the oxDNA implementation as a LAMMPS USER-package, which
-will include a full documentation of the oxDNA model and its parametrization.
+This package is as well distributed as LAMMPS USER-package and available from
+the central LAMMPS web site at Sandia National Laboratories at 
+http://lammps.sandia.gov
+
+[1] O. Henrich, Y. A. Gutierrez-Fosado, T. Curk, T. E. Ouldridge,
+"Coarse-grained simulation of DNA using LAMMPS", Eur. Phys. J. E 41, 57 (2018).
+
+[2] O. Henrich, Y. A. Gutierrez-Fosado, T. Curk, T. E. Ouldridge,
+arXiv:1802.07145, DOI: 10.1140/epje/i2018-11669-8
