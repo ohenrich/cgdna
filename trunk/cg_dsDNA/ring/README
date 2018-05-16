@@ -1,0 +1,12 @@
+The initial configuration is a dsDNA ring 1000 bp long, lying on the x-y plane and with its centre at the origin. Note that in order to have a supercolied dsDNA, you have to set the number of turns different from the natural number of turns (given by Nbp/10). If for example you have a circular dsDNA made by 1000 bp, the relaxed number of helical turns would be roughly 1000/10 = 100. So if you set the number of helical turns in the initial configuration different to 100, and you let the system to equilibrate, you will end up with a supercoiled ring (positive supercoiled if Turns>100 and negative supercoiled if Turns<100). The configuration provided here is initialized with 90 helical turns (negative supercoiled).
+
+Please note that the lammps script for the ringDNA is basically the same as the one for the linearDNA, but the angle section is especified in a different way. This is just because the angle types are inverted in the initial configuration.
+
+   For the linear chain we use:   angle_style hybrid harmonic cosine
+                                  angle_coeff 1 cosine 52.0         
+                                  angle_coeff 2 harmonic 200.0 90
+
+   For the circular chain we use: angle_style hybrid harmonic cosine
+                                  angle_coeff 1 harmonic 200.0 90    
+                                  angle_coeff 2 cosine 52.0          
+

@@ -1,0 +1,89 @@
+#####  DEFINTIONS  #####
+variable M equal 1000
+variable rname index lammps_input_lineardsDNA_N1000_T100
+variable simname index dsDNA.N${M}
+
+
+#####  PARAMETERS  #####
+units lj
+atom_style molecular 
+boundary p p p  
+neighbor 1.3 bin
+neigh_modify every 1 delay 1 check yes 
+
+
+#####  RESTART  #####
+restart 1000000 ${simname}.Restart
+read_data ${rname}
+#read_restart ${rname}
+#reset_timestep 0 
+
+
+#####  GROUPS  #####
+group bb type 1 3 5 6
+group hb type 2 4
+group fake type 5 6
+
+
+#####  DUMPS  #####
+dump 1 all custom 50000 dump.lineardnat.lammpstrj id mol type x y z
+dump_modify 1 format line "%d %d %d %.5f %.5f %.5f"
+
+dump 2 all custom 50000 IN*.data id mol type x y z ix iy iz
+dump_modify 2 format line "%d %d %d %.5f %.5f %.5f %d %d %d"
+
+
+#####  ANGLES  #####
+angle_style hybrid harmonic cosine
+angle_coeff 1 cosine 52.0         #The angle between three consecutive patches in the same strand
+angle_coeff 2 harmonic 200.0 90   #the Patch-patch-Bead angle in the same strand
+
+
+#####  DIHEDRALS  #####
+dihedral_style charmm 
+dihedral_coeff 1 50.0 1 -144 0.0 #right-hand twist   #Dihedral set to 36 degrees --> d=-180+36=-144. We defined in the input file the correct internal dihedral
+
+
+#####  PAIRS  #####
+pair_style	lj/cut 1.12246152962189
+pair_modify shift yes
+pair_coeff	* * 0.0 0.0 0.0
+
+pair_coeff	1 3 1.0 1.0 1.12246152962189 
+
+pair_coeff	1 1 1.0 1.0 1.12246152962189 
+
+pair_coeff	3 3 1.0 1.0 1.12246152962189 
+
+pair_coeff	5 6 1.0 0.5 0.5612
+pair_coeff	3 5 1.0 0.5 0.5612
+pair_coeff	1 6 1.0 0.5 0.5612
+
+
+#####  BONDS  #####
+bond_style  hybrid fene harmonic/shift/cut morse
+special_bonds fene#<=== I M P O R T A N T (new command)
+bond_coeff 1 fene  30.0  0.6825  1.0   0.4430
+bond_coeff 2 harmonic/shift/cut  6.0 0.0 0.3 
+bond_coeff 3 morse 30.0 8 0.33       
+
+
+#####  FIXES  #####
+fix 1 all rigid/small molecule langevin 1.0 1.0 1.0 742589
+
+#####  THERMO  #####
+compute 	MSDs bb msd
+compute		GYRs bb gyration
+thermo 1000
+thermo_style custom  step  temp  c_MSDs[4] c_GYRs cpu
+
+
+#####  INTEGR  #####
+timestep 0.005
+
+shell mkdir linear_DNA_N1000
+shell cd linear_DNA_N1000
+
+
+#####  RUN  #####
+run 100000000

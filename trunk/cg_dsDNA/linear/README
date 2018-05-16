@@ -1,0 +1,28 @@
+The initial configuration here, is the one for the linear dsDNA model without phosphates, 1000 bp long, with its axis pointing along the positive z-direction (starting from z=0).
+In this file:
+
+    1.-Each nucleotide is represented by a rigid body with two interaction sites, so in total there are 4000 particles (2000 per single stranded DNA).
+    2.-The first 2000 particles correspond to the patchy beads in the first strand:
+	a)Odd indices represent the "bead" interaction sites.
+	b)Even indices represent the "patch" interaction sites.
+    3.-Since a nucleotide is made by two particles. There are 1000 molecules (rigid bodies) per ssDNA. 
+       For example, particles 1 and 2 are part of the same molecule: 1.
+    4.-The type of particles in the first strand:
+	a)All the patches are type 2.
+	b)Every interactive bead (type 1) is followed by two ghost beads (type 5).
+    5.-The complementary ssDNA (last 2000 particles) are arrange in a similar way to the first ssDNA:
+	a)Odd indices represent the "bead" interaction sites.
+	b)Even indices represent the "patch" interaction sites.
+	c)All the patches are type 4.
+	d)Every interactive bead (type 3) is followed by two ghost beads (type 6).
+
+The type of interactions are explained in detail in our paper. These are summarized here:
+    1.-Backbone: set by fene bonds(type 1) between consecutive beads in the same strand.
+    2.-Hydrogen Bonds: set by a harmonic/shift/cut bond(type 2) between complementary patches.
+    3.-Stacking interaction: set by a morse potential that is implemented in lammps by a bond (type 3).
+
+    4.-Kratky–Porod potential: set by a cosine angle (type 1).
+    5.-Roll interaction: set by a harmonic angle (type 2).
+
+    6.-Dihedral for the right-handedness of the chain (type 1).
+
