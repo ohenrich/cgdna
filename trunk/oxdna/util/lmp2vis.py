@@ -31,7 +31,6 @@ def transform(line):
     x, y, z = float(list1[3]), float(list1[4]), float(list1[5])
     c_quat1, c_quat2, c_quat3, c_quat4 = \
             float(list1[6]), float(list1[7]), float(list1[8]), float(list1[9])
-    etc = list1[10]
     ex, ey, ez = q_to_exyz(c_quat1, c_quat2, c_quat3, c_quat4)
 
     # position of sugar-phosphate backbone interaction site in oxDNA2
@@ -40,6 +39,7 @@ def transform(line):
     # position of base interaction site in oxDNA2
     x2, y2, z2 = x +0.4*ex[0], y + 0.4*ex[1], z+0.4*ex[2]
 
+    # compose basic output data: id, molecule id, type, position, quaternion
     line1 = str(2*ident-1)+' '+ mol+' '+typb+' '+\
         '%1.6e'%(x1)+' '+'%1.6e'%(y1)+' '+'%1.6e'%(z1)+' '+\
         '%1.6e'%(c_quat1)+' '+'%1.6e'%(c_quat2)+' '+'%1.6e'%(c_quat3)+' '+'%1.6e'%(c_quat4)
@@ -47,6 +47,7 @@ def transform(line):
         '%1.6e'%(x2)+' '+'%1.6e'%(y2)+' '+'%1.6e'%(z2)+' '+\
         '%1.6e'%(c_quat1)+' '+'%1.6e'%(c_quat2)+' '+'%1.6e'%(c_quat3)+' '+'%1.6e'%(c_quat4)
 
+    # append remaining output data
     for i in range(10, len(list1)):
         line1 += ' '+ '%1.6e'%float(list1[i])
         line2 += ' '+ '%1.6e'%float(list1[i])
