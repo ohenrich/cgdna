@@ -26,8 +26,8 @@ def q_to_exyz(q1,q2,q3,q4):
 def transform(line): 
 
     list1 = line.split()
-    ident, mol, typ = int(list1[0]), list1[1],list1[2]
-    typb = typ + '1'  #defines new backbone types
+    ident, mol, typ = int(list1[0]), int(list1[1]), int(list1[2])
+    typb = typ + 10  #defines new backbone types
     x, y, z = float(list1[3]), float(list1[4]), float(list1[5])
     c_quat1, c_quat2, c_quat3, c_quat4 = \
             float(list1[6]), float(list1[7]), float(list1[8]), float(list1[9])
@@ -40,12 +40,12 @@ def transform(line):
     x2, y2, z2 = x +0.4*ex[0], y + 0.4*ex[1], z+0.4*ex[2]
 
     # compose basic output data: id, molecule id, type, position, quaternion
-    line1 = str(2*ident-1)+' '+ mol+' '+typb+' '+\
-        '%1.6e'%(x1)+' '+'%1.6e'%(y1)+' '+'%1.6e'%(z1)+' '+\
-        '%1.6e'%(c_quat1)+' '+'%1.6e'%(c_quat2)+' '+'%1.6e'%(c_quat3)+' '+'%1.6e'%(c_quat4)
-    line2 = str(2*ident)+' '+mol+' '+typ+' '+\
-        '%1.6e'%(x2)+' '+'%1.6e'%(y2)+' '+'%1.6e'%(z2)+' '+\
-        '%1.6e'%(c_quat1)+' '+'%1.6e'%(c_quat2)+' '+'%1.6e'%(c_quat3)+' '+'%1.6e'%(c_quat4)
+    line1 = '%d'%(2*ident-1) +' '+ '%d'%mol +' '+ '%d'%typb +' '+\
+        '%1.6e'%(x1) +' '+ '%1.6e'%(y1) +' '+ '%1.6e'%(z1) +' '+\
+        '%1.6e'%(c_quat1) +' '+ '%1.6e'%(c_quat2) +' '+ '%1.6e'%(c_quat3) +' '+ '%1.6e'%(c_quat4)
+    line2 = '%d'%(2*ident) +' '+ '%d'%mol +' '+ '%d'%typ +' '+\
+        '%1.6e'%(x2) +' '+ '%1.6e'%(y2) +' '+ '%1.6e'%(z2) +' '+\
+        '%1.6e'%(c_quat1) +' '+ '%1.6e'%(c_quat2) +' '+' %1.6e'%(c_quat3) +' '+ '%1.6e'%(c_quat4)
 
     # append remaining output data
     for i in range(10, len(list1)):
