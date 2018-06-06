@@ -479,9 +479,11 @@ def read_strands(filename):
 
             # generate random position of the first nucleotide
             cdm = box_offset + np.random.random_sample(3) * box
+#            cdm = [0,0,0]
 
             # generate the random direction of the helix 
             axis = np.random.random_sample(3)
+#            axis = [0,0,1]
             axis /= np.sqrt(np.dot(axis, axis))
 
             # use the generate function defined above to create 

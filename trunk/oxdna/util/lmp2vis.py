@@ -1,4 +1,4 @@
-import sys, math
+import sys, math, subprocess
 
 # converts quaternion DOF into local body reference frame
 def q_to_exyz(q1,q2,q3,q4):
@@ -47,6 +47,14 @@ def transform(line):
         '%1.6e'%(x2) +' '+ '%1.6e'%(y2) +' '+ '%1.6e'%(z2) +' '+\
         '%1.6e'%(c_quat1) +' '+ '%1.6e'%(c_quat2) +' '+' %1.6e'%(c_quat3) +' '+ '%1.6e'%(c_quat4)
 
+    # for ovito we use oblate particles for the bases
+    shape_sphere = ' 0.4 0.4 0.4'
+    shape_ellipsoid = ' 0.5 0.2 0.1'
+
+    if vismethod == 'ovito':
+        line1 += shape_sphere +' '
+        line2 += shape_ellipsoid +' '
+
     # append remaining output data
     for i in range(10, len(list1)):
         line1 += ' '+ '%1.6e'%float(list1[i])
@@ -59,32 +67,66 @@ def transform(line):
 
 # main part
 
-if len(sys.argv)!=3:
-    print("Syntax: $ python lmp2vis.py input_filename output_filename")
+if len(sys.argv)!=4:
+    print("Syntax: $> python lmp2vis.py visualisation_method(vmd or ovito) input_filename output_filename")
+    sys.exit(1)
 
-r=open(sys.argv[1],'r')
-w=open(sys.argv[2],'w+')
+vismethod = sys.argv[1]
+r=open(sys.argv[2],'r')
+w=open(sys.argv[3],'w+')
+
+if (sys.argv[1]!='vmd' and sys.argv[1]!='ovito'):
+    print("Please select visualisation method: vmd or ovito")
+    print("Syntax: $> python lmp2vis.py visualisation_method input_filename output_filename")
+    sys.exit(1)
+
+print('# Converting LAMMPS output for visualisation with %s' % sys.argv[1])     
+
+# count lines in output file for progress report
+n = 0
+
+try:
+    result = subprocess.run(['wc', '-l', '%s'%sys.argv[2]], stdout=subprocess.PIPE)
+    reslist=str(result).split()
+    nlines=float(reslist[5])
+except:
+    nlines = 100
 
 line=r.readline()
 
 while line != '':
+
+    sys.stdout.write('# Processed %3d %%\r' % (100*n/nlines))     
+
     if line.find('NUMBER OF ATOMS') != -1: 
         w.write(line)
         N=int(r.readline())
-        w.write(str(2*N)+'\n')
+        w.write('%d'%int(2*N)+'\n')
         line=r.readline()
     if line.find('id mol type x y z') != -1:
-       i=0
-       w.write(line)
-       while i<N:
-           line=r.readline()
-           w.write(transform(line))
-           i +=1
-       else:
-           line=r.readline()
+        if vismethod == 'ovito':
+            linestring=line.split()
+            line = linestring[0]
+            for i in range(1, 12):
+                line += ' '+ linestring[i]
+            line += ' shape[0] shape[1] shape[2]'
+            for i in range(12, len(linestring)):
+                line += ' '+ linestring[i]
+            line += '\n'
+        i=0
+        w.write(line)
+        while i<N:
+            line=r.readline()
+            w.write(transform(line))
+            i +=1
+            n += 1
+        else:
+            line=r.readline()
     else:
         w.write(line)
         line=r.readline()
+
+print('# Done                                ')     
 
 r.close()
 w.close()
