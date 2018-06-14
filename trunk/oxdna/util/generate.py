@@ -84,10 +84,10 @@ EXCL_RC3 =  0.52329943261
 Define auxillary variables for the construction of a helix
 """
 # center of the double strand
-CM_CENTER_DS = POS_BASE + 0.2
+COM_CENTRE_DS = POS_BASE + 0.2
 
-# ideal distance between base sites of two nucleotides 
-# which are to be base paired in a duplex
+# ideal rise between two consecutive nucleotides on the
+# same strand which are to be base paired in a duplex
 BASE_BASE = 0.3897628551303122
 
 # cutoff distance for overlap check
@@ -315,6 +315,8 @@ def generate_strand(bp, sequence=None, start_pos=np.array([0, 0, 0]), \
     # if not provided switch off random orientation
     if perp is None or perp is False:
         v1 = np.random.random_sample(3)
+        # comment in to suppress randomised base vector
+#        v1 = [1,0,0]
         v1 -= dir * (np.dot(dir, v1))
         v1 /= np.sqrt(sum(v1*v1))
     else:
@@ -339,10 +341,10 @@ def generate_strand(bp, sequence=None, start_pos=np.array([0, 0, 0]), \
     a3 = dir
     for i in range(bp):
     # work out the position of the centre of mass of the nucleotide
-        rcdm = rb - CM_CENTER_DS * a1
+        rcom = rb - COM_CENTRE_DS * a1
 
         # append to newpositions
-        mynewpositions.append(rcdm)
+        mynewpositions.append(rcom)
         mynewa1s.append(a1)
         mynewa3s.append(a3)
 
@@ -359,8 +361,8 @@ def generate_strand(bp, sequence=None, start_pos=np.array([0, 0, 0]), \
         a3 = -dir
         R = R.transpose()
         for i in range(bp):
-            rcdm = rb - CM_CENTER_DS * a1
-            mynewpositions.append (rcdm)
+            rcom = rb - COM_CENTRE_DS * a1
+            mynewpositions.append (rcom)
             mynewa1s.append (a1)
             mynewa3s.append (a3)
             a1 = np.dot(R, a1)
@@ -478,28 +480,30 @@ def read_strands(filename):
             print("## Created duplex of %i bases" % (2*length), file=sys.stdout)
 
             # generate random position of the first nucleotide
-            cdm = box_offset + np.random.random_sample(3) * box
-#            cdm = [0,0,0]
+            com = box_offset + np.random.random_sample(3) * box
+            # comment in to suppress randomisation
+#            com = [0,0,0]
 
             # generate the random direction of the helix 
             axis = np.random.random_sample(3)
+            # comment in to suppress randomisation
 #            axis = [0,0,1]
             axis /= np.sqrt(np.dot(axis, axis))
 
             # use the generate function defined above to create 
             # the position and orientation vector of the strand 
             newpositions, newa1s, newa3s = generate_strand(len(line), \
-                    sequence=seq, dir=axis, start_pos=cdm, double=True)
+                    sequence=seq, dir=axis, start_pos=com, double=True)
 
             # generate a new position for the strand until it does not overlap
             # with anything already present
             start = timer()
             while not add_strands(newpositions, newa1s, newa3s):
-                cdm = box_offset + np.random.random_sample(3) * box
+                com = box_offset + np.random.random_sample(3) * box
                 axis = np.random.random_sample(3)
                 axis /= np.sqrt(np.dot(axis, axis))
                 newpositions, newa1s, newa3s = generate_strand(len(line), \
-                      sequence=seq, dir=axis, start_pos=cdm, double=True)
+                      sequence=seq, dir=axis, start_pos=com, double=True)
                 print("## Trying %i" % i, file=sys.stdout)
             end = timer()
             print("## Added duplex of %i bases (line %i/%i) in %.2fs, now at %i/%i" % \
@@ -522,7 +526,7 @@ def read_strands(filename):
             noffset += length
 
 	    # generate random position of the first nucleotide
-            cdm = box_offset + np.random.random_sample(3) * box
+            com = box_offset + np.random.random_sample(3) * box
 
             # generate the random direction of the helix 
             axis = np.random.random_sample(3)
@@ -531,14 +535,14 @@ def read_strands(filename):
             print("## Created single strand of %i bases" % length, file=sys.stdout)
 
             newpositions, newa1s, newa3s = generate_strand(length, \
-		      sequence=seq, dir=axis, start_pos=cdm, double=False)
+		      sequence=seq, dir=axis, start_pos=com, double=False)
             start = timer()
             while not add_strands(newpositions, newa1s, newa3s):
-                cdm = box_offset + np.random.random_sample(3) * box
+                com = box_offset + np.random.random_sample(3) * box
                 axis = np.random.random_sample(3)
                 axis /= np.sqrt(np.dot(axis, axis))
                 newpositions, newa1s, newa3s = generate_strand(length, \
-                          sequence=seq, dir=axis, start_pos=cdm, double=False)
+                          sequence=seq, dir=axis, start_pos=com, double=False)
                 print("## Trying  %i" % (i), file=sys.stdout)
             end = timer()
             print("## Added single strand of %i bases (line %i/%i) in %.2fs, now at %i/%i" % \
