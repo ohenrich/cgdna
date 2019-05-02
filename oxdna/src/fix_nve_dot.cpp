@@ -14,9 +14,9 @@
    Contributing author: Oliver Henrich (University of Strathclyde, Glasgow)
 ------------------------------------------------------------------------- */
 
-#include <math.h>
-#include <stdio.h>
-#include <string.h>
+#include <cmath>
+#include <cstdio>
+#include <cstring>
 #include "fix_nve_dot.h"
 #include "math_extra.h"
 #include "atom.h"
@@ -62,7 +62,7 @@ void FixNVEDot::init()
 
 /* ---------------------------------------------------------------------- */
 
-void FixNVEDot::initial_integrate(int vflag)
+void FixNVEDot::initial_integrate(int /*vflag*/)
 {
   double *shape,*quat;
   double fquat[4],conjqm[4],inertia[3];

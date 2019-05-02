@@ -14,10 +14,10 @@
    Contributing author: Oliver Henrich (University of Strathclyde, Glasgow)
 ------------------------------------------------------------------------- */
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include "pair_oxdna_coaxstk.h"
 #include "mf_oxdna.h"
 #include "atom.h"
@@ -62,6 +62,7 @@ PairOxdnaCoaxstk::~PairOxdnaCoaxstk()
     memory->destroy(cut_cxst_hi);
     memory->destroy(cut_cxst_lc);
     memory->destroy(cut_cxst_hc);
+    memory->destroy(cutsq_cxst_hc); 
     memory->destroy(b_cxst_lo);
     memory->destroy(b_cxst_hi);
 
@@ -155,15 +156,14 @@ void PairOxdnaCoaxstk::compute(int eflag, int vflag)
   double df2,df4t1,df4t4,df4t5,df4t6,df5c3,rsint;
 
   evdwl = 0.0;
-  if (eflag || vflag) ev_setup(eflag,vflag);
-  else evflag = vflag_fdotr = 0;
+  ev_init(eflag,vflag);
 
   anum = list->inum;
   alist = list->ilist;
   numneigh = list->numneigh;
   firstneigh = list->firstneigh;
 
-  // loop over pair interaction neighbours of my atoms
+  // loop over pair interaction neighbors of my atoms
 
   for (ia = 0; ia < anum; ia++) {
 
@@ -189,7 +189,7 @@ void PairOxdnaCoaxstk::compute(int eflag, int vflag)
     for (ib = 0; ib < bnum; ib++) {
 
       b = blist[ib];
-      factor_lj = special_lj[sbmask(b)]; // = 0 for nearest neighbours
+      factor_lj = special_lj[sbmask(b)]; // = 0 for nearest neighbors
       b &= NEIGHMASK;
 
       btype = type[b];
@@ -666,7 +666,7 @@ void PairOxdnaCoaxstk::allocate()
    global settings
 ------------------------------------------------------------------------- */
 
-void PairOxdnaCoaxstk::settings(int narg, char **arg)
+void PairOxdnaCoaxstk::settings(int narg, char **/*arg*/)
 {
   if (narg != 0) error->all(FLERR,"Illegal pair_style command");
 

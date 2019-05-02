@@ -14,10 +14,10 @@
    Contributing author: Oliver Henrich (University of Strathclyde, Glasgow)
 ------------------------------------------------------------------------- */
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include "pair_oxdna_stk.h"
 #include "mf_oxdna.h"
 #include "atom.h"
@@ -154,10 +154,9 @@ void PairOxdnaStk::compute(int eflag, int vflag)
   double tptofp;
 
   evdwl = 0.0;
-  if (eflag || vflag) ev_setup(eflag,vflag);
-  else evflag = vflag_fdotr = 0;
+  ev_init(eflag,vflag);
 
-  // loop over stacking interaction neighours using bond topology
+  // loop over stacking interaction neighbors using bond topology
 
   for (in = 0; in < nbondlist; in++) {
 
@@ -647,7 +646,7 @@ void PairOxdnaStk::allocate()
    global settings
 ------------------------------------------------------------------------- */
 
-void PairOxdnaStk::settings(int narg, char **arg)
+void PairOxdnaStk::settings(int narg, char **/*arg*/)
 {
   if (narg != 0) error->all(FLERR,"Illegal pair_style command");
 

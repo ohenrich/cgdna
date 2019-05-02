@@ -14,10 +14,10 @@
    Contributing author: Oliver Henrich (University of Strathclyde, Glasgow)
 ------------------------------------------------------------------------- */
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include "pair_oxdna2_coaxstk.h"
 #include "mf_oxdna.h"
 #include "atom.h"
@@ -62,6 +62,7 @@ PairOxdna2Coaxstk::~PairOxdna2Coaxstk()
     memory->destroy(cut_cxst_hi);
     memory->destroy(cut_cxst_lc);
     memory->destroy(cut_cxst_hc);
+    memory->destroy(cutsq_cxst_hc);
     memory->destroy(b_cxst_lo);
     memory->destroy(b_cxst_hi);
 
@@ -103,9 +104,9 @@ PairOxdna2Coaxstk::~PairOxdna2Coaxstk()
 void PairOxdna2Coaxstk::compute(int eflag, int vflag)
 {
 
-  double delf[3],delt[3],delta[3],deltb[3]; // force, torque increment;
+  double delf[3],delta[3],deltb[3]; // force, torque increment;
   double evdwl,fpair,finc,tpair,factor_lj;
-  double v1tmp[3],v2tmp[3],v3tmp[3];
+  double v1tmp[3];
   double delr_ss[3],delr_ss_norm[3],rsq_ss,r_ss,rinv_ss;
   double delr_st[3],delr_st_norm[3],rsq_st,r_st,rinv_st;
   double theta1,theta1p,t1dir[3],cost1;
@@ -113,12 +114,6 @@ void PairOxdna2Coaxstk::compute(int eflag, int vflag)
   double theta5,theta5p,t5dir[3],cost5;
   double theta6,theta6p,t6dir[3],cost6;
   double cosphi3;
-
-  double gamma,gammacub,rinv_ss_cub,fac;
-  double aybx,azbx,rax,ray,raz,rbx;
-  double dcdr,dcdrbx;
-  double dcdaxbx,dcdaybx,dcdazbx;
-  double dcdrax,dcdray,dcdraz;
 
   // distances COM-backbone site, COM-stacking site
   double d_cs=-0.4, d_cst=+0.34;
@@ -149,15 +144,14 @@ void PairOxdna2Coaxstk::compute(int eflag, int vflag)
   double df2,df4f6t1,df4t4,df4t5,df4t6,rsint;
 
   evdwl = 0.0;
-  if (eflag || vflag) ev_setup(eflag,vflag);
-  else evflag = vflag_fdotr = 0;
+  ev_init(eflag,vflag);
 
   anum = list->inum;
   alist = list->ilist;
   numneigh = list->numneigh;
   firstneigh = list->firstneigh;
 
-  // loop over pair interaction neighbours of my atoms
+  // loop over pair interaction neighbors of my atoms
 
   for (ia = 0; ia < anum; ia++) {
 
@@ -183,7 +177,7 @@ void PairOxdna2Coaxstk::compute(int eflag, int vflag)
     for (ib = 0; ib < bnum; ib++) {
 
       b = blist[ib];
-      factor_lj = special_lj[sbmask(b)]; // = 0 for nearest neighbours
+      factor_lj = special_lj[sbmask(b)]; // = 0 for nearest neighbors
       b &= NEIGHMASK;
 
       btype = type[b];
@@ -234,8 +228,8 @@ void PairOxdna2Coaxstk::compute(int eflag, int vflag)
       theta1p = 2 * MY_PI - theta1;
 
       f4f6t1 = F4(theta1, a_cxst1[atype][btype], theta_cxst1_0[atype][btype], dtheta_cxst1_ast[atype][btype],
-	       b_cxst1[atype][btype], dtheta_cxst1_c[atype][btype]) +
-	       F6(theta1, AA_cxst1[atype][btype], BB_cxst1[atype][btype]);
+               b_cxst1[atype][btype], dtheta_cxst1_c[atype][btype]) +
+               F6(theta1, AA_cxst1[atype][btype], BB_cxst1[atype][btype]);
 
       // early rejection criterium
       if (f4f6t1) {
@@ -296,8 +290,8 @@ void PairOxdna2Coaxstk::compute(int eflag, int vflag)
 
       rsint = 1.0/sin(theta1);
       df4f6t1 = DF4(theta1, a_cxst1[atype][btype], theta_cxst1_0[atype][btype], dtheta_cxst1_ast[atype][btype],
-		b_cxst1[atype][btype], dtheta_cxst1_c[atype][btype])*rsint +
-		DF6(theta1, AA_cxst1[atype][btype], BB_cxst1[atype][btype])*rsint;
+                b_cxst1[atype][btype], dtheta_cxst1_c[atype][btype])*rsint +
+                DF6(theta1, AA_cxst1[atype][btype], BB_cxst1[atype][btype])*rsint;
 
       df4t4 = DF4(theta4, a_cxst4[atype][btype], theta_cxst4_0[atype][btype], dtheta_cxst4_ast[atype][btype],
               b_cxst4[atype][btype], dtheta_cxst4_c[atype][btype])/sin(theta4);
@@ -542,7 +536,7 @@ void PairOxdna2Coaxstk::allocate()
    global settings
 ------------------------------------------------------------------------- */
 
-void PairOxdna2Coaxstk::settings(int narg, char **arg)
+void PairOxdna2Coaxstk::settings(int narg, char **/*arg*/)
 {
   if (narg != 0) error->all(FLERR,"Illegal pair_style command");
 
@@ -855,7 +849,7 @@ void PairOxdna2Coaxstk::read_restart(FILE *fp)
           fread(&dtheta_cxst1_ast[i][j],sizeof(double),1,fp);
           fread(&b_cxst1[i][j],sizeof(double),1,fp);
           fread(&dtheta_cxst1_c[i][j],sizeof(double),1,fp);
-    
+
           fread(&a_cxst4[i][j],sizeof(double),1,fp);
           fread(&theta_cxst4_0[i][j],sizeof(double),1,fp);
           fread(&dtheta_cxst4_ast[i][j],sizeof(double),1,fp);
@@ -874,8 +868,8 @@ void PairOxdna2Coaxstk::read_restart(FILE *fp)
           fread(&b_cxst6[i][j],sizeof(double),1,fp);
           fread(&dtheta_cxst6_c[i][j],sizeof(double),1,fp);
 
-	  fread(&AA_cxst1[i][j],sizeof(double),1,fp);
-	  fread(&BB_cxst1[i][j],sizeof(double),1,fp);
+          fread(&AA_cxst1[i][j],sizeof(double),1,fp);
+          fread(&BB_cxst1[i][j],sizeof(double),1,fp);
 
         }
 
@@ -895,7 +889,7 @@ void PairOxdna2Coaxstk::read_restart(FILE *fp)
         MPI_Bcast(&b_cxst1[i][j],1,MPI_DOUBLE,0,world);
         MPI_Bcast(&dtheta_cxst1_c[i][j],1,MPI_DOUBLE,0,world);
 
-	MPI_Bcast(&a_cxst4[i][j],1,MPI_DOUBLE,0,world);
+        MPI_Bcast(&a_cxst4[i][j],1,MPI_DOUBLE,0,world);
         MPI_Bcast(&theta_cxst4_0[i][j],1,MPI_DOUBLE,0,world);
         MPI_Bcast(&dtheta_cxst4_ast[i][j],1,MPI_DOUBLE,0,world);
         MPI_Bcast(&b_cxst4[i][j],1,MPI_DOUBLE,0,world);
@@ -962,7 +956,7 @@ void PairOxdna2Coaxstk::write_data(FILE *fp)
          %g %g %g %g %g\
          %g %g %g %g %g\
          %g %g %g %g %g\
-	 %g %g\
+         %g %g\
          \n",i,
         k_cxst[i][i],cut_cxst_0[i][i],cut_cxst_c[i][i],cut_cxst_lo[i][i],cut_cxst_hi[i][i],
         cut_cxst_lc[i][i],cut_cxst_hc[i][i],b_cxst_lo[i][i],b_cxst_hi[i][i],
@@ -970,7 +964,7 @@ void PairOxdna2Coaxstk::write_data(FILE *fp)
         a_cxst4[i][i],theta_cxst4_0[i][i],dtheta_cxst4_ast[i][i],b_cxst4[i][i],dtheta_cxst4_c[i][i],
         a_cxst5[i][i],theta_cxst5_0[i][i],dtheta_cxst5_ast[i][i],b_cxst5[i][i],dtheta_cxst5_c[i][i],
         a_cxst6[i][i],theta_cxst6_0[i][i],dtheta_cxst6_ast[i][i],b_cxst6[i][i],dtheta_cxst6_c[i][i],
-	AA_cxst1[i][i],BB_cxst1[i][i]);
+        AA_cxst1[i][i],BB_cxst1[i][i]);
 }
 
 /* ----------------------------------------------------------------------
@@ -988,7 +982,7 @@ void PairOxdna2Coaxstk::write_data_all(FILE *fp)
          %g %g %g %g %g\
          %g %g %g %g %g\
          %g %g %g %g %g\
-	 %g %g\
+         %g %g\
          \n",i,j,
         k_cxst[i][j],cut_cxst_0[i][j],cut_cxst_c[i][j],cut_cxst_lo[i][j],cut_cxst_hi[i][j],
         cut_cxst_lc[i][j],cut_cxst_hc[i][j],b_cxst_lo[i][j],b_cxst_hi[i][j],
@@ -996,7 +990,7 @@ void PairOxdna2Coaxstk::write_data_all(FILE *fp)
         a_cxst4[i][j],theta_cxst4_0[i][j],dtheta_cxst4_ast[i][j],b_cxst4[i][j],dtheta_cxst4_c[i][j],
         a_cxst5[i][j],theta_cxst5_0[i][j],dtheta_cxst5_ast[i][j],b_cxst5[i][j],dtheta_cxst5_c[i][j],
         a_cxst6[i][j],theta_cxst6_0[i][j],dtheta_cxst6_ast[i][j],b_cxst6[i][j],dtheta_cxst6_c[i][j],
-	AA_cxst1[i][j],BB_cxst1[i][j]);
+        AA_cxst1[i][j],BB_cxst1[i][j]);
 
 }
 

@@ -14,10 +14,10 @@
    Contributing author: Oliver Henrich (University of Strathclyde, Glasgow)
 ------------------------------------------------------------------------- */
 
-#include <math.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include "pair_oxdna_excv.h"
 #include "mf_oxdna.h"
 #include "atom.h"
@@ -92,7 +92,7 @@ PairOxdnaExcv::~PairOxdnaExcv()
     compute vector COM-excluded volume interaction sites in oxDNA
 ------------------------------------------------------------------------- */
 void PairOxdnaExcv::compute_interaction_sites(double e1[3],
-  double e2[3], double rs[3], double rb[3])
+  double /*e2*/[3], double rs[3], double rb[3])
 {
   double d_cs=-0.4, d_cb=+0.4;
 
@@ -144,15 +144,14 @@ void PairOxdnaExcv::compute(int eflag, int vflag)
   int a,b,ia,ib,anum,bnum,atype,btype;
 
   evdwl = 0.0;
-  if (eflag || vflag) ev_setup(eflag,vflag);
-  else evflag = vflag_fdotr = 0;
+  ev_init(eflag,vflag);
 
   anum = list->inum;
   alist = list->ilist;
   numneigh = list->numneigh;
   firstneigh = list->firstneigh;
 
-  // loop over pair interaction neighbours of my atoms
+  // loop over pair interaction neighbors of my atoms
 
   for (ia = 0; ia < anum; ia++) {
 
@@ -179,7 +178,7 @@ void PairOxdnaExcv::compute(int eflag, int vflag)
     for (ib = 0; ib < bnum; ib++) {
 
       b = blist[ib];
-      factor_lj = special_lj[sbmask(b)]; // = 0 for nearest neighbours
+      factor_lj = special_lj[sbmask(b)]; // = 0 for nearest neighbors
       b &= NEIGHMASK;
 
       btype = type[b];
@@ -222,7 +221,7 @@ void PairOxdnaExcv::compute(int eflag, int vflag)
         evdwl = F3(rsq_ss,cutsq_ss_ast[atype][btype],cut_ss_c[atype][btype],lj1_ss[atype][btype],
                         lj2_ss[atype][btype],epsilon_ss[atype][btype],b_ss[atype][btype],fpair);
 
-        // knock out nearest-neighbour interaction between ss
+        // knock out nearest-neighbor interaction between ss
         fpair *= factor_lj;
         evdwl *= factor_lj;
 
@@ -441,7 +440,7 @@ void PairOxdnaExcv::allocate()
    global settings
 ------------------------------------------------------------------------- */
 
-void PairOxdnaExcv::settings(int narg, char **arg)
+void PairOxdnaExcv::settings(int narg, char **/*arg*/)
 {
   if (narg != 0) error->all(FLERR,"Illegal pair_style command");
 
