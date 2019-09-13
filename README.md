@@ -28,14 +28,13 @@ Model of DNA, J. Chem. Phys. 142, 234901 (2015).
 gradient thermostats for rigid body dynamics", J. Chem. Phys. 142, 
 144114 (2015).
 
-Example input and data files can be found in
-/examples/USER/cgdna/examples/oxDNA/ and /oxDNA2/. Python setup 
-tools which create single straight or helical DNA strands as
-well as DNA duplexes or arrays of duplexes can be found in
-/examples/USER/cgdna/util/. A technical report with more information
-on the models, the structure of the input and data file, the setup tool
-and the performance of the LAMMPS-implementation of oxDNA can be found
-in /doc/src/PDF/USER-CGDNA.pdf.
+The source code is contained in /cgdna/oxdna/src.
+Example input and data files can be found in /cgdna/oxdna/examples. 
+Python setup tools which create single straight or helical DNA strands as
+well as DNA duplexes or arrays of duplexes can be found in /cgdna/oxdna/util/. 
+A technical report [1] with more information on the models, the structure 
+of the input and data file, the setup tool and the performance of the 
+LAMMPS-implementation of oxDNA can be found /cgdna/oxdna/doc.
 
 IMPORTANT NOTE: This package can only be used if LAMMPS is compiled
 with the MOLECULE and ASPHERE packages.  These should be included in

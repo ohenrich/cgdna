@@ -1,6 +1,6 @@
-This directory contains example data and input files 
-and utility scripts for the oxDNA coarse-grained model 
-for DNA.
+This directory contains example data and input files for the
+oxDNA coarse-grained DNA model. Utility scripts are available in
+a subfolder of the parent directory.
 
 /examples/duplex1:
 Input, data and log files for a DNA duplex (double-stranded DNA) 
@@ -33,7 +33,16 @@ The change of mass and moment of inertia allows direct comparision of
 e.g. trajectory data, energies or time-dependent observables on a per-timestep 
 basis until numerical noise causes deviations at later simulation times. 
 
-/util:
-This directory contains a simple python setup tool which creates 
-single straight or helical DNA strands, DNA duplexes or arrays of DNA 
-duplexes.
+/examples/oxDNA2/unique_bp:
+This example uses atom types 1-8 to model a 13 base pair duplex.
+The nucleotide types are assigned as follows:
+A = 1,5; C = 2,6; G = 3,7; T = 4,8
+When a large number of atom types is used, this feature allows
+quasi-unique base pairing between two individual nucleotides.
+
+The topology is
+A   C   G   T   A   C   G   T   A   C   G   T   A
+1 - 2 - 3 - 4 - 5 - 6 - 7 - 8 - 1 - 2 - 7 - 8 - 1
+|   |   |   |   |   |   |   |   |   |   |   |   |
+4 - 3 - 2 - 1 - 8 - 7 - 6 - 5 - 4 - 3 - 6 - 5 - 4
+T   G   C   A   T   G   C   A   T   G   C   A   T
