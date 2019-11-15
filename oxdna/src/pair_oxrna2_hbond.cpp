@@ -14,38 +14,45 @@
    Contributing author: Oliver Henrich (University of Strathclyde, Glasgow)
 ------------------------------------------------------------------------- */
 
-#include "pair_oxdna2_excv.h"
+#include "pair_oxrna2_hbond.h"
 
 using namespace LAMMPS_NS;
 
 /* ---------------------------------------------------------------------- */
 
-PairOxdna2Excv::PairOxdna2Excv(LAMMPS *lmp) : PairOxdnaExcv(lmp)
+PairOxrna2Hbond::PairOxrna2Hbond(LAMMPS *lmp) : PairOxdnaHbond(lmp)
 {
+  single_enable = 0;
+  writedata = 1;
+
+  // sequence-specific base-pairing strength
+  // A:0 C:1 G:2 U:3, 5'- [i][j] -3'
+   
+  alpha_hb[0][0] = 1.00000;
+  alpha_hb[0][1] = 1.00000;
+  alpha_hb[0][2] = 1.00000;
+  alpha_hb[0][3] = 0.94253;
+
+  alpha_hb[1][0] = 1.00000;
+  alpha_hb[1][1] = 1.00000;
+  alpha_hb[1][2] = 1.22288;
+  alpha_hb[1][3] = 1.00000;
+
+  alpha_hb[2][0] = 1.00000;
+  alpha_hb[2][1] = 1.22288;
+  alpha_hb[2][2] = 1.00000;
+  alpha_hb[2][3] = 0.58655;
+
+  alpha_hb[3][0] = 0.94253;
+  alpha_hb[3][1] = 1.00000;
+  alpha_hb[3][2] = 0.58655;
+  alpha_hb[3][3] = 1.00000;
 
 }
 
 /* ---------------------------------------------------------------------- */
 
-PairOxdna2Excv::~PairOxdna2Excv()
+PairOxrna2Hbond::~PairOxrna2Hbond()
 {
-
-}
-
-/* ----------------------------------------------------------------------
-    compute vector COM-excluded volume interaction sites in oxDNA2
-------------------------------------------------------------------------- */
-void PairOxdna2Excv::compute_interaction_sites(double e1[3], double e2[3],
-    double /*e3*/[3], double rs[3], double rb[3])
-{
-  double d_cs_x=-0.34, d_cs_y=+0.3408, d_cb=+0.4;
-
-  rs[0] = d_cs_x*e1[0] + d_cs_y*e2[0];
-  rs[1] = d_cs_x*e1[1] + d_cs_y*e2[1];
-  rs[2] = d_cs_x*e1[2] + d_cs_y*e2[2];
-
-  rb[0] = d_cb*e1[0];
-  rb[1] = d_cb*e1[1];
-  rb[2] = d_cb*e1[2];
 
 }
