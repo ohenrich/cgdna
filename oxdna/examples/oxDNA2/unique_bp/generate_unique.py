@@ -781,7 +781,7 @@ def read_strands(filename):
                      strandnum[i]))
 
     out.write('\n')
-    out.write('# Atom-ID, translational, rotational velocity\n')
+    out.write('# Atom-ID, translational velocity, angular momentum\n')
     out.write('Velocities\n')
     out.write('\n')
 
