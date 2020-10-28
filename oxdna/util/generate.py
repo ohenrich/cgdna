@@ -316,7 +316,7 @@ def generate_strand(bp, sequence=None, start_pos=np.array([0, 0, 0]), \
     if perp is None or perp is False:
         v1 = np.random.random_sample(3)
         # comment in to suppress randomised base vector
-#        v1 = [1,0,0]
+        v1 = [1,0,0]
         v1 -= dir * (np.dot(dir, v1))
         v1 /= np.sqrt(sum(v1*v1))
     else:
@@ -482,12 +482,12 @@ def read_strands(filename):
             # generate random position of the first nucleotide
             com = box_offset + np.random.random_sample(3) * box
             # comment in to suppress randomisation
-#            com = [0,0,0]
+            com = [0,0,0]
 
             # generate the random direction of the helix 
             axis = np.random.random_sample(3)
             # comment in to suppress randomisation
-#            axis = [0,0,1]
+            axis = [0,0,1]
             axis /= np.sqrt(np.dot(axis, axis))
 
             # use the generate function defined above to create 
@@ -591,7 +591,7 @@ def read_strands(filename):
                      strandnum[i]))
 
     out.write('\n')
-    out.write('# Atom-ID, translational, rotational velocity\n')
+    out.write('# Atom-ID, translational velocity, angular momentum\n')
     out.write('Velocities\n')
     out.write('\n')
 
