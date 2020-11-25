@@ -47,9 +47,7 @@ PairOxdna2Dh::~PairOxdna2Dh()
 
     memory->destroy(setflag);
     memory->destroy(cutsq);
-
     memory->destroy(qeff_dh_pf);
-
     memory->destroy(kappa_dh);
     memory->destroy(b_dh);
     memory->destroy(cut_dh_ast);
@@ -216,7 +214,6 @@ void PairOxdna2Dh::compute(int eflag, int vflag)
 
         }
 
-
         // increment energy and virial
         // NOTE: The virial is calculated on the 'molecular' basis.
         // (see G. Ciccotti and J.P. Ryckaert, Comp. Phys. Rep. 4, 345-392 (1986))
@@ -245,10 +242,8 @@ void PairOxdna2Dh::allocate()
       setflag[i][j] = 0;
 
   memory->create(cutsq,n+1,n+1,"pair:cutsq");
-
   memory->create(kappa_dh,n+1,n+1,"pair:kappa_dh");
   memory->create(qeff_dh_pf,n+1,n+1,"pair:qeff_dh_pf");
-
   memory->create(b_dh,n+1,n+1,"pair:b_dh");
   memory->create(cut_dh_ast,n+1,n+1,"pair:cut_dh_ast");
   memory->create(cutsq_dh_ast,n+1,n+1,"pair:cutsq_dh_ast");
@@ -273,7 +268,7 @@ void PairOxdna2Dh::coeff(int narg, char **arg)
 {
   int count;
 
-  if (narg != 5) error->all(FLERR,"Incorrect args for pair coefficients in oxdna/dh");
+  if (narg != 5) error->all(FLERR,"Incorrect args for pair coefficients in oxdna2/dh");
   if (!allocated) allocate();
 
   int ilo,ihi,jlo,jhi;
@@ -356,7 +351,7 @@ void PairOxdna2Dh::coeff(int narg, char **arg)
     }
   }
 
-  if (count == 0) error->all(FLERR,"Incorrect args for pair coefficients in oxdna/dh");
+  if (count == 0) error->all(FLERR,"Incorrect args for pair coefficients in oxdna2/dh");
 }
 
 /* ----------------------------------------------------------------------
