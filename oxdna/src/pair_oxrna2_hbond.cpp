@@ -1,6 +1,6 @@
 /* ----------------------------------------------------------------------
    LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
-   https://lammps.sandia.gov/, Sandia National Laboratories
+   https://www.lammps.org/, Sandia National Laboratories
    Steve Plimpton, sjplimp@sandia.gov
 
    Copyright (2003) Sandia Corporation.  Under the terms of Contract
@@ -47,12 +47,4 @@ PairOxrna2Hbond::PairOxrna2Hbond(LAMMPS *lmp) : PairOxdnaHbond(lmp)
   alpha_hb[3][1] = 1.00000;
   alpha_hb[3][2] = 0.58655;
   alpha_hb[3][3] = 1.00000;
-
-}
-
-/* ---------------------------------------------------------------------- */
-
-PairOxrna2Hbond::~PairOxrna2Hbond()
-{
-
 }

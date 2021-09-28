@@ -11,24 +11,30 @@
    See the README file in the top-level LAMMPS directory.
 ------------------------------------------------------------------------- */
 
-#ifdef PAIR_CLASS
+#ifdef ATOM_CLASS
 // clang-format off
-PairStyle(oxdna2/excv,PairOxdna2Excv);
+AtomStyle(oxdna,AtomVecOxdna);
 // clang-format on
 #else
 
-#ifndef LMP_PAIR_OXDNA2_EXCV_H
-#define LMP_PAIR_OXDNA2_EXCV_H
+#ifndef LMP_ATOM_VEC_OXDNA_H
+#define LMP_ATOM_VEC_OXDNA_H
 
-#include "pair_oxdna_excv.h"
+#include "atom_vec.h"
 
 namespace LAMMPS_NS {
 
-class PairOxdna2Excv : public PairOxdnaExcv {
+class AtomVecOxdna : public AtomVec {
  public:
-  PairOxdna2Excv(class LAMMPS *lmp) : PairOxdnaExcv(lmp) {}
-  virtual ~PairOxdna2Excv() {}
-  virtual void compute_interaction_sites(double *, double *, double *, double *, double *);
+  AtomVecOxdna(class LAMMPS *);
+  ~AtomVecOxdna();
+
+  void grow_pointers();
+  void data_atom_post(int);
+  void data_bonds_post(int, int, tagint, tagint, tagint);
+
+ private:
+  tagint *id5p;
 };
 
 }    // namespace LAMMPS_NS
@@ -37,15 +43,5 @@ class PairOxdna2Excv : public PairOxdnaExcv {
 #endif
 
 /* ERROR/WARNING messages:
-
-E: Illegal ... command
-
-Self-explanatory.  Check the input script syntax and compare to the
-documentation for the command.  You can use -echo screen as a
-command-line option when running LAMMPS to see the offending line.
-
-E: Incorrect args for pair coefficients
-
-Self-explanatory.  Check the input script or data file.
 
 */
