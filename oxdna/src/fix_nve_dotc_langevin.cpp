@@ -2,7 +2,7 @@
 /* ----------------------------------------------------------------------
    LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
    https://www.lammps.org/, Sandia National Laboratories
-   Steve Plimpton, sjplimp@sandia.gov
+   LAMMPS development team: developers@lammps.org
 
    Copyright (2003) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
@@ -33,7 +33,7 @@ using namespace LAMMPS_NS;
 using namespace FixConst;
 using namespace MathExtra;
 
-#define INERTIA 0.2          // moment of inertia prefactor for ellipsoid
+static constexpr double INERTIA = 0.2;          // moment of inertia prefactor for ellipsoid
 
 /* ---------------------------------------------------------------------- */
 
@@ -89,7 +89,7 @@ void FixNVEDotcLangevin::init()
   int *mask = atom->mask;
   int nlocal = atom->nlocal;
 
-  avec = dynamic_cast<AtomVecEllipsoid *>( atom->style_match("ellipsoid"));
+  avec = dynamic_cast<AtomVecEllipsoid *>(atom->style_match("ellipsoid"));
 
   if (!avec)
     error->all(FLERR,"Fix nve/dotc/langevin requires atom style ellipsoid");

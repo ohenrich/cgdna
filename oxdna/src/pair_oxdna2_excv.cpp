@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------
    LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
    https://www.lammps.org/, Sandia National Laboratories
-   Steve Plimpton, sjplimp@sandia.gov
+   LAMMPS development team: developers@lammps.org
 
    Copyright (2003) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
@@ -14,6 +14,7 @@
    Contributing author: Oliver Henrich (University of Strathclyde, Glasgow)
 ------------------------------------------------------------------------- */
 
+#include "constants_oxdna.h"
 #include "pair_oxdna2_excv.h"
 
 using namespace LAMMPS_NS;
@@ -24,7 +25,9 @@ using namespace LAMMPS_NS;
 void PairOxdna2Excv::compute_interaction_sites(double e1[3], double e2[3], double /*e3*/[3],
                                                double rs[3], double rb[3])
 {
-  double d_cs_x = -0.34, d_cs_y = +0.3408, d_cb = +0.4;
+  double d_cs_x = ConstantsOxdna::get_d_cs_x();
+  double d_cs_y = ConstantsOxdna::get_d_cs_y();
+  double d_cb = ConstantsOxdna::get_d_cb();
 
   rs[0] = d_cs_x * e1[0] + d_cs_y * e2[0];
   rs[1] = d_cs_x * e1[1] + d_cs_y * e2[1];

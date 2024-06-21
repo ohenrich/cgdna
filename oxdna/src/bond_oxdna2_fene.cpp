@@ -1,7 +1,7 @@
 /* ----------------------------------------------------------------------
    LAMMPS - Large-scale Atomic/Molecular Massively Parallel Simulator
    https://www.lammps.org/, Sandia National Laboratories
-   Steve Plimpton, sjplimp@sandia.gov
+   LAMMPS development team: developers@lammps.org
 
    Copyright (2003) Sandia Corporation.  Under the terms of Contract
    DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains
@@ -15,6 +15,7 @@
 ------------------------------------------------------------------------- */
 
 #include "bond_oxdna2_fene.h"
+#include "constants_oxdna.h"
 
 using namespace LAMMPS_NS;
 
@@ -24,8 +25,8 @@ using namespace LAMMPS_NS;
 void BondOxdna2Fene::compute_interaction_sites(double e1[3], double e2[3], double /*e3*/[3],
                                                double r[3]) const
 {
-  constexpr double d_cs_x = -0.34;
-  constexpr double d_cs_y = +0.3408;
+  double d_cs_x = ConstantsOxdna::get_d_cs_x();
+  double d_cs_y = ConstantsOxdna::get_d_cs_y();
 
   r[0] = d_cs_x * e1[0] + d_cs_y * e2[0];
   r[1] = d_cs_x * e1[1] + d_cs_y * e2[1];
